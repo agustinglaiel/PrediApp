@@ -22,5 +22,8 @@ type User struct {
     IsEmailVerified bool               `bson:"is_email_verified" json:"is_email_verified"`
     LastLoginAt     *time.Time         `bson:"last_login_at,omitempty" json:"last_login_at,omitempty"`
     PhoneNumber     string             `bson:"phone_number,omitempty" json:"phone_number,omitempty"`
+    Provider        string             `bson:"provider,omitempty" json:"provider,omitempty"`
+	ProviderID      string             `bson:"provider_id,omitempty" json:"provider_id,omitempty"`
+    AvatarURL       string             `bson:"avatar_url,omitempty" json:"avatar_url,omitempty"`
 }
 
