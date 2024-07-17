@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"log"
 	"time"
 	"users/internal/dto"
 	"users/internal/model"
@@ -14,38 +15,35 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type userService struct{
-	userRepo repository.UserRepository
-
+type userService struct {
+    userRepo repository.UserRepository
 }
 
-var (
-	UserService userServiceInterface
-)
-
-type userServiceInterface interface {
-	SignUp(ctx context.Context, request dto.UserSignUpRequestDTO) (dto.UserSignUpResponseDTO, e.ApiError)
-	Login(ctx context.Context, request dto.UserLoginRequestDTO) (dto.UserLoginResponseDTO, e.ApiError)
-	OAuthSignIn(ctx context.Context, request dto.GoogleOAuthRequestDTO) (dto.GoogleOAuthResponseDTO, e.ApiError)
+type UserServiceInterface interface {
+    SignUp(ctx context.Context, request dto.UserSignUpRequestDTO) (dto.UserSignUpResponseDTO, e.ApiError)
+    Login(ctx context.Context, request dto.UserLoginRequestDTO) (dto.UserLoginResponseDTO, e.ApiError)
+    OAuthSignIn(ctx context.Context, request dto.GoogleOAuthRequestDTO) (dto.GoogleOAuthResponseDTO, e.ApiError)
 }
 
-func init() {
-    userRepo := repository.NewUserRepository()
-    UserService = &userService{
+func NewUserService(userRepo repository.UserRepository) UserServiceInterface {
+    return &userService{
         userRepo: userRepo,
     }
-	//Esto inicializa una instancia del repositorio y la asigna al campo userRepo de la estructura userService.
 }
 
 func (s *userService) SignUp(ctx context.Context, request dto.UserSignUpRequestDTO) (dto.UserSignUpResponseDTO, e.ApiError) {
+    log.Printf("Checking if email already exists: %s", request.Email)
     if _, err := s.userRepo.GetUserByEmail(ctx, request.Email); err == nil {
         return dto.UserSignUpResponseDTO{}, e.NewBadRequestApiError("email already exists")
     }
+
+    log.Printf("Checking if username already exists: %s", request.Username)
     if _, err := s.userRepo.GetUserByUsername(ctx, request.Username); err == nil {
         return dto.UserSignUpResponseDTO{}, e.NewBadRequestApiError("username already exists")
     }
 
     // Hash de la contraseña
+    log.Printf("Hashing password for user: %s", request.Username)
     hashedPassword, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
     if err != nil {
         return dto.UserSignUpResponseDTO{}, e.NewInternalServerApiError("error hashing password", err)
@@ -66,6 +64,7 @@ func (s *userService) SignUp(ctx context.Context, request dto.UserSignUpRequestD
         IsEmailVerified: false,
     }
 
+    log.Printf("Creating user: %+v", newUser)
     if err := s.userRepo.CreateUser(ctx, newUser); err != nil {
         return dto.UserSignUpResponseDTO{}, e.NewInternalServerApiError("error creating user", err)
     }
@@ -80,51 +79,45 @@ func (s *userService) SignUp(ctx context.Context, request dto.UserSignUpRequestD
         CreatedAt: newUser.CreatedAt.Format(time.RFC3339),
     }
 
+    log.Printf("User created successfully: %+v", response)
     return response, nil
 }
 
 func (s *userService) Login(ctx context.Context, request dto.UserLoginRequestDTO) (dto.UserLoginResponseDTO, e.ApiError) {
-	// Verificar si el usuario existe
-	user, err := s.userRepo.GetUserByEmail(ctx, request.Email)
-	if err != nil {
-		return dto.UserLoginResponseDTO{}, e.NewBadRequestApiError("invalid credentials")
-	}
+    user, err := s.userRepo.GetUserByEmail(ctx, request.Email)
+    if err != nil {
+        return dto.UserLoginResponseDTO{}, e.NewBadRequestApiError("invalid credentials")
+    }
 
-	// Comparar la contraseña
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(request.Password)); err != nil {
-		return dto.UserLoginResponseDTO{}, e.NewBadRequestApiError("invalid credentials")
-	}
+    if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(request.Password)); err != nil {
+        return dto.UserLoginResponseDTO{}, e.NewBadRequestApiError("invalid credentials")
+    }
 
-	// Generar un token JWT (asumiendo que tienes un servicio de tokens configurado)
-	// token, err := s.tokenService.GenerateToken(user)
-	// if err != nil {
-	//     return dto.UserLoginResponseDTO{}, e.NewInternalServerApiError("error generating token", err)
-	// }
+    response := dto.UserLoginResponseDTO{
+        ID:        user.ID.Hex(),
+        FirstName: user.FirstName,
+        LastName:  user.LastName,
+        Username:  user.Username,
+        Email:     user.Email,
+        Role:      user.Role,
+        Token:     "dummy-jwt-token", // Reemplazar con el token real
+    }
 
-	response := dto.UserLoginResponseDTO{
-		ID:        user.ID.Hex(),
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
-		Username:  user.Username,
-		Email:     user.Email,
-		Role:      user.Role,
-		Token:     "dummy-jwt-token", // Reemplazar con el token real
-	}
-
-	return response, nil
+    return response, nil
 }
 
 func (s *userService) OAuthSignIn(ctx context.Context, request dto.GoogleOAuthRequestDTO) (dto.GoogleOAuthResponseDTO, e.ApiError) {
-    // Verificar el token de Google y obtener los datos del usuario
     googleUser, err := VerifyGoogleToken(request.GoogleToken)
     if err != nil {
         return dto.GoogleOAuthResponseDTO{}, e.NewBadRequestApiError("invalid Google token")
     }
 
-    // Verificar si el usuario ya existe
-    user, err := s.userRepo.GetUserByEmail(ctx, googleUser.Email)
-    if err != nil {
-        // Si el usuario no existe, crear uno nuevo
+    user, apiErr := s.userRepo.GetUserByEmail(ctx, googleUser.Email)
+    if apiErr != nil {
+        if apiErr.Status() != 404 {
+            return dto.GoogleOAuthResponseDTO{}, apiErr
+        }
+
         user = &model.User{
             ID:              primitive.NewObjectID(),
             FirstName:       googleUser.FirstName,
@@ -140,11 +133,10 @@ func (s *userService) OAuthSignIn(ctx context.Context, request dto.GoogleOAuthRe
             CreatedAt:       time.Now(),
         }
 
-        if err := s.userRepo.CreateUser(ctx, user); err != nil {
-            return dto.GoogleOAuthResponseDTO{}, e.NewInternalServerApiError("error creating user", err)
+        if apiErr := s.userRepo.CreateUser(ctx, user); apiErr != nil {
+            return dto.GoogleOAuthResponseDTO{}, apiErr
         }
     } else {
-        // Si el usuario existe, actualizar los datos del usuario
         user.Provider = "google"
         user.ProviderID = googleUser.UserID
         user.AvatarURL = googleUser.AvatarURL
@@ -152,16 +144,10 @@ func (s *userService) OAuthSignIn(ctx context.Context, request dto.GoogleOAuthRe
         now := time.Now()
         user.LastLoginAt = &now
 
-        if err := s.userRepo.UpdateUser(ctx, user); err != nil {
-            return dto.GoogleOAuthResponseDTO{}, e.NewInternalServerApiError("error updating user", err)
+        if apiErr := s.userRepo.UpdateUser(ctx, user); apiErr != nil {
+            return dto.GoogleOAuthResponseDTO{}, apiErr
         }
     }
-
-    // Generar un token JWT (asumiendo que tienes un servicio de tokens configurado)
-    // token, err := s.tokenService.GenerateToken(user)
-    // if err != nil {
-    //     return dto.GoogleOAuthResponseDTO{}, e.NewInternalServerApiError("error generating token", err)
-    // }
 
     response := dto.GoogleOAuthResponseDTO{
         ID:          user.ID.Hex(),

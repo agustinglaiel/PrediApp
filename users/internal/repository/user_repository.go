@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"log"
 	"users/internal/model"
 	e "users/pkg/utils"
 
@@ -30,8 +31,10 @@ func NewUserRepository() UserRepository {
 // CreateUser inserta un nuevo usuario en la base de datos
 func (r *userRepository) CreateUser(ctx context.Context, user *model.User) e.ApiError {
     db := e.MongoDb
+    log.Printf("Inserting user into database: %+v", user)
     _, err := db.Collection("users").InsertOne(ctx, user)
     if err != nil {
+        log.Printf("Error creating user: %v", err)
         return e.NewInternalServerApiError("error creating user", err)
     }
     return nil
@@ -41,13 +44,17 @@ func (r *userRepository) CreateUser(ctx context.Context, user *model.User) e.Api
 func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*model.User, e.ApiError) {
     var user model.User
     db := e.MongoDb
+    log.Printf("Searching for user by email: %s", email)
     err := db.Collection("users").FindOne(ctx, bson.M{"email": email}).Decode(&user)
     if err != nil {
         if err == mongo.ErrNoDocuments {
+            log.Printf("User not found: %s", email)
             return nil, e.NewNotFoundApiError("user not found")
         }
+        log.Printf("Error finding user by email: %v", err)
         return nil, e.NewInternalServerApiError("error finding user by email", err)
     }
+    log.Printf("User found: %+v", user)
     return &user, nil
 }
 

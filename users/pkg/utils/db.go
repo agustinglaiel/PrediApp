@@ -47,7 +47,8 @@ func InitDB() error {
         return fmt.Errorf("error listing database names: %v", err)
     }
 
-    MongoDb = client.Database("test")
+    // Cambiar el nombre de la base de datos aquí
+    MongoDb = client.Database("prediApp")
 
     fmt.Println("Available databases:")
     fmt.Println(dbNames)
