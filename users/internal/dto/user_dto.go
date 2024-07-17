@@ -59,3 +59,27 @@ type UserLoginResponseDTO struct {
     Role      string `json:"role"`
     Token     string `json:"token"` // JWT token
 }
+
+// UserResponseDTO representa la respuesta general de un usuario
+type UserResponseDTO struct {
+    ID        string `json:"id"`
+    FirstName string `json:"first_name"`
+    LastName  string `json:"last_name"`
+    Username  string `json:"username"`
+    Email     string `json:"email"`
+    Role      string `json:"role"`
+    Score     int    `json:"score"`
+    CreatedAt string `json:"created_at"`
+    IsActive  bool   `json:"is_active"`
+}
+
+// UserUpdateRequestDTO representa la solicitud de actualización de un usuario
+type UserUpdateRequestDTO struct {
+    FirstName   string `json:"first_name,omitempty"`
+    LastName    string `json:"last_name,omitempty"`
+    Username    string `json:"username,omitempty"`
+    Email       string `json:"email,omitempty"`
+    Password    string `json:"password,omitempty"`
+    PhoneNumber string `json:"phone_number,omitempty"`
+    IsActive    bool   `json:"is_active,omitempty"`
+}

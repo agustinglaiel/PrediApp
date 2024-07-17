@@ -20,7 +20,11 @@ type UserRepository interface {
     GetUserByEmail(ctx context.Context, email string) (*model.User, e.ApiError)
     GetUserByUsername(ctx context.Context, username string) (*model.User, e.ApiError)
     GetUserByID(ctx context.Context, id primitive.ObjectID) (*model.User, e.ApiError)
-    UpdateUser(ctx context.Context, user *model.User) e.ApiError
+    GetUsers(ctx context.Context) ([]*model.User, e.ApiError)
+    UpdateUserByID(ctx context.Context, id primitive.ObjectID, user *model.User) e.ApiError
+    UpdateUserByUsername(ctx context.Context, username string, user *model.User) e.ApiError
+    DeleteUserByID(ctx context.Context, id primitive.ObjectID) e.ApiError
+    DeleteUserByUsername(ctx context.Context, username string) e.ApiError
 }
 
 // NewUserRepository crea una nueva instancia de userRepository
@@ -86,16 +90,74 @@ func (r *userRepository) GetUserByID(ctx context.Context, id primitive.ObjectID)
     return &user, nil
 }
 
-// UpdateUser actualiza un usuario en la base de datos
-func (r *userRepository) UpdateUser(ctx context.Context, user *model.User) e.ApiError {
+// GetUsers obtiene todos los usuarios
+func (r *userRepository) GetUsers(ctx context.Context) ([]*model.User, e.ApiError) {
+    var users []*model.User
     db := e.MongoDb
-    filter := bson.M{"_id": user.ID}
+    cursor, err := db.Collection("users").Find(ctx, bson.M{})
+    if err != nil {
+        return nil, e.NewInternalServerApiError("error finding users", err)
+    }
+    defer cursor.Close(ctx)
+    for cursor.Next(ctx) {
+        var user model.User
+        if err := cursor.Decode(&user); err != nil {
+            return nil, e.NewInternalServerApiError("error decoding user", err)
+        }
+        users = append(users, &user)
+    }
+    if err := cursor.Err(); err != nil {
+        return nil, e.NewInternalServerApiError("cursor error", err)
+    }
+    return users, nil
+}
+
+// UpdateUserByID actualiza un usuario por su ID en la base de datos
+func (r *userRepository) UpdateUserByID(ctx context.Context, id primitive.ObjectID, user *model.User) e.ApiError {
+    db := e.MongoDb
+    filter := bson.M{"_id": id}
     update := bson.M{
         "$set": user,
     }
     _, err := db.Collection("users").UpdateOne(ctx, filter, update)
     if err != nil {
-        return e.NewInternalServerApiError("error updating user", err)
+        return e.NewInternalServerApiError("error updating user by ID", err)
+    }
+    return nil
+}
+
+// UpdateUserByUsername actualiza un usuario por su nombre de usuario en la base de datos
+func (r *userRepository) UpdateUserByUsername(ctx context.Context, username string, user *model.User) e.ApiError {
+    db := e.MongoDb
+    filter := bson.M{"username": username}
+    update := bson.M{
+        "$set": user,
+    }
+    _, err := db.Collection("users").UpdateOne(ctx, filter, update)
+    if err != nil {
+        return e.NewInternalServerApiError("error updating user by username", err)
+    }
+    return nil
+}
+
+// DeleteUserByID elimina un usuario por su ID de la base de datos
+func (r *userRepository) DeleteUserByID(ctx context.Context, id primitive.ObjectID) e.ApiError {
+    db := e.MongoDb
+    filter := bson.M{"_id": id}
+    _, err := db.Collection("users").DeleteOne(ctx, filter)
+    if err != nil {
+        return e.NewInternalServerApiError("error deleting user by ID", err)
+    }
+    return nil
+}
+
+// DeleteUserByUsername elimina un usuario por su nombre de usuario de la base de datos
+func (r *userRepository) DeleteUserByUsername(ctx context.Context, username string) e.ApiError {
+    db := e.MongoDb
+    filter := bson.M{"username": username}
+    _, err := db.Collection("users").DeleteOne(ctx, filter)
+    if err != nil {
+        return e.NewInternalServerApiError("error deleting user by username", err)
     }
     return nil
 }

@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"users/internal/api"
 	"users/internal/repository"
+	"users/internal/router"
 	"users/internal/service"
 	"users/pkg/utils"
 
@@ -12,6 +14,7 @@ import (
 func main() {
     // Initialize database
     if err := utils.InitDB(); err != nil {
+        fmt.Println("Error al conectar con la Base de Datos")
         panic(err)
     }
     defer utils.DisconnectDB()
@@ -19,16 +22,15 @@ func main() {
     // Initialize repository and service
     userRepo := repository.NewUserRepository()
     userService := service.NewUserService(userRepo)
-
     // Initialize controller
     userController := api.NewUserController(userService)
 
-    // Set up router
-    router := gin.Default()
-    router.POST("/signup", userController.SignUp)
-    router.POST("/login", userController.Login)
-    router.POST("/oauth/signin", userController.OAuthSignIn)
+    //Set up router
+    ginRouter := gin.Default()
+
+    //Map URLs
+    router.MapUrls(ginRouter, userController)
 
     // Start server
-    router.Run(":8080")
+    ginRouter.Run(":8080")
 }

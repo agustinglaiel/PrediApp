@@ -78,3 +78,95 @@ func (ctrl *UserController) OAuthSignIn(c *gin.Context) {
 
     c.JSON(http.StatusOK, response)
 }
+
+// GetUserByID handles fetching a user by their ID
+func (ctrl *UserController) GetUserByID(c *gin.Context) {
+    id := c.Param("id")
+    user, apiErr := ctrl.userService.GetUserById(c.Request.Context(), id)
+    if apiErr != nil {
+        c.JSON(apiErr.Status(), apiErr)
+        return
+    }
+    c.JSON(http.StatusOK, user)
+}
+
+// GetUserByUsername handles fetching a user by their username
+func (ctrl *UserController) GetUserByUsername(c *gin.Context) {
+    username := c.Param("username")
+    user, apiErr := ctrl.userService.GetUserByUsername(c.Request.Context(), username)
+    if apiErr != nil {
+        c.JSON(apiErr.Status(), apiErr)
+        return
+    }
+    c.JSON(http.StatusOK, user)
+}
+
+// GetUsers handles fetching all users
+func (ctrl *UserController) GetUsers(c *gin.Context) {
+    users, apiErr := ctrl.userService.GetUsers(c.Request.Context())
+    if apiErr != nil {
+        c.JSON(apiErr.Status(), apiErr)
+        return
+    }
+    c.JSON(http.StatusOK, users)
+}
+
+// UpdateUserByID handles updating a user by their ID
+func (ctrl *UserController) UpdateUserByID(c *gin.Context) {
+    id := c.Param("id")
+    var request dto.UserUpdateRequestDTO
+    if err := c.ShouldBindJSON(&request); err != nil {
+        apiErr := e.NewBadRequestApiError("invalid request")
+        c.JSON(apiErr.Status(), apiErr)
+        return
+    }
+
+    user, apiErr := ctrl.userService.UpdateUserById(c.Request.Context(), id, request)
+    if apiErr != nil {
+        c.JSON(apiErr.Status(), apiErr)
+        return
+    }
+
+    c.JSON(http.StatusOK, user)
+}
+
+// UpdateUserByUsername handles updating a user by their username
+func (ctrl *UserController) UpdateUserByUsername(c *gin.Context) {
+    username := c.Param("username")
+    var request dto.UserUpdateRequestDTO
+    if err := c.ShouldBindJSON(&request); err != nil {
+        apiErr := e.NewBadRequestApiError("invalid request")
+        c.JSON(apiErr.Status(), apiErr)
+        return
+    }
+
+    user, apiErr := ctrl.userService.UpdateUserByUsername(c.Request.Context(), username, request)
+    if apiErr != nil {
+        c.JSON(apiErr.Status(), apiErr)
+        return
+    }
+
+    c.JSON(http.StatusOK, user)
+}
+
+// DeleteUserByID handles deleting a user by their ID
+func (ctrl *UserController) DeleteUserByID(c *gin.Context) {
+    id := c.Param("id")
+    apiErr := ctrl.userService.DeleteUserById(c.Request.Context(), id)
+    if apiErr != nil {
+        c.JSON(apiErr.Status(), apiErr)
+        return
+    }
+    c.JSON(http.StatusNoContent, nil)
+}
+
+// DeleteUserByUsername handles deleting a user by their username
+func (ctrl *UserController) DeleteUserByUsername(c *gin.Context) {
+    username := c.Param("username")
+    apiErr := ctrl.userService.DeleteUserByUsername(c.Request.Context(), username)
+    if apiErr != nil {
+        c.JSON(apiErr.Status(), apiErr)
+        return
+    }
+    c.JSON(http.StatusNoContent, nil)
+}

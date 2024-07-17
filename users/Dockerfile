@@ -1,5 +1,5 @@
 # Usar una imagen base oficial de Go
-FROM golang:1.16-alpine
+FROM golang:1.18-alpine
 
 # Establecer el directorio de trabajo dentro del contenedor
 WORKDIR /app
@@ -13,7 +13,7 @@ RUN go mod download
 # Copiar el código fuente del microservicio al contenedor
 COPY . .
 
-# Compilar la aplicación al binario ejecutable. Reemplaza 'cmd/users/main.go' con la ruta al punto de entrada de tu aplicación
+# Compilar la aplicación al binario ejecutable. Reemplaza 'cmd/main.go' con la ruta al punto de entrada de tu aplicación
 RUN go build -o /users-service ./cmd/main.go
 
 # Indicar el puerto que el contenedor debe exponer (cambia 8080 por el puerto que uses)

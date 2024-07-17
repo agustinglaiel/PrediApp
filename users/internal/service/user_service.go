@@ -23,6 +23,13 @@ type UserServiceInterface interface {
     SignUp(ctx context.Context, request dto.UserSignUpRequestDTO) (dto.UserSignUpResponseDTO, e.ApiError)
     Login(ctx context.Context, request dto.UserLoginRequestDTO) (dto.UserLoginResponseDTO, e.ApiError)
     OAuthSignIn(ctx context.Context, request dto.GoogleOAuthRequestDTO) (dto.GoogleOAuthResponseDTO, e.ApiError)
+    GetUserById(ctx context.Context, id string) (dto.UserResponseDTO, e.ApiError)
+    GetUserByUsername(ctx context.Context, username string) (dto.UserResponseDTO, e.ApiError)
+    GetUsers(ctx context.Context) ([]dto.UserResponseDTO, e.ApiError)
+    UpdateUserById(ctx context.Context, id string, request dto.UserUpdateRequestDTO) (dto.UserResponseDTO, e.ApiError)
+    UpdateUserByUsername(ctx context.Context, username string, request dto.UserUpdateRequestDTO) (dto.UserResponseDTO, e.ApiError)
+    DeleteUserById(ctx context.Context, id string) e.ApiError
+    DeleteUserByUsername(ctx context.Context, username string) e.ApiError
 }
 
 func NewUserService(userRepo repository.UserRepository) UserServiceInterface {
@@ -144,7 +151,7 @@ func (s *userService) OAuthSignIn(ctx context.Context, request dto.GoogleOAuthRe
         now := time.Now()
         user.LastLoginAt = &now
 
-        if apiErr := s.userRepo.UpdateUser(ctx, user); apiErr != nil {
+        if apiErr := s.userRepo.UpdateUserByID(ctx, user.ID, user); apiErr != nil {
             return dto.GoogleOAuthResponseDTO{}, apiErr
         }
     }
@@ -180,4 +187,163 @@ func VerifyGoogleToken(googleToken string) (*goth.User, e.ApiError) {
     }
 
     return &user, nil
+}
+
+func (s *userService) GetUserById(ctx context.Context, id string) (dto.UserResponseDTO, e.ApiError) {
+    objID, err := primitive.ObjectIDFromHex(id)
+    if err != nil {
+        return dto.UserResponseDTO{}, e.NewBadRequestApiError("invalid user ID")
+    }
+
+    user, apiErr := s.userRepo.GetUserByID(ctx, objID)
+    if apiErr != nil {
+        return dto.UserResponseDTO{}, apiErr
+    }
+
+    response := dto.UserResponseDTO{
+        ID:        user.ID.Hex(),
+        FirstName: user.FirstName,
+        LastName:  user.LastName,
+        Username:  user.Username,
+        Email:     user.Email,
+        Role:      user.Role,
+        Score:     user.Score,
+        CreatedAt: user.CreatedAt.Format(time.RFC3339),
+        IsActive:  user.IsActive,
+    }
+
+    return response, nil
+}
+
+func (s *userService) GetUserByUsername(ctx context.Context, username string) (dto.UserResponseDTO, e.ApiError) {
+    user, apiErr := s.userRepo.GetUserByUsername(ctx, username)
+    if apiErr != nil {
+        return dto.UserResponseDTO{}, apiErr
+    }
+
+    response := dto.UserResponseDTO{
+        ID:        user.ID.Hex(),
+        FirstName: user.FirstName,
+        LastName:  user.LastName,
+        Username:  user.Username,
+        Email:     user.Email,
+        Role:      user.Role,
+        Score:     user.Score,
+        CreatedAt: user.CreatedAt.Format(time.RFC3339),
+        IsActive:  user.IsActive,
+    }
+
+    return response, nil
+}
+
+func (s *userService) GetUsers(ctx context.Context) ([]dto.UserResponseDTO, e.ApiError) {
+    users, apiErr := s.userRepo.GetUsers(ctx)
+    if apiErr != nil {
+        return nil, apiErr
+    }
+
+    var response []dto.UserResponseDTO
+    for _, user := range users {
+        response = append(response, dto.UserResponseDTO{
+            ID:        user.ID.Hex(),
+            FirstName: user.FirstName,
+            LastName:  user.LastName,
+            Username:  user.Username,
+            Email:     user.Email,
+            Role:      user.Role,
+            Score:     user.Score,
+            CreatedAt: user.CreatedAt.Format(time.RFC3339),
+            IsActive:  user.IsActive,
+        })
+    }
+
+    return response, nil
+}
+
+func (s *userService) UpdateUserById(ctx context.Context, id string, request dto.UserUpdateRequestDTO) (dto.UserResponseDTO, e.ApiError) {
+    objID, err := primitive.ObjectIDFromHex(id)
+    if err != nil {
+        return dto.UserResponseDTO{}, e.NewBadRequestApiError("invalid user ID")
+    }
+
+    user, apiErr := s.userRepo.GetUserByID(ctx, objID)
+    if apiErr != nil {
+        return dto.UserResponseDTO{}, apiErr
+    }
+
+    user.FirstName = request.FirstName
+    user.LastName = request.LastName
+    user.Username = request.Username
+    user.Email = request.Email
+    user.IsActive = request.IsActive
+
+    if apiErr := s.userRepo.UpdateUserByID(ctx, objID, user); apiErr != nil {
+        return dto.UserResponseDTO{}, apiErr
+    }
+
+    response := dto.UserResponseDTO{
+        ID:        user.ID.Hex(),
+        FirstName: user.FirstName,
+        LastName:  user.LastName,
+        Username:  user.Username,
+        Email:     user.Email,
+        Role:      user.Role,
+        Score:     user.Score,
+        CreatedAt: user.CreatedAt.Format(time.RFC3339),
+        IsActive:  user.IsActive,
+    }
+
+    return response, nil
+}
+
+func (s *userService) UpdateUserByUsername(ctx context.Context, username string, request dto.UserUpdateRequestDTO) (dto.UserResponseDTO, e.ApiError) {
+    user, apiErr := s.userRepo.GetUserByUsername(ctx, username)
+    if apiErr != nil {
+        return dto.UserResponseDTO{}, apiErr
+    }
+
+    user.FirstName = request.FirstName
+    user.LastName = request.LastName
+    user.Username = request.Username
+    user.Email = request.Email
+    user.IsActive = request.IsActive
+
+    if apiErr := s.userRepo.UpdateUserByUsername(ctx, username, user); apiErr != nil {
+        return dto.UserResponseDTO{}, apiErr
+    }
+
+    response := dto.UserResponseDTO{
+        ID:        user.ID.Hex(),
+        FirstName: user.FirstName,
+        LastName:  user.LastName,
+        Username:  user.Username,
+        Email:     user.Email,
+        Role:      user.Role,
+        Score:     user.Score,
+        CreatedAt: user.CreatedAt.Format(time.RFC3339),
+        IsActive:  user.IsActive,
+    }
+
+    return response, nil
+}
+
+func (s *userService) DeleteUserById(ctx context.Context, id string) e.ApiError {
+    objID, err := primitive.ObjectIDFromHex(id)
+    if err != nil {
+        return e.NewBadRequestApiError("invalid user ID")
+    }
+
+    if apiErr := s.userRepo.DeleteUserByID(ctx, objID); apiErr != nil {
+        return apiErr
+    }
+
+    return nil
+}
+
+func (s *userService) DeleteUserByUsername(ctx context.Context, username string) e.ApiError {
+    if apiErr := s.userRepo.DeleteUserByUsername(ctx, username); apiErr != nil {
+        return apiErr
+    }
+
+    return nil
 }

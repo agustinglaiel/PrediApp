@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -27,7 +28,12 @@ func DisconnectDB() {
 
 // InitDB inicializa la conexión a la base de datos MongoDB
 func InitDB() error {
-    clientOpts := options.Client().ApplyURI("mongodb://localhost:27017")
+    mongoURI := os.Getenv("MONGO_URI")
+    if mongoURI == "" {
+        mongoURI = "mongodb://localhost:27017"
+    }
+
+    clientOpts := options.Client().ApplyURI(mongoURI)
     cli, err := mongo.Connect(context.TODO(), clientOpts)
     if err != nil {
         return fmt.Errorf("error connecting to MongoDB: %v", err)
@@ -47,8 +53,7 @@ func InitDB() error {
         return fmt.Errorf("error listing database names: %v", err)
     }
 
-    // Cambiar el nombre de la base de datos aquí
-    MongoDb = client.Database("prediApp")
+    MongoDb = client.Database("test")
 
     fmt.Println("Available databases:")
     fmt.Println(dbNames)
