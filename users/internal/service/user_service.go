@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"log"
 	"time"
 	"users/internal/dto"
 	"users/internal/model"
@@ -39,18 +38,18 @@ func NewUserService(userRepo repository.UserRepository) UserServiceInterface {
 }
 
 func (s *userService) SignUp(ctx context.Context, request dto.UserSignUpRequestDTO) (dto.UserSignUpResponseDTO, e.ApiError) {
-    log.Printf("Checking if email already exists: %s", request.Email)
+    //log.Printf("Checking if email already exists: %s", request.Email)
     if _, err := s.userRepo.GetUserByEmail(ctx, request.Email); err == nil {
         return dto.UserSignUpResponseDTO{}, e.NewBadRequestApiError("email already exists")
     }
 
-    log.Printf("Checking if username already exists: %s", request.Username)
+    //log.Printf("Checking if username already exists: %s", request.Username)
     if _, err := s.userRepo.GetUserByUsername(ctx, request.Username); err == nil {
         return dto.UserSignUpResponseDTO{}, e.NewBadRequestApiError("username already exists")
     }
 
     // Hash de la contraseña
-    log.Printf("Hashing password for user: %s", request.Username)
+    //log.Printf("Hashing password for user: %s", request.Username)
     hashedPassword, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
     if err != nil {
         return dto.UserSignUpResponseDTO{}, e.NewInternalServerApiError("error hashing password", err)
@@ -71,7 +70,7 @@ func (s *userService) SignUp(ctx context.Context, request dto.UserSignUpRequestD
         IsEmailVerified: false,
     }
 
-    log.Printf("Creating user: %+v", newUser)
+    //log.Printf("Creating user: %+v", newUser)
     if err := s.userRepo.CreateUser(ctx, newUser); err != nil {
         return dto.UserSignUpResponseDTO{}, e.NewInternalServerApiError("error creating user", err)
     }
@@ -86,7 +85,7 @@ func (s *userService) SignUp(ctx context.Context, request dto.UserSignUpRequestD
         CreatedAt: newUser.CreatedAt.Format(time.RFC3339),
     }
 
-    log.Printf("User created successfully: %+v", response)
+    //log.Printf("User created successfully: %+v", response)
     return response, nil
 }
 

@@ -30,7 +30,7 @@ func (ctrl *UserController) SignUp(c *gin.Context) {
         return
     }
 
-    log.Printf("Request received: %+v", request)
+    //log.Printf("Request received: %+v", request)
 
     response, apiErr := ctrl.userService.SignUp(c.Request.Context(), request)
     if apiErr != nil {
@@ -39,7 +39,7 @@ func (ctrl *UserController) SignUp(c *gin.Context) {
         return
     }
 
-    log.Printf("User created successfully: %+v", response)
+    //log.Printf("User created successfully: %+v", response)
     c.JSON(http.StatusCreated, response)
 }
 
