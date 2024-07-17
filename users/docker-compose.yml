@@ -20,7 +20,7 @@ services:
     depends_on:
       - mongopredi
     environment:
-      - MONGO_URI=mongodb://mongopredi:27017
+      - MONGO_URI=mongodb://mongopredi:27017/prediApp
     networks:
       - backend
 

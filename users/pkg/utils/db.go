@@ -30,7 +30,7 @@ func DisconnectDB() {
 func InitDB() error {
     mongoURI := os.Getenv("MONGO_URI")
     if mongoURI == "" {
-        mongoURI = "mongodb://localhost:27017"
+        mongoURI = "mongodb://localhost:27017/prediApp"
     }
 
     clientOpts := options.Client().ApplyURI(mongoURI)
@@ -53,7 +53,7 @@ func InitDB() error {
         return fmt.Errorf("error listing database names: %v", err)
     }
 
-    MongoDb = client.Database("test")
+    MongoDb = client.Database("prediApp")
 
     fmt.Println("Available databases:")
     fmt.Println(dbNames)
