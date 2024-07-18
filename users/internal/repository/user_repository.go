@@ -35,14 +35,23 @@ func NewUserRepository() UserRepository {
 // CreateUser inserta un nuevo usuario en la base de datos
 func (r *userRepository) CreateUser(ctx context.Context, user *model.User) e.ApiError {
     db := e.MongoDb
-    collectionName := "users"
-    //log.Printf("Attempting to insert user into database: %+v", user)
-    result, err := db.Collection(collectionName).InsertOne(ctx, user)
+    log.Printf("Attempting to insert user into database: %+v", user)
+    result, err := db.Collection("users").InsertOne(ctx, user)
     if err != nil {
-        log.Printf("Error creating user in collection %s: %v", collectionName, err)
+        log.Printf("Error creating user: %v", err)
         return e.NewInternalServerApiError("error creating user", err)
     }
-    log.Printf("User inserted into database: %s, collection: %s with ID: %v", db.Name(), collectionName, result.InsertedID)
+    log.Printf("User inserted with ID: %v", result.InsertedID)
+    
+    // Agregar log para confirmar que el usuario se ha insertado
+    var insertedUser model.User
+    err = db.Collection("users").FindOne(ctx, bson.M{"_id": result.InsertedID}).Decode(&insertedUser)
+    if err != nil {
+        log.Printf("Error verifying inserted user: %v", err)
+    } else {
+        log.Printf("Inserted user: %+v", insertedUser)
+    }
+    
     return nil
 }
 
@@ -50,7 +59,7 @@ func (r *userRepository) CreateUser(ctx context.Context, user *model.User) e.Api
 func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*model.User, e.ApiError) {
     var user model.User
     db := e.MongoDb
-    log.Printf("Searching for user by email: %s", email)
+    //log.Printf("Searching for user by email: %s", email)
     err := db.Collection("users").FindOne(ctx, bson.M{"email": email}).Decode(&user)
     if err != nil {
         if err == mongo.ErrNoDocuments {

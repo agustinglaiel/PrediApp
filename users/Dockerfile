@@ -5,7 +5,7 @@ FROM golang:1.19-alpine
 WORKDIR /app
 
 # Install necessary packages
-RUN apk add --no-cache git curl mongodb-tools
+RUN apk add --no-cache git curl
 
 # Copy the Go modules files
 COPY go.mod go.sum ./

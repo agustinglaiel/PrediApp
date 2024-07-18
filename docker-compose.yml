@@ -2,39 +2,38 @@ version: "3.8"
 
 services:
   mongopredi:
-    image: mongo:latest
+    image: mongo:7.0
     container_name: mongopredi
     ports:
       - "27017:27017"
+    volumes:
+      - mongodata:/data/db
     networks:
-      - backend
+      - mongo_net
 
   users-service:
     build:
       context: ./users
-      dockerfile: Dockerfile
-    container_name: users-service
     ports:
       - "8080:8080"
-    depends_on:
-      - mongopredi
     environment:
       - MONGO_URI=mongodb://mongopredi:27017
+    depends_on:
+      - mongopredi
     networks:
-      - backend
+      - mongo_net
 
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
-    container_name: frontend
+    dockerfile: Dockerfile
     ports:
       - "3000:3000"
-    depends_on:
-      - users-service
     networks:
-      - backend
+      - mongo_net
+
+volumes:
+  mongodata:
 
 networks:
-  backend:
-    driver: bridge
+  mongo_net:
