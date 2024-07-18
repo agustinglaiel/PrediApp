@@ -1,0 +1,63 @@
+body {
+  font-family: "Arial", sans-serif;
+  background-color: #fafafa;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+}
+
+.update-user-container {
+  width: 100%;
+  max-width: 400px;
+  padding: 20px;
+  border-radius: 10px;
+  background-color: #fff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra para el efecto flotante */
+  text-align: center;
+}
+
+.update-user-container h2 {
+  color: #333;
+}
+
+.update-user-container form {
+  display: flex;
+  flex-direction: column;
+}
+
+.update-user-container label {
+  margin: 10px 0 5px;
+  color: #333;
+}
+
+.update-user-container input {
+  padding: 10px;
+  margin-bottom: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  box-sizing: border-box;
+  font-size: 14px;
+}
+
+.update-user-container button {
+  padding: 10px;
+  margin: 10px 0;
+  border: none;
+  border-radius: 5px;
+  background-color: #007bff;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.update-user-container button:hover {
+  background-color: #0056b3;
+}
+
+.update-user-container .error {
+  color: red;
+  margin-bottom: 10px;
+}
