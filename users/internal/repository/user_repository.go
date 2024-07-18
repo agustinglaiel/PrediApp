@@ -36,7 +36,7 @@ func NewUserRepository() UserRepository {
 func (r *userRepository) CreateUser(ctx context.Context, user *model.User) e.ApiError {
     db := e.MongoDb
     collectionName := "users"
-    log.Printf("Attempting to insert user into database: %+v", user)
+    //log.Printf("Attempting to insert user into database: %+v", user)
     result, err := db.Collection(collectionName).InsertOne(ctx, user)
     if err != nil {
         log.Printf("Error creating user in collection %s: %v", collectionName, err)

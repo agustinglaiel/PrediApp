@@ -30,7 +30,7 @@ func DisconnectDB() {
 func InitDB() error {
     mongoURI := os.Getenv("MONGO_URI")
     if mongoURI == "" {
-        mongoURI = "mongodb://localhost:27017/prediApp"
+        mongoURI = "mongodb://localhost:27017"
     }
 
     clientOpts := options.Client().ApplyURI(mongoURI)

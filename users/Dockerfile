@@ -1,23 +1,26 @@
-# Usar una imagen base oficial de Go
-FROM golang:1.18-alpine
+# Use the official Golang image as the base image
+FROM golang:1.19-alpine
 
-# Establecer el directorio de trabajo dentro del contenedor
+# Set the working directory
 WORKDIR /app
 
-# Copiar el archivo go.mod y go.sum para gestionar dependencias
+# Install necessary packages
+RUN apk add --no-cache git curl mongodb-tools
+
+# Copy the Go modules files
 COPY go.mod go.sum ./
 
-# Descargar las dependencias de Go. Esto se beneficia de la caché de las capas de Docker si los archivos go.mod y go.sum no cambian
+# Download the Go modules
 RUN go mod download
 
-# Copiar el código fuente del microservicio al contenedor
+# Copy the rest of the application
 COPY . .
 
-# Compilar la aplicación al binario ejecutable. Reemplaza 'cmd/main.go' con la ruta al punto de entrada de tu aplicación
-RUN go build -o /users-service ./cmd/main.go
+# Build the application
+RUN go build -o main ./cmd/main.go
 
-# Indicar el puerto que el contenedor debe exponer (cambia 8080 por el puerto que uses)
+# Expose the port the app runs on
 EXPOSE 8080
 
-# Comando para ejecutar la aplicación
-CMD ["/users-service"]
+# Start the application
+CMD ["./main"]
