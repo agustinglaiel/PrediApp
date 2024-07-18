@@ -21,10 +21,11 @@ html {
 
 .welcome-box {
   background: linear-gradient(45deg, #ff9a9e, #fad0c4);
-  padding: 20px 40px;
+  padding: 30px 50px;
   border-radius: 20px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s, box-shadow 0.3s;
+  animation: bounce 2s ease-out;
 }
 
 .welcome-box:hover {
@@ -34,7 +35,24 @@ html {
 
 .welcome-box h1 {
   margin: 0;
-  font-size: 2rem;
+  font-size: 3rem; /* Tamaño de letra más grande */
   color: #fff;
   text-align: center;
+}
+
+/* Animación de rebote */
+@keyframes bounce {
+  0%,
+  20%,
+  50%,
+  80%,
+  100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-30px);
+  }
+  60% {
+    transform: translateY(-15px);
+  }
 }

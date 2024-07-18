@@ -1,6 +1,6 @@
 body {
   font-family: "Arial", sans-serif;
-  background-color: #fafafa;
+  background-color: #fafafa; /* Un fondo claro y neutral */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -10,54 +10,54 @@ body {
 
 .update-user-container {
   width: 100%;
-  max-width: 400px;
+  max-width: 400px; /* Ancho máximo para mantener el formulario manejable */
   padding: 20px;
-  border-radius: 10px;
-  background-color: #fff;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra para el efecto flotante */
-  text-align: center;
+  border-radius: 10px; /* Bordes redondeados para suavidad */
+  background-color: #fff; /* Fondo blanco para el formulario */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra para un efecto flotante */
+  text-align: center; /* Alineación del texto al centro para un look uniforme */
 }
 
 .update-user-container h2 {
-  color: #333;
+  color: #333; /* Un gris oscuro para el texto proporciona contraste */
 }
 
 .update-user-container form {
   display: flex;
-  flex-direction: column;
+  flex-direction: column; /* Organiza los campos del formulario en una columna */
 }
 
 .update-user-container label {
-  margin: 10px 0 5px;
-  color: #333;
+  margin: 10px 0 5px; /* Espaciado alrededor de las etiquetas para claridad */
+  color: #333; /* Color coherente con el de los títulos */
 }
 
 .update-user-container input {
-  padding: 10px;
-  margin-bottom: 10px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  box-sizing: border-box;
-  font-size: 14px;
+  padding: 10px; /* Relleno para hacer los campos de entrada más accesibles */
+  margin-bottom: 10px; /* Margen para separar cada campo */
+  border: 1px solid #ddd; /* Borde sutil */
+  border-radius: 5px; /* Bordes ligeramente redondeados en las entradas */
+  box-sizing: border-box; /* Asegura que el padding y border no afecten el ancho */
+  font-size: 14px; /* Tamaño de fuente estándar para la legibilidad */
 }
 
 .update-user-container button {
-  padding: 10px;
-  margin: 10px 0;
-  border: none;
-  border-radius: 5px;
-  background-color: #007bff;
-  color: white;
-  font-size: 16px;
-  cursor: pointer;
-  transition: background-color 0.3s;
+  padding: 10px; /* Relleno cómodo para facilitar el clic */
+  margin: 10px 0; /* Espacio antes y después del botón */
+  border: none; /* Sin borde para un botón más limpio */
+  border-radius: 5px; /* Bordes redondeados en el botón */
+  background-color: #007bff; /* Un azul brillante para llamar la atención */
+  color: white; /* Texto en blanco para contraste */
+  font-size: 16px; /* Tamaño de fuente ligeramente mayor para destacar */
+  cursor: pointer; /* Cambia el cursor para indicar clickeabilidad */
+  transition: background-color 0.3s; /* Transición suave al cambiar de color */
 }
 
 .update-user-container button:hover {
-  background-color: #0056b3;
+  background-color: #0056b3; /* Un azul más oscuro al pasar el ratón */
 }
 
 .update-user-container .error {
-  color: red;
-  margin-bottom: 10px;
+  color: red; /* Rojo para errores, llamando la atención del usuario */
+  margin-bottom: 10px; /* Espacio debajo del mensaje de error */
 }
