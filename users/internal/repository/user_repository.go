@@ -35,22 +35,22 @@ func NewUserRepository() UserRepository {
 // CreateUser inserta un nuevo usuario en la base de datos
 func (r *userRepository) CreateUser(ctx context.Context, user *model.User) e.ApiError {
     db := e.MongoDb
-    log.Printf("Attempting to insert user into database: %+v", user)
+    //log.Printf("Attempting to insert user into database: %+v", user)
     result, err := db.Collection("users").InsertOne(ctx, user)
     if err != nil {
         log.Printf("Error creating user: %v", err)
         return e.NewInternalServerApiError("error creating user", err)
     }
-    log.Printf("User inserted with ID: %v", result.InsertedID)
+    //log.Printf("User inserted with ID: %v", result.InsertedID)
     
     // Agregar log para confirmar que el usuario se ha insertado
     var insertedUser model.User
     err = db.Collection("users").FindOne(ctx, bson.M{"_id": result.InsertedID}).Decode(&insertedUser)
     if err != nil {
         log.Printf("Error verifying inserted user: %v", err)
-    } else {
+    } /*else {
         log.Printf("Inserted user: %+v", insertedUser)
-    }
+    }*/
     
     return nil
 }
