@@ -8,12 +8,12 @@ type ProdeCarrera struct {
 	ID           primitive.ObjectID `bson:"_id,omitempty"`
 	UserID       primitive.ObjectID `bson:"user_id"`
 	EventID      primitive.ObjectID `bson:"event_id"`
-	P1           string             `bson:"p1"`
-	P2           string             `bson:"p2"`
-	P3           string             `bson:"p3"`
-	P4           string             `bson:"p4"`
-	P5           string             `bson:"p5"`
-	FastestLap   string             `bson:"fastest_lap"`
+	P1           primitive.ObjectID `bson:"p1"` // driver_id
+	P2           primitive.ObjectID `bson:"p2"` // driver_id
+	P3           primitive.ObjectID `bson:"p3"` // driver_id
+	P4           primitive.ObjectID `bson:"p4"` // driver_id
+	P5           primitive.ObjectID `bson:"p5"` // driver_id
+	FastestLap   primitive.ObjectID `bson:"fastest_lap"` // driver_id
 	VSC          bool               `bson:"vsc"` // Virtual Safety Car
 	SC           bool               `bson:"sc"`  // Safety Car
 	DNF          int                `bson:"dnf"` // Did Not Finish

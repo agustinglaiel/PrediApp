@@ -30,7 +30,7 @@ func DisconnectDB() {
 func InitDB() error {
     mongoURI := os.Getenv("MONGO_URI")
     if mongoURI == "" {
-        mongoURI = "mongodb://mongopredi:27017"
+        mongoURI = "mongodb://localhost:27017" //cambiar localhost por mongopredi para el docker compose
     }
 
     clientOpts := options.Client().ApplyURI(mongoURI)
