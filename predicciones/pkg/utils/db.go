@@ -1,17 +1,45 @@
 package utils
 
 import (
-	"context"
 	"fmt"
-	"log"
-	"os"
-	"time"
+	"predicciones/internal/model"
+	"predicciones/pkg/config"
 
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-	"gopkg.in/mgo.v2/bson"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 )
 
+var DB *gorm.DB 
+
+func InitDB() (*gorm.DB, error){
+    dsn := config.DBConnectionURL
+
+    db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+    if err != nil {
+        return nil, fmt.Errorf("error connection to the database: %v", err)
+    }
+
+    DB = db
+
+    return db, nil
+}
+
+func DisconnectDB() {
+    sqlDB, err := DB.DB()
+    if err != nil {
+        fmt.Printf("Error getting DB instance: %v\n", err)
+        return
+    }
+    sqlDB.Close()
+}
+
+func StartDbEngine(){
+    DB.AutoMigrate(&model.ProdeCarrera{})
+    DB.AutoMigrate(&model.ProdeSession{})
+    fmt.Println("Finishing Migration Database Tables")
+}
+
+/* Esto es para MONGO
 var MongoDb *mongo.Database
 var client *mongo.Client
 
@@ -59,4 +87,4 @@ func InitDB() error {
     fmt.Println(dbNames)
 
     return nil
-}
+}*/
