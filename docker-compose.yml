@@ -18,11 +18,10 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - MONGO_URI=mongodb://mongopredi:27017
-    depends_on:
-      - mongopredi
-    networks:
-      - mongo_net
+      - DB_USER=root
+      - DB_PASSWORD=1A2g3u4s.
+      - DB_HOST=localhost
+      - DB_NAME=prediApp
 
   frontend:
     build:

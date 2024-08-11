@@ -7,7 +7,7 @@ type GoogleOAuthRequestDTO struct {
 
 // GoogleOAuthResponseDTO representa la respuesta de un registro/inicio de sesión exitoso utilizando Google OAuth
 type GoogleOAuthResponseDTO struct {
-    ID            string `json:"id"`
+    ID            uint   `json:"id"`
     FirstName     string `json:"first_name"`
     LastName      string `json:"last_name"`
     Username      string `json:"username"`
@@ -34,7 +34,7 @@ type UserSignUpRequestDTO struct {
 
 // UserSignUpResponseDTO representa la respuesta de un registro exitoso
 type UserSignUpResponseDTO struct {
-    ID          string `json:"id"`
+    ID          uint   `json:"id"`
     FirstName   string `json:"first_name"`
     LastName    string `json:"last_name"`
     Username    string `json:"username"`
@@ -51,7 +51,7 @@ type UserLoginRequestDTO struct {
 
 // UserLoginResponseDTO representa la respuesta de un inicio de sesión exitoso
 type UserLoginResponseDTO struct {
-    ID        string `json:"id"`
+    ID        uint `json:"id"`
     FirstName string `json:"first_name"`
     LastName  string `json:"last_name"`
     Username  string `json:"username"`
@@ -62,7 +62,7 @@ type UserLoginResponseDTO struct {
 
 // UserResponseDTO representa la respuesta general de un usuario
 type UserResponseDTO struct {
-    ID        string `json:"id"`
+    ID        uint   `json:"id"`
     FirstName string `json:"first_name"`
     LastName  string `json:"last_name"`
     Username  string `json:"username"`

@@ -3,6 +3,7 @@ package api
 import (
 	"log"
 	"net/http"
+	"strconv"
 	"users/internal/dto"
 	"users/internal/service"
 	e "users/pkg/utils"
@@ -82,7 +83,14 @@ func (ctrl *UserController) OAuthSignIn(c *gin.Context) {
 // GetUserByID handles fetching a user by their ID
 func (ctrl *UserController) GetUserByID(c *gin.Context) {
     id := c.Param("id")
-    user, apiErr := ctrl.userService.GetUserById(c.Request.Context(), id)
+    uintID, err := strconv.ParseUint(id, 10, 32)
+    if err != nil {
+        apiErr := e.NewBadRequestApiError("invalid user ID")
+        c.JSON(apiErr.Status(), apiErr)
+        return
+    }
+
+    user, apiErr := ctrl.userService.GetUserById(c.Request.Context(), uint(uintID))
     if apiErr != nil {
         c.JSON(apiErr.Status(), apiErr)
         return
@@ -114,6 +122,13 @@ func (ctrl *UserController) GetUsers(c *gin.Context) {
 // UpdateUserByID handles updating a user by their ID
 func (ctrl *UserController) UpdateUserByID(c *gin.Context) {
     id := c.Param("id")
+    uintID, err := strconv.ParseUint(id, 10, 32)
+    if err != nil {
+        apiErr := e.NewBadRequestApiError("invalid user ID")
+        c.JSON(apiErr.Status(), apiErr)
+        return
+    }
+
     var request dto.UserUpdateRequestDTO
     if err := c.ShouldBindJSON(&request); err != nil {
         apiErr := e.NewBadRequestApiError("invalid request")
@@ -121,7 +136,7 @@ func (ctrl *UserController) UpdateUserByID(c *gin.Context) {
         return
     }
 
-    user, apiErr := ctrl.userService.UpdateUserById(c.Request.Context(), id, request)
+    user, apiErr := ctrl.userService.UpdateUserById(c.Request.Context(), uint(uintID), request)
     if apiErr != nil {
         c.JSON(apiErr.Status(), apiErr)
         return
@@ -152,7 +167,14 @@ func (ctrl *UserController) UpdateUserByUsername(c *gin.Context) {
 // DeleteUserByID handles deleting a user by their ID
 func (ctrl *UserController) DeleteUserByID(c *gin.Context) {
     id := c.Param("id")
-    apiErr := ctrl.userService.DeleteUserById(c.Request.Context(), id)
+    uintID, err := strconv.ParseUint(id, 10, 32)
+    if err != nil {
+        apiErr := e.NewBadRequestApiError("invalid user ID")
+        c.JSON(apiErr.Status(), apiErr)
+        return
+    }
+
+    apiErr := ctrl.userService.DeleteUserById(c.Request.Context(), uint(uintID))
     if apiErr != nil {
         c.JSON(apiErr.Status(), apiErr)
         return

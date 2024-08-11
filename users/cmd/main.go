@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"users/internal/api"
 	"users/internal/repository"
 	"users/internal/router"
@@ -13,24 +14,30 @@ import (
 
 func main() {
     // Initialize database
-    if err := utils.InitDB(); err != nil {
+    db, err := utils.InitDB()
+    if err != nil {
         fmt.Println("Error al conectar con la Base de Datos")
         panic(err)
     }
     defer utils.DisconnectDB()
 
+    // Start the database engine to migrate tables
+    utils.StartDbEngine()
+
     // Initialize repository and service
-    userRepo := repository.NewUserRepository()
+    userRepo := repository.NewUserRepository(db)
     userService := service.NewUserService(userRepo)
     // Initialize controller
     userController := api.NewUserController(userService)
 
-    //Set up router
+    // Set up router
     ginRouter := gin.Default()
 
-    //Map URLs
+    // Map URLs
     router.MapUrls(ginRouter, userController)
 
     // Start server
-    ginRouter.Run(":8080")
+    if err := ginRouter.Run(":8080"); err != nil {
+        log.Fatalf("Failed to run server: %v", err)
+    }
 }
