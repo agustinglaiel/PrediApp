@@ -1,0 +1,147 @@
+/* Estilo para el contenedor principal de la página */
+.race-weekend-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f0f0f0;
+  font-family: "Arial", sans-serif;
+  color: #333;
+}
+
+/* Título principal */
+.race-weekend-page h2 {
+  text-align: center;
+  font-size: 32px;
+  color: #222;
+  margin-bottom: 20px;
+  text-transform: uppercase;
+}
+
+/* Contenedor de formularios */
+.forms-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+/* Estilo para los formularios */
+.race-prediction-form,
+.session-prediction-form {
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  flex: 1;
+}
+
+/* Espaciado entre los formularios */
+.session-prediction-form {
+  margin-right: 20px;
+}
+
+.race-prediction-form {
+  margin-left: 20px;
+}
+
+/* Estilo para los títulos de los formularios */
+.race-prediction-form h3,
+.session-prediction-form h3 {
+  margin-bottom: 15px;
+  font-size: 24px;
+  color: #444;
+}
+
+/* Estilo para los selectores de pilotos */
+.driver-select {
+  margin-bottom: 15px;
+}
+
+.driver-select label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.driver-select select {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+}
+
+/* Estilo para el grupo de checkboxes */
+.checkbox-group {
+  display: flex;
+  gap: 20px;
+  margin-top: 10px;
+}
+
+.checkbox-group label {
+  display: flex;
+  align-items: center;
+  font-size: 16px;
+  color: #555;
+}
+
+.checkbox-group input {
+  margin-right: 5px;
+}
+
+/* Estilo para el grupo de DNF */
+.dnf-group {
+  margin-top: 15px;
+  font-size: 16px;
+}
+
+.dnf-group input {
+  width: 60px;
+  padding: 5px;
+  font-size: 16px;
+  margin-left: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+/* Estilo para los botones */
+button[type="submit"],
+.confirmation button {
+  background-color: #007bff;
+  color: #fff;
+  padding: 10px 20px;
+  font-size: 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button[type="submit"]:hover,
+.confirmation button:hover {
+  background-color: #0069d9;
+}
+
+/* Estilo para el mensaje de confirmación */
+.confirmation {
+  text-align: center;
+  margin-top: 20px;
+  background-color: #e2f3e7;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #c3e6cb;
+}
+
+.confirmation p {
+  font-size: 18px;
+  color: #155724;
+  margin-bottom: 15px;
+}
+
+.confirmation button {
+  background-color: #007bff;
+  margin-top: 10px;
+}
+
+.confirmation button:hover {
+  background-color: #0069d9;
+}

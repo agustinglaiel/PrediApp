@@ -5,7 +5,7 @@ import Login from "./components/Login";
 import Home from "./components/Home";
 import AdminPanel from "./components/AdminPanel";
 import UpdateUser from "./components/UpdateUser";
-import "./styles/App.css";
+import RaceWeekendPage from "./components/RaceWeekendPage";
 
 const App = () => {
   return (
@@ -16,6 +16,8 @@ const App = () => {
         <Route path="/signup" element={<SignUp />} />
         <Route path="/admin" element={<AdminPanel />} />
         <Route path="/update-user/:id" element={<UpdateUser />} />
+        <Route path="/race-weekend" element={<RaceWeekendPage />} />{" "}
+        {/* Nueva ruta */}
       </Routes>
     </Router>
   );
