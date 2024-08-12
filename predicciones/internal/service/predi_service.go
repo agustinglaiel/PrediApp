@@ -18,9 +18,9 @@ type PrediServiceInterface interface {
     GetProdeCarreraByID(ctx context.Context, prodeID uint) (dto.ResponseProdeCarreraDTO, e.ApiError)
     GetProdeSessionByID(ctx context.Context, prodeID uint) (dto.ResponseProdeSessionDTO, e.ApiError)
     GetProdesByUserID(ctx context.Context, userID uint) ([]dto.ResponseProdeCarreraDTO, []dto.ResponseProdeSessionDTO, e.ApiError)
-    UpdateProdeCarrera(ctx context.Context, dto dto.UpdateProdeCarreraDTO) (dto.ResponseProdeCarreraDTO, e.ApiError)
-    UpdateProdeSession(ctx context.Context, dto dto.UpdateProdeSessionDTO) (dto.ResponseProdeSessionDTO, e.ApiError)
-    DeleteProdeByID(ctx context.Context, prodeID uint, userID uint) e.ApiError
+    UpdateProdeCarrera(ctx context.Context, request dto.UpdateProdeCarreraDTO) (dto.ResponseProdeCarreraDTO, e.ApiError) 
+    UpdateProdeSession(ctx context.Context, request dto.UpdateProdeSessionDTO) (dto.ResponseProdeSessionDTO, e.ApiError)
+    DeleteProdeByID(ctx context.Context, prodeID uint, eventID uint, userID uint) e.ApiError
 }
 
 func NewPrediService(prodeRepo repository.ProdeRepository) PrediServiceInterface {
@@ -67,7 +67,6 @@ func (s *prediService) CreateProdeCarrera(ctx context.Context, request dto.Creat
 }
 
 func (s *prediService) CreateProdeSession(ctx context.Context, request dto.CreateProdeSessionDTO) (dto.ResponseProdeSessionDTO, e.ApiError) {
-    // Crear una nueva instancia de ProdeSession
     prode := model.ProdeSession{
         UserID:  uint(request.UserID),
         EventID: uint(request.EventID),
@@ -76,12 +75,10 @@ func (s *prediService) CreateProdeSession(ctx context.Context, request dto.Creat
         P3:      uint(request.P3),
     }
 
-    // Insertar el nuevo pronóstico de sesión en la base de datos
     if err := s.prodeRepo.CreateProdeSession(ctx, &prode); err != nil {
         return dto.ResponseProdeSessionDTO{}, err
     }
 
-    // Construir la respuesta DTO con los datos insertados
     response := dto.ResponseProdeSessionDTO{
         ID:       uint(prode.ID),
         UserID:   uint(prode.UserID),
@@ -95,9 +92,9 @@ func (s *prediService) CreateProdeSession(ctx context.Context, request dto.Creat
 }
 
 func (s *prediService) GetProdeCarreraByID(ctx context.Context, id uint) (dto.ResponseProdeCarreraDTO, e.ApiError) {
-    prode, err := s.prodeRepo.GetProdeCarreraByID(ctx, uint(id))
+    prode, err := s.prodeRepo.GetProdeCarreraByID(ctx, id)
     if err != nil {
-        return dto.ResponseProdeCarreraDTO{}, e.NewNotFoundApiError("prode not found")
+        return dto.ResponseProdeCarreraDTO{}, e.NewNotFoundApiError("prode carrera not found")
     }
 
     response := dto.ResponseProdeCarreraDTO{
@@ -121,7 +118,7 @@ func (s *prediService) GetProdeCarreraByID(ctx context.Context, id uint) (dto.Re
 func (s *prediService) GetProdeSessionByID(ctx context.Context, prodeID uint) (dto.ResponseProdeSessionDTO, e.ApiError) {
     prode, err := s.prodeRepo.GetProdeSessionByID(ctx, prodeID)
     if err != nil {
-        return dto.ResponseProdeSessionDTO{}, err
+        return dto.ResponseProdeSessionDTO{}, e.NewNotFoundApiError("prode session not found")
     }
 
     response := dto.ResponseProdeSessionDTO{
@@ -176,10 +173,9 @@ func (s *prediService) GetProdesByUserID(ctx context.Context, userID uint) ([]dt
 }
 
 func (s *prediService) UpdateProdeCarrera(ctx context.Context, request dto.UpdateProdeCarreraDTO) (dto.ResponseProdeCarreraDTO, e.ApiError) {
-    // Convertir ProdeID a uint
     prode, err := s.prodeRepo.GetProdeCarreraByID(ctx, uint(request.ProdeID))
     if err != nil {
-        return dto.ResponseProdeCarreraDTO{}, e.NewNotFoundApiError("prode not found")
+        return dto.ResponseProdeCarreraDTO{}, e.NewNotFoundApiError("prode carrera not found")
     }
 
     // Actualizar los campos del pronóstico
@@ -194,9 +190,10 @@ func (s *prediService) UpdateProdeCarrera(ctx context.Context, request dto.Updat
     prode.DNF = request.DNF
 
     if err := s.prodeRepo.UpdateProdeCarrera(ctx, prode); err != nil {
-        return dto.ResponseProdeCarreraDTO{}, e.NewInternalServerApiError("error updating prode", err)
+        return dto.ResponseProdeCarreraDTO{}, e.NewInternalServerApiError("error updating prode carrera", err)
     }
 
+    // Preparar la respuesta
     response := dto.ResponseProdeCarreraDTO{
         ID:         prode.ID,
         UserID:     prode.UserID,
@@ -216,10 +213,9 @@ func (s *prediService) UpdateProdeCarrera(ctx context.Context, request dto.Updat
 }
 
 func (s *prediService) UpdateProdeSession(ctx context.Context, request dto.UpdateProdeSessionDTO) (dto.ResponseProdeSessionDTO, e.ApiError) {
-    // Obtener el pronóstico de la sesión por ID
     prode, err := s.prodeRepo.GetProdeSessionByID(ctx, uint(request.ProdeID))
     if err != nil {
-        return dto.ResponseProdeSessionDTO{}, e.NewNotFoundApiError("prode not found")
+        return dto.ResponseProdeSessionDTO{}, e.NewNotFoundApiError("prode session not found")
     }
 
     // Actualizar los campos del pronóstico de la sesión
@@ -227,7 +223,6 @@ func (s *prediService) UpdateProdeSession(ctx context.Context, request dto.Updat
     prode.P2 = uint(request.P2)
     prode.P3 = uint(request.P3)
 
-    // Actualizar el pronóstico en la base de datos
     if err := s.prodeRepo.UpdateProdeSession(ctx, prode); err != nil {
         return dto.ResponseProdeSessionDTO{}, e.NewInternalServerApiError("error updating prode session", err)
     }
@@ -245,21 +240,31 @@ func (s *prediService) UpdateProdeSession(ctx context.Context, request dto.Updat
     return response, nil
 }
 
-func (s *prediService) DeleteProdeByID(ctx context.Context, prodeID uint, userID uint) e.ApiError {
-    prodeCarrera, err := s.prodeRepo.GetProdeCarreraByID(ctx, prodeID)
-    if err == nil && prodeCarrera.UserID == userID {
-        if apiErr := s.prodeRepo.DeleteProdeCarreraByID(ctx, prodeID); apiErr != nil {
-            return apiErr
-        }
-        return nil
+func (s *prediService) DeleteProdeByID(ctx context.Context, prodeID uint, eventID uint, userID uint) e.ApiError {
+    // Consultar la tabla `sessions` para verificar el tipo de evento
+    sessionType, sessionName, err := s.prodeRepo.GetSessionTypeAndNameByEventID(ctx, eventID)
+    if err != nil {
+        return e.NewInternalServerApiError("error retrieving session information", err)
     }
 
-    prodeSession, err := s.prodeRepo.GetProdeSessionByID(ctx, prodeID)
-    if err == nil && prodeSession.UserID == userID {
-        if apiErr := s.prodeRepo.DeleteProdeSessionByID(ctx, prodeID); apiErr != nil {
-            return apiErr
+    if sessionType == "Race" && sessionName == "Race" {
+        // Es una carrera, eliminar `ProdeCarrera`
+        prodeCarrera, err := s.prodeRepo.GetProdeCarreraByID(ctx, prodeID)
+        if err == nil && prodeCarrera.UserID == userID {
+            if apiErr := s.prodeRepo.DeleteProdeCarreraByID(ctx, prodeID); apiErr != nil {
+                return apiErr
+            }
+            return nil
         }
-        return nil
+    } else {
+        // Es otra sesión, eliminar `ProdeSession`
+        prodeSession, err := s.prodeRepo.GetProdeSessionByID(ctx, prodeID)
+        if err == nil && prodeSession.UserID == userID {
+            if apiErr := s.prodeRepo.DeleteProdeSessionByID(ctx, prodeID); apiErr != nil {
+                return apiErr
+            }
+            return nil
+        }
     }
 
     return e.NewNotFoundApiError("prode not found")

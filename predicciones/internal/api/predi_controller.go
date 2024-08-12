@@ -21,7 +21,6 @@ func NewPrediController(prediService service.PrediServiceInterface) *PrediContro
 	}
 }
 
-
 // CreateProdeCarrera handles the creation of a new race prediction
 func (ctrl *PrediController) CreateProdeCarrera(c *gin.Context) {
 	var request dto.CreateProdeCarreraDTO
@@ -115,81 +114,89 @@ func (ctrl *PrediController) GetProdesByUserID(c *gin.Context) {
 		"carrera": prodesCarrera,
 		"session": prodesSession,
 	})
-}
+}                                 
 
 // UpdateProdeCarrera handles updating an existing race prediction
 func (ctrl *PrediController) UpdateProdeCarrera(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		apiErr := e.NewBadRequestApiError("invalid ID")
-		c.JSON(apiErr.Status(), apiErr)
-		return
-	}
+    id, err := strconv.Atoi(c.Param("id"))
+    if err != nil {
+        apiErr := e.NewBadRequestApiError("invalid ID")
+        c.JSON(apiErr.Status(), apiErr)
+        return
+    }
 
-	var request dto.UpdateProdeCarreraDTO
-	if err := c.ShouldBindJSON(&request); err != nil {
-		apiErr := e.NewBadRequestApiError("invalid request")
-		c.JSON(apiErr.Status(), apiErr)
-		return
-	}
+    var request dto.UpdateProdeCarreraDTO
+    if err := c.ShouldBindJSON(&request); err != nil {
+        apiErr := e.NewBadRequestApiError("invalid request")
+        c.JSON(apiErr.Status(), apiErr)
+        return
+    }
 
-	request.ProdeID = id
-	prode, apiErr := ctrl.prediService.UpdateProdeCarrera(c.Request.Context(), request)
-	if apiErr != nil {
-		c.JSON(apiErr.Status(), apiErr)
-		return
-	}
+    request.ProdeID = id
+    prode, apiErr := ctrl.prediService.UpdateProdeCarrera(c.Request.Context(), request)
+    if apiErr != nil {
+        c.JSON(apiErr.Status(), apiErr)
+        return
+    }
 
-	c.JSON(http.StatusOK, prode)
+    c.JSON(http.StatusOK, prode)
 }
 
 // UpdateProdeSession handles updating an existing session prediction
 func (ctrl *PrediController) UpdateProdeSession(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		apiErr := e.NewBadRequestApiError("invalid ID")
-		c.JSON(apiErr.Status(), apiErr)
-		return
-	}
+    id, err := strconv.Atoi(c.Param("id"))
+    if err != nil {
+        apiErr := e.NewBadRequestApiError("invalid ID")
+        c.JSON(apiErr.Status(), apiErr)
+        return
+    }
 
-	var request dto.UpdateProdeSessionDTO
-	if err := c.ShouldBindJSON(&request); err != nil {
-		apiErr := e.NewBadRequestApiError("invalid request")
-		c.JSON(apiErr.Status(), apiErr)
-		return
-	}
+    var request dto.UpdateProdeSessionDTO
+    if err := c.ShouldBindJSON(&request); err != nil {
+        apiErr := e.NewBadRequestApiError("invalid request")
+        c.JSON(apiErr.Status(), apiErr)
+        return
+    }
 
-	request.ProdeID = id
-	prode, apiErr := ctrl.prediService.UpdateProdeSession(c.Request.Context(), request)
-	if apiErr != nil {
-		c.JSON(apiErr.Status(), apiErr)
-		return
-	}
+    request.ProdeID = id
+    prode, apiErr := ctrl.prediService.UpdateProdeSession(c.Request.Context(), request)
+    if apiErr != nil {
+        c.JSON(apiErr.Status(), apiErr)
+        return
+    }
 
-	c.JSON(http.StatusOK, prode)
+    c.JSON(http.StatusOK, prode)
 }
 
 // DeleteProdeByID handles deleting a prediction by ID
 func (ctrl *PrediController) DeleteProdeByID(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		apiErr := e.NewBadRequestApiError("invalid ID")
-		c.JSON(apiErr.Status(), apiErr)
-		return
-	}
+    id, err := strconv.Atoi(c.Param("id"))
+    if err != nil {
+        apiErr := e.NewBadRequestApiError("invalid ID")
+        c.JSON(apiErr.Status(), apiErr)
+        return
+    }
 
-	userID, err := strconv.Atoi(c.Query("userID"))
-	if err != nil {
-		apiErr := e.NewBadRequestApiError("invalid user ID")
-		c.JSON(apiErr.Status(), apiErr)
-		return
-	}
+    userID, err := strconv.Atoi(c.Query("userID"))
+    if err != nil {
+        apiErr := e.NewBadRequestApiError("invalid user ID")
+        c.JSON(apiErr.Status(), apiErr)
+        return
+    }
 
-	apiErr := ctrl.prediService.DeleteProdeByID(c.Request.Context(), uint(id), uint(userID))
-	if apiErr != nil {
-		c.JSON(apiErr.Status(), apiErr)
-		return
-	}
+	eventID, err := strconv.Atoi(c.Query("eventID"))
+    if err != nil {
+        apiErr := e.NewBadRequestApiError("invalid event ID")
+        c.JSON(apiErr.Status(), apiErr)
+        return
+    }
 
-	c.JSON(http.StatusNoContent, nil)
+    // DeleteProdeByID se encargará de diferenciar si es un prode de carrera o de otra sesión.
+    apiErr := ctrl.prediService.DeleteProdeByID(c.Request.Context(), uint(id), uint(eventID) ,uint(userID))
+    if apiErr != nil {
+        c.JSON(apiErr.Status(), apiErr)
+        return
+    }
+
+    c.JSON(http.StatusNoContent, nil)
 }

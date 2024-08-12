@@ -25,6 +25,7 @@ type ProdeRepository interface {
 	UpdateProdeSession(ctx context.Context, prode *model.ProdeSession) e.ApiError
 	DeleteProdeCarreraByID(ctx context.Context, id uint) e.ApiError
 	DeleteProdeSessionByID(ctx context.Context, id uint) e.ApiError
+	GetSessionTypeAndNameByEventID(ctx context.Context, eventID uint) (string, string, e.ApiError)
 }
 
 // NewProdeRepository crea una nueva instancia de prodeRepository
@@ -47,25 +48,33 @@ func (r *prodeRepository) CreateProdeSession(ctx context.Context, prode *model.P
 }
 
 func (r *prodeRepository) GetProdeCarreraByID(ctx context.Context, id uint) (*model.ProdeCarrera, e.ApiError) {
-	var prode model.ProdeCarrera
-	if err := r.db.WithContext(ctx).First(&prode, id).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, e.NewNotFoundApiError("prode carrera not found")
-		}
-		return nil, e.NewInternalServerApiError("error finding prode carrera", err)
-	}
-	return &prode, nil
+    var prode model.ProdeCarrera
+    if err := r.db.WithContext(ctx).
+        Joins("JOIN events ON prode_carrera.event_id = events.id").
+        Joins("JOIN sessions ON events.session_id = sessions.id").
+        Where("prode_carrera.id = ? AND sessions.session_name = ? AND sessions.session_type = ?", id, "Race", "Race").
+        First(&prode).Error; err != nil {
+        if err == gorm.ErrRecordNotFound {
+            return nil, e.NewNotFoundApiError("prode carrera not found")
+        }
+        return nil, e.NewInternalServerApiError("error finding prode carrera", err)
+    }
+    return &prode, nil
 }
 
 func (r *prodeRepository) GetProdeSessionByID(ctx context.Context, id uint) (*model.ProdeSession, e.ApiError) {
-	var prode model.ProdeSession
-	if err := r.db.WithContext(ctx).First(&prode, id).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, e.NewNotFoundApiError("prode session not found")
-		}
-		return nil, e.NewInternalServerApiError("error finding prode session", err)
-	}
-	return &prode, nil
+    var prode model.ProdeSession
+    if err := r.db.WithContext(ctx).
+        Joins("JOIN events ON prode_session.event_id = events.id").
+        Joins("JOIN sessions ON events.session_id = sessions.id").
+        Where("prode_session.id = ? AND NOT (sessions.session_name = ? AND sessions.session_type = ?)", id, "Race", "Race").
+        First(&prode).Error; err != nil {
+        if err == gorm.ErrRecordNotFound {
+            return nil, e.NewNotFoundApiError("prode session not found")
+        }
+        return nil, e.NewInternalServerApiError("error finding prode session", err)
+    }
+    return &prode, nil
 }
 
 func (r *prodeRepository) GetProdesByUserID(ctx context.Context, userID uint) ([]model.ProdeCarrera, []model.ProdeSession, e.ApiError) {
@@ -98,7 +107,6 @@ func (r *prodeRepository) GetProdesByEventID(ctx context.Context, eventID uint) 
 	return prodesCarrera, prodesSession, nil
 }
 
-
 func (r *prodeRepository) UpdateProdeCarrera(ctx context.Context, prode *model.ProdeCarrera) e.ApiError {
 	if err := r.db.WithContext(ctx).Save(prode).Error; err != nil {
 		return e.NewInternalServerApiError("error updating prode carrera", err)
@@ -125,4 +133,24 @@ func (r *prodeRepository) DeleteProdeSessionByID(ctx context.Context, id uint) e
 		return e.NewInternalServerApiError("error deleting prode session", err)
 	}
 	return nil
+}
+
+func (r *prodeRepository) GetSessionTypeAndNameByEventID(ctx context.Context, eventID uint) (string, string, e.ApiError) {
+    var session struct {
+        SessionType string `gorm:"column:session_type"`
+        SessionName string `gorm:"column:session_name"`
+    }
+
+    if err := r.db.WithContext(ctx).
+        Table("sessions").
+        Select("session_type, session_name").
+        Where("event_id = ?", eventID).
+        First(&session).Error; err != nil {
+        if err == gorm.ErrRecordNotFound {
+            return "", "", e.NewNotFoundApiError("session not found")
+        }
+        return "", "", e.NewInternalServerApiError("error finding session", err)
+    }
+
+    return session.SessionType, session.SessionName, nil
 }
