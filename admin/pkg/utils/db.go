@@ -1,8 +1,8 @@
 package utils
 
 import (
+	"admin/pkg/config"
 	"fmt"
-	"users/pkg/config"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
