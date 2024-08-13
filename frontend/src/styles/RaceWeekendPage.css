@@ -3,7 +3,7 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
-  background-color: #f0f0f0;
+  background-color: #ffffff; /* Cambiado a blanco */
   font-family: "Arial", sans-serif;
   color: #333;
 }
@@ -34,12 +34,8 @@
   flex: 1;
 }
 
-/* Espaciado entre los formularios */
+/* Asegurarse de que ambos formularios se vean igual */
 .session-prediction-form {
-  margin-right: 20px;
-}
-
-.race-prediction-form {
   margin-left: 20px;
 }
 

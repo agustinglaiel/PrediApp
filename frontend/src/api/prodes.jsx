@@ -5,7 +5,7 @@ const API_URL = "http://localhost:8070";
 // Crear un prode de carrera
 export const createProdeCarrera = async (prodeData) => {
   try {
-    const response = await axios.post(`${API_URL}/prode-carrera`, prodeData);
+    const response = await axios.post(`${API_URL}/prodes/carrera`, prodeData);
     return response.data;
   } catch (error) {
     throw new Error(
@@ -17,7 +17,7 @@ export const createProdeCarrera = async (prodeData) => {
 // Crear un prode de sesión
 export const createProdeSession = async (prodeData) => {
   try {
-    const response = await axios.post(`${API_URL}/prode-session`, prodeData);
+    const response = await axios.post(`${API_URL}/prodes/session`, prodeData);
     return response.data;
   } catch (error) {
     throw new Error(

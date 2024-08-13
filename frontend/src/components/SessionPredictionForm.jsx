@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import DriverSelect from "./DriverSelect"; // Importa el componente DriverSelect
+import DriverSelect from "./DriverSelect";
 import "../styles/RaceWeekendPage.css";
 
-const QualyPredictionForm = ({ sessionType, onSubmit }) => {
+const SessionPredictionForm = ({ sessionType, onSubmit }) => {
   const [formData, setFormData] = useState({
     p1: "",
     p2: "",
@@ -22,7 +22,7 @@ const QualyPredictionForm = ({ sessionType, onSubmit }) => {
   };
 
   return (
-    <form className="qualy-prediction-form" onSubmit={handleSubmit}>
+    <form className="session-prediction-form" onSubmit={handleSubmit}>
       <h3>{sessionType} Prediction</h3>
       <DriverSelect
         label="P1"
@@ -42,4 +42,4 @@ const QualyPredictionForm = ({ sessionType, onSubmit }) => {
   );
 };
 
-export default QualyPredictionForm;
+export default SessionPredictionForm;
