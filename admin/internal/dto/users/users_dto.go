@@ -1,4 +1,4 @@
-package users
+package dto
 
 // GoogleOAuthRequestDTO representa la solicitud de OAuth de Google
 type GoogleOAuthRequestDTO struct {
