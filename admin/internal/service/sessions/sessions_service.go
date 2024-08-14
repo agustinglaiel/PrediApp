@@ -87,3 +87,27 @@ func (s *sessionService) GetSessionById(ctx context.Context, sessionID uint) (dt
 
 	return response, nil
 }
+
+func (s *sessionService) UpdateSessionById(ctx context.Context, sessionID uint, request dto.UpdateSessionDTO) (dto.ResponseSessionDTO, e.ApiError){
+	session, apiErr := s.sessionsRepo.GetSessionById(ctx, sessionID)
+	if apiErr != nil {
+		return dto.ResponseSessionDTO{}, apiErr
+	}
+
+	session.CircuitKey = request.CircuitKey
+	session.CircuitShortName = request.CircuitShortName
+	session.CountryCode = request.CountryCode
+	session.CountryKey = request.CountryKey
+	session.CountryName = request.CountryName
+	session.DateStart = request.DateStart
+	session.DateEnd = request.DateEnd
+	session.Location = request.Location
+	session.SessionKey = request.SessionKey
+	session.SessionName = request.SessionName
+	session.SessionType = request.SessionType
+	session.Year = request.Year
+
+	if apiErr := s.sessionsRepo.UpdateSessionById(ctx, session); apiErr != nil {
+
+	}
+}

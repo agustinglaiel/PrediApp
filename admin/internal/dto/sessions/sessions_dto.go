@@ -20,6 +20,7 @@ type UpdateSessionDTO struct {
     CircuitKey        int       `json:"circuit_key,omitempty"`
     CircuitShortName  string    `json:"circuit_short_name,omitempty"`
     CountryCode       string    `json:"country_code,omitempty"`
+    CountryKey        int       `json:"country_key, omitempty"`
     CountryName       string    `json:"country_name,omitempty"`
     DateStart         time.Time `json:"date_start,omitempty"`
     DateEnd           time.Time `json:"date_end,omitempty"`
