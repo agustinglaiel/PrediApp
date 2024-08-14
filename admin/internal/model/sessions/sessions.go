@@ -1,4 +1,4 @@
-package sessions
+package model
 
 import (
 	"time"

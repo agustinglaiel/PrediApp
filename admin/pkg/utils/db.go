@@ -2,8 +2,8 @@ package utils
 
 import (
 	"admin/internal/model/drivers"
-	"admin/internal/model/prodes"
-	"admin/internal/model/sessions"
+	modelP "admin/internal/model/prodes"
+	modelS "admin/internal/model/sessions"
 	"admin/internal/model/users"
 	"admin/pkg/config"
 	"fmt"
@@ -42,9 +42,9 @@ func DisconnectDB() {
 func StartDbEngine() {
     err := DB.AutoMigrate(
         &users.User{},        // Migrar el modelo User
-        &prodes.ProdeCarrera{},  // Migrar el modelo ProdeCarrera
-        &prodes.ProdeSession{},  // Migrar el modelo ProdeSession
-        &sessions.Session{},  // Migrar el modelo Session
+        &modelP.ProdeCarrera{},  // Migrar el modelo ProdeCarrera
+        &modelP.ProdeSession{},  // Migrar el modelo ProdeSession
+        &modelS.Session{},  // Migrar el modelo Session
         &drivers.Driver{},    // Migrar el modelo Driver
     )
     if err != nil {

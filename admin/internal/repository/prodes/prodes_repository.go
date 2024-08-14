@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"admin/internal/model/prodes"
+	prodes "admin/internal/model/prodes"
 	e "admin/pkg/utils"
 	"context"
 

@@ -1,4 +1,4 @@
-package prodes
+package model
 
 import (
 	"time"
