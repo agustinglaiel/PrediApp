@@ -217,7 +217,7 @@ func (sc *SessionController) ListSessionsBetweenDates(c *gin.Context) {
 	// Responder con el listado de sesiones
 	c.JSON(http.StatusOK, response)
 }
-/*
+
 func (sc *SessionController) FindSessionsByNameAndType(c *gin.Context) {
 	// Obtener el nombre y tipo de la sesión desde los parámetros de la URL o el query
 	sessionName := c.Query("session_name")
@@ -225,7 +225,7 @@ func (sc *SessionController) FindSessionsByNameAndType(c *gin.Context) {
 
 	// Validar que los parámetros no estén vacíos
 	if sessionName == "" || sessionType == "" {
-		c.JSON(http.StatusBadRequest, utils.NewBadRequestApiError("Nombre y tipo de sesión son requeridos"))
+		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Nombre y tipo de sesión son requeridos"))
 		return
 	}
 
@@ -239,7 +239,6 @@ func (sc *SessionController) FindSessionsByNameAndType(c *gin.Context) {
 	// Responder con el listado de sesiones
 	c.JSON(http.StatusOK, response)
 }
-*/
 
 func ParseUintParam(param string) (uint, error) {
 	id, err := strconv.ParseUint(param, 10, 32)
