@@ -7,6 +7,7 @@ import (
 )
 
 type Session struct {
+	ID               uint      `gorm:"primaryKey" json:"id"`
 	CircuitKey       int       `json:"circuit_key"`
 	CircuitShortName string    `json:"circuit_short_name"`
 	CountryCode      string    `json:"country_code"`

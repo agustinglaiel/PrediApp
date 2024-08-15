@@ -24,7 +24,7 @@ type SessionRepository interface{
 	GetSessionsByCountryCode(ctx context.Context, countryCode string) ([]*model.Session, e.ApiError)
 	GetUpcomingSessions(ctx context.Context) ([]*model.Session, e.ApiError)
 	GetSessionsBetweenDates(ctx context.Context, startDate, endDate time.Time) ([]*model.Session, e.ApiError)
-	GetSessionByNameAndType(ctx context.Context, sessionName, sessionType string) (*model.Session, e.ApiError)
+	GetSessionsByNameAndType(ctx context.Context, sessionName, sessionType string) ([]*model.Session, e.ApiError)
 }
 
 func NewSessionRepository(db *gorm.DB) SessionRepository{
@@ -115,13 +115,14 @@ func (s *sessionRepository) GetSessionsBetweenDates(ctx context.Context, startDa
     return sessions, nil
 }
 
-func (s *sessionRepository) GetSessionByNameAndType(ctx context.Context, sessionName, sessionType string) (*model.Session, e.ApiError) {
-    var session model.Session
-    if err := s.db.WithContext(ctx).Where("session_name = ? AND session_type = ?", sessionName, sessionType).First(&session).Error; err != nil {
+//NO ME ACUERDO PARA QUE IBA A USAR ESTA FUNCIÓN
+func (s *sessionRepository) GetSessionsByNameAndType(ctx context.Context, sessionName, sessionType string) ([]*model.Session, e.ApiError) {
+    var sessions []*model.Session
+    if err := s.db.WithContext(ctx).Where("session_name = ? AND session_type = ?", sessionName, sessionType).First(&sessions).Error; err != nil {
         if err == gorm.ErrRecordNotFound {
             return nil, e.NewNotFoundApiError("Sesión no encontrada con el nombre y tipo especificado")
         }
         return nil, e.NewInternalServerApiError("Error encontrando sesión por nombre y tipo", err)
     }
-    return &session, nil
+    return sessions, nil
 }

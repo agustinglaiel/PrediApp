@@ -32,20 +32,25 @@ type UpdateSessionDTO struct {
 }
 
 type ResponseSessionDTO struct {
-    ID                uint      `json:"id"`
-    CircuitKey        int       `json:"circuit_key"`
-    CircuitShortName  string    `json:"circuit_short_name"`
-    CountryCode       string    `json:"country_code"`
-    CountryName       string    `json:"country_name"`
-    DateStart         time.Time `json:"date_start"`
-    DateEnd           time.Time `json:"date_end"`
-    Location          string    `json:"location"`
-    SessionKey        int       `json:"session_key"`
-    SessionName       string    `json:"session_name"`
-    SessionType       string    `json:"session_type"`
-    Year              int       `json:"year"`
+    ID               uint      `json:"id"`  // Identificador único en la base de datos
+    CircuitKey       int       `json:"circuit_key"`
+    CircuitShortName string    `json:"circuit_short_name"`
+    CountryCode      string    `json:"country_code"`
+    CountryName      string    `json:"country_name"`
+    DateStart        time.Time `json:"date_start"`
+    DateEnd          time.Time `json:"date_end"`
+    Location         string    `json:"location"`
+    SessionKey       int       `json:"session_key"`  // Identificador lógico o de negocio
+    SessionName      string    `json:"session_name"`
+    SessionType      string    `json:"session_type"`
+    Year             int       `json:"year"`
 }
 
 type DeleteSessionDTO struct {
     SessionID uint `json:"session_id"`
+}
+
+type SessionNameAndTypeDTO struct {
+	SessionName string `json:"session_name"`
+	SessionType string `json:"session_type"`
 }
