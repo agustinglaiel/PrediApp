@@ -129,6 +129,7 @@ func (s *sessionService) GetSessionById(ctx context.Context, sessionID uint) (dt
 		DateStart:        session.DateStart,
 		DateEnd:          session.DateEnd,
 		Location:         session.Location,
+		SessionKey:       session.SessionKey,
 		SessionName:      session.SessionName,
 		SessionType:      session.SessionType,
 		Year:             session.Year,

@@ -64,11 +64,12 @@ func (s *sessionRepository) UpdateSessionById(ctx context.Context, session *mode
 	return nil
 }
 
-func (s *sessionRepository) DeleteSessionById(ctx context.Context, sessionID uint) e.ApiError{
-	if err := s.db.WithContext(ctx).Where("id = ?", sessionID).Delete(&model.Session{}).Error; err != nil{
-		return e.NewInternalServerApiError("Error eliminando la sesión", err)
-	}
-	return nil
+func (s *sessionRepository) DeleteSessionById(ctx context.Context, sessionID uint) e.ApiError {
+    // Eliminar físicamente la sesión utilizando el ID
+    if err := s.db.WithContext(ctx).Unscoped().Where("id = ?", sessionID).Delete(&model.Session{}).Error; err != nil {
+        return e.NewInternalServerApiError("Error eliminando la sesión", err)
+    }
+    return nil
 }
 
 func (s *sessionRepository) GetSessionByYear(ctx context.Context, year int) ([]*model.Session, e.ApiError) {

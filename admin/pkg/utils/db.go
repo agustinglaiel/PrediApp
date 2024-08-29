@@ -52,5 +52,19 @@ func StartDbEngine() {
         return
     }
 
+    // Verificar si el índice ya existe
+    var exists int64
+    DB.Raw("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'sessions' AND index_name = 'uni_sessions_session_key'").Scan(&exists)
+
+    if exists == 0 {
+        // Si no existe, entonces agregar la restricción
+        err := DB.Exec("ALTER TABLE sessions ADD CONSTRAINT `uni_sessions_session_key` UNIQUE (`session_key`)").Error
+        if err != nil {
+            fmt.Printf("Error creating unique constraint: %v\n", err)
+        }
+    } else {
+        fmt.Println("Unique constraint `uni_sessions_session_key` already exists, skipping creation.")
+    }
+
     fmt.Println("Finished migrating database tables")
 }
