@@ -29,6 +29,7 @@ func MapUrls(engine *gin.Engine, sessionController *api.SessionController) {
 	//engine.GET("/sessions/date-range", sessionController.ListSessionsBetweenDates) VER DESPUES
 	engine.GET("/sessions/name-type", sessionController.FindSessionsByNameAndType)
 	engine.GET("/sessions/:id/name-type", sessionController.GetSessionNameAndTypeById)
+	engine.GET("/sessions", sessionController.GetAllSessions)  // Nueva ruta para obtener todas las sesiones
 
 	// Debugging purpose
 	engine.GET("/ping", func(c *gin.Context) {

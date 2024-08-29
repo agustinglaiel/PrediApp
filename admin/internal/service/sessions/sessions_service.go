@@ -26,6 +26,7 @@ type SessionServiceInterface interface{
 	ListUpcomingSessions(ctx context.Context) ([]dto.ResponseSessionDTO, e.ApiError)
 	ListSessionsBetweenDates(ctx context.Context, startDate time.Time, endDate time.Time) ([]dto.ResponseSessionDTO, e.ApiError)
 	FindSessionsByNameAndType(ctx context.Context, sessionName string, sessionType string) ([]dto.ResponseSessionDTO, e.ApiError)
+	GetAllSessions(ctx context.Context) ([]dto.ResponseSessionDTO, e.ApiError)
 }
 
 func NewSessionService(sessionsRepo repository.SessionRepository) SessionServiceInterface{
@@ -35,6 +36,40 @@ func NewSessionService(sessionsRepo repository.SessionRepository) SessionService
 }
 
 func (s *sessionService) CreateSession(ctx context.Context, request dto.CreateSessionDTO) (dto.ResponseSessionDTO, e.ApiError) {
+	// Validar que session_key sea único
+	existingSession, _ := s.sessionsRepo.GetSessionBySessionKey(ctx, request.SessionKey)
+	if existingSession != nil {
+		return dto.ResponseSessionDTO{}, e.NewBadRequestApiError("session_key ya está en uso")
+	}
+
+	 // Validar que la combinación de session_name y session_type sea válida
+	 validCombinations := map[string]string{
+        "Sprint Qualifying": "Qualifying",
+        "Sprint":            "Race",
+        "Practice 1":        "Practice",
+        "Practice 2":        "Practice",
+        "Practice 3":        "Practice",
+        "Qualifying":        "Qualifying",
+        "Race":              "Race",
+    }
+
+	expectedType, ok := validCombinations[request.SessionName]
+    if !ok || expectedType != request.SessionType {
+        return dto.ResponseSessionDTO{}, e.NewBadRequestApiError("Combinación inválida de session_name y session_type")
+    }
+
+    // Validar que no exista ya una combinación idéntica para el mismo fin de semana (mismo circuito y año)
+    existingSessions, err := s.sessionsRepo.GetSessionsByCircuitKeyAndYear(ctx, request.CircuitKey, request.Year)
+    if err != nil {
+        return dto.ResponseSessionDTO{}, e.NewInternalServerApiError("Error validando sesiones existentes", err)
+    }
+
+    for _, session := range existingSessions {
+        if session.SessionName == request.SessionName && session.SessionType == request.SessionType {
+            return dto.ResponseSessionDTO{}, e.NewBadRequestApiError("Ya existe una sesión con el mismo nombre y tipo para este fin de semana")
+        }
+    }
+
 	// Convert DTO to Model
 	newSession := &model.Session{
         CircuitKey:       request.CircuitKey,
@@ -109,6 +144,40 @@ func (s *sessionService) UpdateSessionById(ctx context.Context, sessionID uint, 
 		return dto.ResponseSessionDTO{}, apiErr
 	}
 
+	// Validar que la combinación de session_name y session_type sea válida
+	if request.SessionName != "" || request.SessionType != "" {
+		validCombinations := map[string]string{
+			"Sprint Qualifying": "Qualifying",
+			"Sprint":            "Race",
+			"Practice 1":        "Practice",
+			"Practice 2":        "Practice",
+			"Practice 3":        "Practice",
+			"Qualifying":        "Qualifying",
+			"Race":              "Race",
+		}
+
+		if request.SessionName != "" && request.SessionType != "" {
+			expectedType, ok := validCombinations[request.SessionName]
+			if !ok || expectedType != request.SessionType {
+				return dto.ResponseSessionDTO{}, e.NewBadRequestApiError("Combinación inválida de session_name y session_type")
+			}
+		}
+	}
+
+	// Validar que no exista ya una combinación idéntica para el mismo fin de semana (mismo circuito y año)
+	if request.SessionName != "" && request.SessionType != "" && request.CircuitKey != 0 && request.Year != 0 {
+		existingSessions, err := s.sessionsRepo.GetSessionsByCircuitKeyAndYear(ctx, request.CircuitKey, request.Year)
+		if err != nil {
+			return dto.ResponseSessionDTO{}, e.NewInternalServerApiError("Error validando sesiones existentes", err)
+		}
+
+		for _, existingSession := range existingSessions {
+			if existingSession.ID != sessionID && existingSession.SessionName == request.SessionName && existingSession.SessionType == request.SessionType {
+				return dto.ResponseSessionDTO{}, e.NewBadRequestApiError("Ya existe una sesión con el mismo nombre y tipo para este fin de semana")
+			}
+		}
+	}
+
 	// Actualiza solo los campos que están presentes en el DTO de actualización
 	if request.CircuitKey != 0 {
 		session.CircuitKey = request.CircuitKey
@@ -154,7 +223,7 @@ func (s *sessionService) UpdateSessionById(ctx context.Context, sessionID uint, 
 
 	// Construye el DTO de respuesta utilizando los valores actualizados del modelo
 	response := dto.ResponseSessionDTO{
-		ID:               uint(session.ID),  // Aquí utilizas el ID de la base de datos
+		ID:               uint(session.ID),
 		CircuitKey:       session.CircuitKey,
 		CircuitShortName: session.CircuitShortName,
 		CountryCode:      session.CountryCode,
@@ -162,7 +231,7 @@ func (s *sessionService) UpdateSessionById(ctx context.Context, sessionID uint, 
 		DateStart:        session.DateStart,
 		DateEnd:          session.DateEnd,
 		Location:         session.Location,
-		SessionKey:       session.SessionKey,  // Y aquí el SessionKey lógico
+		SessionKey:       session.SessionKey,
 		SessionName:      session.SessionName,
 		SessionType:      session.SessionType,
 		Year:             session.Year,
@@ -350,6 +419,35 @@ func (s *sessionService) ListSessionsBetweenDates(ctx context.Context, startDate
 func (s *sessionService) FindSessionsByNameAndType(ctx context.Context, sessionName string, sessionType string) ([]dto.ResponseSessionDTO, e.ApiError) {
 	// Llamar a la función del repository para obtener las sesiones por nombre y tipo
 	sessions, err := s.sessionsRepo.GetSessionsByNameAndType(ctx, sessionName, sessionType)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convertir el resultado de []*model.Session a []dto.ResponseSessionDTO
+	var response []dto.ResponseSessionDTO
+	for _, session := range sessions {
+		response = append(response, dto.ResponseSessionDTO{
+			ID:               session.ID,
+			CircuitKey:       session.CircuitKey,
+			CircuitShortName: session.CircuitShortName,
+			CountryCode:      session.CountryCode,
+			CountryName:      session.CountryName,
+			DateStart:        session.DateStart,
+			DateEnd:          session.DateEnd,
+			Location:         session.Location,
+			SessionKey:       session.SessionKey,
+			SessionName:      session.SessionName,
+			SessionType:      session.SessionType,
+			Year:             session.Year,
+		})
+	}
+
+	return response, nil
+}
+
+func (s *sessionService) GetAllSessions(ctx context.Context) ([]dto.ResponseSessionDTO, e.ApiError) {
+	// Llamar a la función del repository para obtener todas las sesiones
+	sessions, err := s.sessionsRepo.GetAllSessions(ctx)
 	if err != nil {
 		return nil, err
 	}

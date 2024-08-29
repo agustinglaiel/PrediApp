@@ -26,6 +26,9 @@ type SessionRepository interface{
 	GetUpcomingSessions(ctx context.Context) ([]*model.Session, e.ApiError)
 	GetSessionsBetweenDates(ctx context.Context, startDate, endDate time.Time) ([]*model.Session, e.ApiError)
 	GetSessionsByNameAndType(ctx context.Context, sessionName, sessionType string) ([]*model.Session, e.ApiError)
+	GetSessionBySessionKey(ctx context.Context, sessionKey int) (*model.Session, e.ApiError)
+	GetAllSessions(ctx context.Context) ([]*model.Session, e.ApiError)
+	GetSessionsByCircuitKeyAndYear(ctx context.Context, circuitKey, year int) ([]*model.Session, e.ApiError)
 }
 
 func NewSessionRepository(db *gorm.DB) SessionRepository{
@@ -131,3 +134,29 @@ func (s *sessionRepository) GetSessionsByNameAndType(ctx context.Context, sessio
 	return sessions, nil
 }
 
+func (s *sessionRepository) GetSessionBySessionKey(ctx context.Context, sessionKey int) (*model.Session, e.ApiError) {
+	var session model.Session
+	if err := s.db.WithContext(ctx).Where("session_key = ?", sessionKey).First(&session).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil // No encontrado, pero no es un error
+		}
+		return nil, e.NewInternalServerApiError("Error buscando sesión por session_key", err)
+	}
+	return &session, nil
+}
+
+func (s *sessionRepository) GetAllSessions(ctx context.Context) ([]*model.Session, e.ApiError) {
+	var sessions []*model.Session
+	if err := s.db.WithContext(ctx).Find(&sessions).Error; err != nil {
+		return nil, e.NewInternalServerApiError("Error obteniendo todas las sesiones", err)
+	}
+	return sessions, nil
+}
+
+func (s *sessionRepository) GetSessionsByCircuitKeyAndYear(ctx context.Context, circuitKey, year int) ([]*model.Session, e.ApiError) {
+	var sessions []*model.Session
+	if err := s.db.WithContext(ctx).Where("circuit_key = ? AND year = ?", circuitKey, year).Find(&sessions).Error; err != nil {
+		return nil, e.NewInternalServerApiError("Error obteniendo sesiones por circuito y año", err)
+	}
+	return sessions, nil
+}

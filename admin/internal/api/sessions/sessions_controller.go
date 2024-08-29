@@ -247,3 +247,15 @@ func ParseUintParam(param string) (uint, error) {
 	}
 	return uint(id), nil
 }
+
+func (sc *SessionController) GetAllSessions(c *gin.Context) {
+	// Llamar al servicio para obtener todas las sesiones
+	response, apiErr := sc.sessionService.GetAllSessions(c.Request.Context())
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	// Responder con el listado de todas las sesiones
+	c.JSON(http.StatusOK, response)
+}
