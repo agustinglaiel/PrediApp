@@ -6,6 +6,7 @@ import (
 	repository "admin/internal/repository/sessions"
 	e "admin/pkg/utils"
 	"context"
+	"fmt"
 	"time"
 )
 
@@ -23,8 +24,8 @@ type SessionServiceInterface interface{
 	ListSessionsByCircuitKey(ctx context.Context, circuitKey int) ([]dto.ResponseSessionDTO, e.ApiError)
 	ListSessionsByCountryCode(ctx context.Context, countryCode string) ([]dto.ResponseSessionDTO, e.ApiError)
 	ListUpcomingSessions(ctx context.Context) ([]dto.ResponseSessionDTO, e.ApiError)
-	ListSessionsBetweenDates(ctx context.Context, startDate, endDate time.Time) ([]dto.ResponseSessionDTO, e.ApiError)
-	FindSessionsByNameAndType(ctx context.Context, sessionName, sessionType string) ([]dto.ResponseSessionDTO, e.ApiError)
+	ListSessionsBetweenDates(ctx context.Context, startDate time.Time, endDate time.Time) ([]dto.ResponseSessionDTO, e.ApiError)
+	FindSessionsByNameAndType(ctx context.Context, sessionName string, sessionType string) ([]dto.ResponseSessionDTO, e.ApiError)
 }
 
 func NewSessionService(sessionsRepo repository.SessionRepository) SessionServiceInterface{
@@ -36,39 +37,43 @@ func NewSessionService(sessionsRepo repository.SessionRepository) SessionService
 func (s *sessionService) CreateSession(ctx context.Context, request dto.CreateSessionDTO) (dto.ResponseSessionDTO, e.ApiError) {
 	// Convert DTO to Model
 	newSession := &model.Session{
-		CircuitKey:       request.CircuitKey,
-		CircuitShortName: request.CircuitShortName,
-		CountryCode:      request.CountryCode,
-		CountryName:      request.CountryName,
-		DateStart:        request.DateStart,
-		DateEnd:          request.DateEnd,
-		Location:         request.Location,
-		SessionKey:       request.SessionKey,
-		SessionName:      request.SessionName,
-		SessionType:      request.SessionType,
-		Year:             request.Year,
-		CreatedAt:        time.Now(),
-		UpdatedAt:        time.Now(),
-	}
+        CircuitKey:       request.CircuitKey,
+        CircuitShortName: request.CircuitShortName,
+        CountryCode:      request.CountryCode,
+        CountryName:      request.CountryName,
+        DateStart:        request.DateStart,
+        DateEnd:          request.DateEnd,
+        Location:         request.Location,
+        SessionKey:       request.SessionKey,
+        SessionName:      request.SessionName,
+        SessionType:      request.SessionType,
+        Year:             request.Year,
+        CreatedAt:        time.Now(),
+        UpdatedAt:        time.Now(),
+    }
 
 	if err := s.sessionsRepo.CreateSession(ctx, newSession); err != nil {
 		return dto.ResponseSessionDTO{}, e.NewInternalServerApiError("Error creando la sesión", err)
 	}
 
+	// Verificar el ID después de la creación
+    fmt.Printf("Session ID after creation: %d\n", newSession.ID)
+
 	// Convert Model to Response DTO
 	response := dto.ResponseSessionDTO{
-		ID:               uint(newSession.SessionKey),
-		CircuitKey:       newSession.CircuitKey,
-		CircuitShortName: newSession.CircuitShortName,
-		CountryCode:      newSession.CountryCode,
-		CountryName:      newSession.CountryName,
-		DateStart:        newSession.DateStart,
-		DateEnd:          newSession.DateEnd,
-		Location:         newSession.Location,
-		SessionName:      newSession.SessionName,
-		SessionType:      newSession.SessionType,
-		Year:             newSession.Year,
-	}
+        ID:               newSession.ID,
+        CircuitKey:       newSession.CircuitKey,
+        CircuitShortName: newSession.CircuitShortName,
+        CountryCode:      newSession.CountryCode,
+        CountryName:      newSession.CountryName,
+        DateStart:        newSession.DateStart,
+        DateEnd:          newSession.DateEnd,
+        Location:         newSession.Location,
+        SessionKey:       newSession.SessionKey,
+        SessionName:      newSession.SessionName,
+        SessionType:      newSession.SessionType,
+        Year:             newSession.Year,
+    }
 
 	return response, nil
 }
@@ -81,7 +86,7 @@ func (s *sessionService) GetSessionById(ctx context.Context, sessionID uint) (dt
 
 	// Convert Model to Response DTO
 	response := dto.ResponseSessionDTO{
-		ID:               uint(session.SessionKey),
+		ID:               session.ID,
 		CircuitKey:       session.CircuitKey,
 		CircuitShortName: session.CircuitShortName,
 		CountryCode:      session.CountryCode,
@@ -313,7 +318,7 @@ func (s *sessionService) ListUpcomingSessions(ctx context.Context) ([]dto.Respon
 	return response, nil
 }
 
-func (s *sessionService) ListSessionsBetweenDates(ctx context.Context, startDate, endDate time.Time) ([]dto.ResponseSessionDTO, e.ApiError) {
+func (s *sessionService) ListSessionsBetweenDates(ctx context.Context, startDate time.Time, endDate time.Time) ([]dto.ResponseSessionDTO, e.ApiError) {
 	// Llamar a la función del repository para obtener las sesiones entre las fechas especificadas
 	sessions, err := s.sessionsRepo.GetSessionsBetweenDates(ctx, startDate, endDate)
 	if err != nil {
@@ -342,7 +347,7 @@ func (s *sessionService) ListSessionsBetweenDates(ctx context.Context, startDate
 	return response, nil
 }
 
-func (s *sessionService) FindSessionsByNameAndType(ctx context.Context, sessionName, sessionType string) ([]dto.ResponseSessionDTO, e.ApiError) {
+func (s *sessionService) FindSessionsByNameAndType(ctx context.Context, sessionName string, sessionType string) ([]dto.ResponseSessionDTO, e.ApiError) {
 	// Llamar a la función del repository para obtener las sesiones por nombre y tipo
 	sessions, err := s.sessionsRepo.GetSessionsByNameAndType(ctx, sessionName, sessionType)
 	if err != nil {
@@ -353,7 +358,7 @@ func (s *sessionService) FindSessionsByNameAndType(ctx context.Context, sessionN
 	var response []dto.ResponseSessionDTO
 	for _, session := range sessions {
 		response = append(response, dto.ResponseSessionDTO{
-			ID:               session.ID,  // Usamos el ID como identificador principal
+			ID:               session.ID,
 			CircuitKey:       session.CircuitKey,
 			CircuitShortName: session.CircuitShortName,
 			CountryCode:      session.CountryCode,

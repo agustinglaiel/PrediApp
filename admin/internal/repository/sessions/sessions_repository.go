@@ -4,6 +4,7 @@ import (
 	model "admin/internal/model/sessions"
 	e "admin/pkg/utils"
 	"context"
+	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -32,10 +33,14 @@ func NewSessionRepository(db *gorm.DB) SessionRepository{
 }
 
 func (s *sessionRepository) CreateSession(ctx context.Context, session *model.Session) e.ApiError{
-	if err := s.db.WithContext(ctx).Create(session).Error; err != nil{
-		return e.NewInternalServerApiError("Error creando sesión", err)
-	}
-	return nil
+	if err := s.db.WithContext(ctx).Create(session).Error; err != nil {
+        return e.NewInternalServerApiError("Error creando sesión", err)
+    }
+
+    // Log para verificar el ID asignado
+    fmt.Printf("Session created with ID: %d\n", session.ID)
+    
+    return nil
 }
 
 func (s *sessionRepository) GetSessionById(ctx context.Context, sessionID uint)(*model.Session, e.ApiError){
@@ -115,14 +120,14 @@ func (s *sessionRepository) GetSessionsBetweenDates(ctx context.Context, startDa
     return sessions, nil
 }
 
-//NO ME ACUERDO PARA QUE IBA A USAR ESTA FUNCIÓN
 func (s *sessionRepository) GetSessionsByNameAndType(ctx context.Context, sessionName, sessionType string) ([]*model.Session, e.ApiError) {
-    var sessions []*model.Session
-    if err := s.db.WithContext(ctx).Where("session_name = ? AND session_type = ?", sessionName, sessionType).First(&sessions).Error; err != nil {
-        if err == gorm.ErrRecordNotFound {
-            return nil, e.NewNotFoundApiError("Sesión no encontrada con el nombre y tipo especificado")
-        }
-        return nil, e.NewInternalServerApiError("Error encontrando sesión por nombre y tipo", err)
-    }
-    return sessions, nil
+	var sessions []*model.Session
+	if err := s.db.WithContext(ctx).Where("session_name = ? AND session_type = ?", sessionName, sessionType).Find(&sessions).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, e.NewNotFoundApiError("Sesión no encontrada con el nombre y tipo especificado")
+		}
+		return nil, e.NewInternalServerApiError("Error encontrando sesiones por nombre y tipo", err)
+	}
+	return sessions, nil
 }
+

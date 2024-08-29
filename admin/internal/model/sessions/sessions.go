@@ -16,7 +16,7 @@ type Session struct {
 	DateEnd          time.Time `json:"date_end"`
 	DateStart        time.Time `json:"date_start"`
 	Location         string    `json:"location"`
-	SessionKey       int       `json:"session_key" gorm:"primaryKey"`
+	SessionKey       int       `json:"session_key"`
 	SessionName      string    `json:"session_name"`
 	SessionType      string    `json:"session_type"`
 	Year             int       `json:"year"`
