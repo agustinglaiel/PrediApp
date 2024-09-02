@@ -1,16 +1,23 @@
 package main
 
 import (
-	controllerS "admin/internal/api/sessions"
-	repoS "admin/internal/repository/sessions"
+	drC "admin/internal/api/drivers"
+	prC "admin/internal/api/prodes"
+	seC "admin/internal/api/sessions"
+	drR "admin/internal/repository/drivers"
+	prR "admin/internal/repository/prodes"
+	seR "admin/internal/repository/sessions"
 	"admin/internal/router"
-	serviceS "admin/internal/service/sessions"
+	drS "admin/internal/service/drivers"
+	prS "admin/internal/service/prodes"
+	seS "admin/internal/service/sessions"
 	"admin/pkg/utils"
 	"fmt"
-	"log"
 
 	"github.com/gin-gonic/gin"
 )
+
+
 
 func main() {
 	// Inicializar la base de datos
@@ -24,21 +31,30 @@ func main() {
 	// Iniciar el motor de la base de datos para migrar tablas
 	utils.StartDbEngine()
 
-	// Inicializar repositorio y servicio
-	sessionRepo := repoS.NewSessionRepository(db)
-	sessionService := serviceS.NewSessionService(sessionRepo)
+	// Crear repositorios
+	sessionRepo := seR.NewSessionRepository(db)
+	driverRepo := drR.NewDriverRepository(db)
+	driverEventRepo := drR.NewDriverEventRepository(db)
+	prodeRepo := prR.NewProdeRepository(db)
 
-	// Inicializar controlador
-	sessionController := controllerS.NewSessionController(sessionService)
+	// Crear servicios
+	sessionService := seS.NewSessionService(sessionRepo)
+	driverService := drS.NewDriverService(driverRepo)
+	driverEventService := drS.NewDriverEventService(driverEventRepo, driverRepo)
+	prodeService := prS.NewPrediService(prodeRepo, sessionService)
+
+	// Crear controladores
+	sessionController := seC.NewSessionController(sessionService)
+	driverController := drC.NewDriverController(driverService)
+	driverEventController := drC.NewDriverEventController(driverEventService)
+	prodeController := prC.NewProdeController(prodeService)
 
 	// Configurar el router
-	ginRouter := gin.Default()
+	engine := gin.Default()
+	router.MapUrls(engine, sessionController, driverController, driverEventController, prodeController)
 
-	// Mapear URLs
-	router.MapUrls(ginRouter, sessionController)
-
-	// Iniciar el servidor
-	if err := ginRouter.Run(":8060"); err != nil {
-		log.Fatalf("Failed to run server: %v", err)
+	// Ejecutar el servidor
+	if err := engine.Run(":8080"); err != nil {
+		panic(err)
 	}
 }

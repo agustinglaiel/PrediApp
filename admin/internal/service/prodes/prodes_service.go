@@ -31,47 +31,67 @@ func NewPrediService(prodeRepo repository.ProdeRepository, sessionService sessio
 }
 
 func (s *prodeService) CreateProdeCarrera(ctx context.Context, request prodes.CreateProdeCarreraDTO) (prodes.ResponseProdeCarreraDTO, e.ApiError) {
-	// Convertir DTO a modelo
-	prode := model.ProdeCarrera{
-		UserID:     request.UserID,
-		EventID:    request.EventID,
-		P1:         request.P1,
-		P2:         request.P2,
-		P3:         request.P3,
-		P4:         request.P4,
-		P5:         request.P5,
-		FastestLap: request.FastestLap,
-		VSC:        request.VSC,
-		SC:         request.SC,
-		DNF:        request.DNF,
-	}
+    // Verificar el nombre de la sesión
+    sessionInfo, err := s.sessionService.GetSessionNameAndTypeById(ctx, uint(request.EventID))
+    if err != nil {
+        return prodes.ResponseProdeCarreraDTO{}, err
+    }
 
-	// Crear el pronóstico de carrera en la base de datos
-	err := s.prodeRepo.CreateProdeCarrera(ctx, &prode)
-	if err != nil {
-		return prodes.ResponseProdeCarreraDTO{}, err
-	}
+    if sessionInfo.SessionName != "Race" {
+        return prodes.ResponseProdeCarreraDTO{}, e.NewBadRequestApiError("La sesión asociada no es una carrera, no se puede crear un ProdeCarrera")
+    }
 
-	// Convertir el modelo a DTO de respuesta
-	response := prodes.ResponseProdeCarreraDTO{
-		ID:         prode.ID,
-		UserID:     prode.UserID,
-		EventID:    prode.EventID,
-		P1:         prode.P1,
-		P2:         prode.P2,
-		P3:         prode.P3,
-		P4:         prode.P4,
-		P5:         prode.P5,
-		FastestLap: prode.FastestLap,
-		VSC:        prode.VSC,
-		SC:         prode.SC,
-		DNF:        prode.DNF,
-	}
+    // Convertir DTO a modelo
+    prode := model.ProdeCarrera{
+        UserID:     request.UserID,
+        EventID:    request.EventID,
+        P1:         request.P1,
+        P2:         request.P2,
+        P3:         request.P3,
+        P4:         request.P4,
+        P5:         request.P5,
+        FastestLap: request.FastestLap,
+        VSC:        request.VSC,
+        SC:         request.SC,
+        DNF:        request.DNF,
+    }
 
-	return response, nil
+    // Crear el pronóstico de carrera en la base de datos
+    err = s.prodeRepo.CreateProdeCarrera(ctx, &prode)
+    if err != nil {
+        return prodes.ResponseProdeCarreraDTO{}, err
+    }
+
+    // Convertir el modelo a DTO de respuesta
+    response := prodes.ResponseProdeCarreraDTO{
+        ID:         prode.ID,
+        UserID:     prode.UserID,
+        EventID:    prode.EventID,
+        P1:         prode.P1,
+        P2:         prode.P2,
+        P3:         prode.P3,
+        P4:         prode.P4,
+        P5:         prode.P5,
+        FastestLap: prode.FastestLap,
+        VSC:        prode.VSC,
+        SC:         prode.SC,
+        DNF:        prode.DNF,
+    }
+
+    return response, nil
 }
 
 func (s *prodeService) CreateProdeSession(ctx context.Context, request prodes.CreateProdeSessionDTO) (prodes.ResponseProdeSessionDTO, e.ApiError) {
+	// Verificar el nombre de la sesión
+    sessionInfo, err := s.sessionService.GetSessionNameAndTypeById(ctx, uint(request.EventID))
+    if err != nil {
+        return prodes.ResponseProdeSessionDTO{}, err
+    }
+
+    if sessionInfo.SessionType == "Race" {
+        return prodes.ResponseProdeSessionDTO{}, e.NewBadRequestApiError("La sesión asociada es una carrera, no se puede crear un ProdeSession")
+    }
+	
 	prode := model.ProdeSession{
 		UserID:  request.UserID,
 		EventID: request.EventID,
@@ -79,10 +99,11 @@ func (s *prodeService) CreateProdeSession(ctx context.Context, request prodes.Cr
 		P2:      request.P2,
 		P3:      request.P3,
 	}
-	err := s.prodeRepo.CreateProdeSession(ctx, &prode)
-	if err != nil {
-		return prodes.ResponseProdeSessionDTO{}, err
-	}
+	// Crear el pronóstico de sesión en la base de datos
+    err = s.prodeRepo.CreateProdeSession(ctx, &prode)
+    if err != nil {
+        return prodes.ResponseProdeSessionDTO{}, err
+    }
 	response := prodes.ResponseProdeSessionDTO{
 		ID:      prode.ID,
 		UserID:  prode.UserID,
@@ -186,12 +207,12 @@ func (s *prodeService) DeleteProdeSession(ctx context.Context, prodeID int) e.Ap
 
 func (s *prodeService) DeleteProdeById(ctx context.Context, prodeID int) e.ApiError {
     // Obtener el nombre y tipo de la sesión asociada
-    sessionType, err := s.sessionService.GetSessionNameAndTypeById(ctx, uint(prodeID))
+    sessionName, err := s.sessionService.GetSessionNameAndTypeById(ctx, uint(prodeID))
     if err != nil {
         return err
     }
 
-    if sessionType.SessionType == "Race" {
+    if sessionName.SessionName == "Race" {
         // Es una carrera, eliminar el prode de carrera
         if err := s.DeleteProdeCarrera(ctx, prodeID); err != nil {
             return err
