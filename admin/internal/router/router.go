@@ -4,12 +4,13 @@ import (
 	drivers "admin/internal/api/drivers"
 	prodes "admin/internal/api/prodes"
 	api "admin/internal/api/sessions"
+	users "admin/internal/api/users"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
-func MapUrls(engine *gin.Engine, sessionController *api.SessionController, driverController *drivers.DriverController, driverEventController *drivers.DriverEventController, prodeController *prodes.ProdeController) {
+func MapUrls(engine *gin.Engine, sessionController *api.SessionController, driverController *drivers.DriverController, driverEventController *drivers.DriverEventController, prodeController *prodes.ProdeController, userController *users.UserController) {
 	// Use CORS middleware
 	engine.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:3000"},
@@ -57,6 +58,22 @@ func MapUrls(engine *gin.Engine, sessionController *api.SessionController, drive
 	engine.PUT("/prodes/session/:id", prodeController.UpdateProdeSession)
 	engine.DELETE("/prodes/:id", prodeController.DeleteProdeById)
 	engine.GET("/prodes/user/:user_id", prodeController.GetProdesByUserId)
+
+	// Rutas relacionadas con usuarios
+	engine.POST("/users/signup", userController.SignUp)
+	engine.POST("/users/login", userController.Login)
+	engine.POST("/users/oauth", userController.OAuthSignIn)
+	engine.GET("/users/:id", userController.GetUserByID)
+	engine.GET("/users/username/:username", userController.GetUserByUsername)
+	engine.GET("/users", userController.GetUsers)
+	engine.PUT("/users/:id", userController.UpdateUserByID)
+	engine.PUT("/users/username/:username", userController.UpdateUserByUsername)
+	engine.DELETE("/users/:id", userController.DeleteUserByID)
+	engine.DELETE("/users/username/:username", userController.DeleteUserByUsername)
+	engine.PUT("/users/:id/role", userController.UpdateUserRoleByID)
+	engine.PUT("/users/:id/deactivate", userController.DeactivateUserByID)
+	engine.PUT("/users/:id/reactivate", userController.ReactivateUserByID)
+
 
 	// Debugging purpose
 	engine.GET("/ping", func(c *gin.Context) {
