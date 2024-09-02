@@ -2,7 +2,7 @@ package service
 
 import (
 	dto "admin/internal/dto/drivers"
-	"admin/internal/model/drivers"
+	model "admin/internal/model/drivers"
 	repository "admin/internal/repository/drivers"
 	e "admin/pkg/utils"
 	"context"
@@ -44,7 +44,7 @@ func (s *driverService) CreateDriver(ctx context.Context, request dto.CreateDriv
 	}
 
 	// Convert DTO to Model
-	newDriver := &drivers.Driver{
+	newDriver := &model.Driver{
 		BroadcastName:  request.BroadcastName,
 		CountryCode:    request.CountryCode,
 		DriverNumber:   request.DriverNumber,

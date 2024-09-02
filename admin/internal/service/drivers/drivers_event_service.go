@@ -2,7 +2,7 @@ package service
 
 import (
 	dto "admin/internal/dto/drivers"
-	"admin/internal/model/drivers"
+	model "admin/internal/model/drivers"
 	repository "admin/internal/repository/drivers"
 	e "admin/pkg/utils"
 	"context"
@@ -39,7 +39,7 @@ func (s *driverEventService) AddDriverToEvent(ctx context.Context, request dto.D
 	}
 
 	// Crear la asignación piloto-evento
-	driverEvent := &drivers.DriverEvent{
+	driverEvent := &model.DriverEvent{
 		EventID:  request.EventID,
 		DriverID: request.DriverID,
 	}
@@ -88,7 +88,7 @@ func (s *driverEventService) ListDriversByEvent(ctx context.Context, eventID uin
 
 	return response, nil
 }
-/*
+
 func (s *driverEventService) ListEventsByDriver(ctx context.Context, driverID uint) ([]dto.ResponseEventDTO, e.ApiError) {
 	// Obtener eventos por piloto
 	events, err := s.driverEventRepo.ListEventsByDriver(ctx, driverID)
@@ -107,7 +107,7 @@ func (s *driverEventService) ListEventsByDriver(ctx context.Context, driverID ui
 
 	return response, nil
 }
-*/
+
 func (s *driverEventService) CheckDriverInEvent(ctx context.Context, driverID, eventID uint) (bool, e.ApiError) {
 	drivers, err := s.driverEventRepo.ListDriversByEvent(ctx, eventID)
 	if err != nil {

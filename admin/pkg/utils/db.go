@@ -1,10 +1,10 @@
 package utils
 
 import (
-	"admin/internal/model/drivers"
+	modelD "admin/internal/model/drivers"
 	modelP "admin/internal/model/prodes"
 	modelS "admin/internal/model/sessions"
-	"admin/internal/model/users"
+	modelU "admin/internal/model/users"
 	"admin/pkg/config"
 	"fmt"
 
@@ -40,31 +40,39 @@ func DisconnectDB() {
 
 // StartDbEngine migrates the database tables
 func StartDbEngine() {
-    err := DB.AutoMigrate(
-        &users.User{},        // Migrar el modelo User
-        &modelP.ProdeCarrera{},  // Migrar el modelo ProdeCarrera
-        &modelP.ProdeSession{},  // Migrar el modelo ProdeSession
-        &modelS.Session{},  // Migrar el modelo Session
-        &drivers.Driver{},    // Migrar el modelo Driver
-    )
-    if err != nil {
-        fmt.Printf("Error migrating database tables: %v\n", err)
-        return
-    }
+	err := DB.AutoMigrate(
+		&modelU.User{},          // Migrar el modelo User
+		&modelP.ProdeCarrera{},  // Migrar el modelo ProdeCarrera
+		&modelP.ProdeSession{},  // Migrar el modelo ProdeSession
+		&modelS.Session{},       // Migrar el modelo Session
+		&modelD.Driver{},        // Migrar el modelo Driver
+		&modelD.DriverEvent{},   // Migrar el modelo DriverEvent (asegúrate de tenerlo definido)
+	)
+	if err != nil {
+		fmt.Printf("Error migrating database tables: %v\n", err)
+		return
+	}
 
-    // Verificar si el índice ya existe
-    var exists int64
-    DB.Raw("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'sessions' AND index_name = 'uni_sessions_session_key'").Scan(&exists)
+	// Verificar y agregar índices o restricciones únicos
+	checkAndCreateUniqueConstraint(DB, "sessions", "uni_sessions_session_key", "session_key")
 
-    if exists == 0 {
-        // Si no existe, entonces agregar la restricción
-        err := DB.Exec("ALTER TABLE sessions ADD CONSTRAINT `uni_sessions_session_key` UNIQUE (`session_key`)").Error
-        if err != nil {
-            fmt.Printf("Error creating unique constraint: %v\n", err)
-        }
-    } else {
-        fmt.Println("Unique constraint `uni_sessions_session_key` already exists, skipping creation.")
-    }
+	fmt.Println("Finished migrating database tables")
+}
 
-    fmt.Println("Finished migrating database tables")
+// checkAndCreateUniqueConstraint verifica si existe un índice único y lo crea si no existe
+func checkAndCreateUniqueConstraint(db *gorm.DB, tableName, indexName, columnName string) {
+	var exists int64
+	query := fmt.Sprintf("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = '%s' AND index_name = '%s'", tableName, indexName)
+	db.Raw(query).Scan(&exists)
+
+	if exists == 0 {
+		err := db.Exec(fmt.Sprintf("ALTER TABLE %s ADD CONSTRAINT %s UNIQUE (%s)", tableName, indexName, columnName)).Error
+		if err != nil {
+			fmt.Printf("Error creating unique constraint: %v\n", err)
+		} else {
+			fmt.Printf("Unique constraint `%s` created successfully.\n", indexName)
+		}
+	} else {
+		fmt.Printf("Unique constraint `%s` already exists, skipping creation.\n", indexName)
+	}
 }

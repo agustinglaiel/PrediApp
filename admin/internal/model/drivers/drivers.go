@@ -1,4 +1,4 @@
-package drivers
+package model
 
 type Driver struct {
 	ID             uint   `gorm:"primaryKey" json:"id"`

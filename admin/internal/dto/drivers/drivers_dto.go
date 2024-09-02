@@ -42,9 +42,14 @@ type DeleteDriverDTO struct {
 }
 
 type ResponseEventDTO struct {
-	ID        uint      `json:"id"`
-	SessionID uint      `json:"session_id"`
-	EventName string    `json:"event_name"`
-	Date      time.Time `json:"date"`
-	Location  string    `json:"location"`
+	ID                uint      `json:"id"`
+	SessionID         uint      `json:"session_id"`
+	RaceResultID      uint      `json:"race_result_id,omitempty"`
+	SprintRaceResultID uint     `json:"sprint_race_result_id,omitempty"`
+	QualyResultID     uint      `json:"qualy_result_id,omitempty"`
+	SprintQualyResultID uint    `json:"sprint_qualy_result_id,omitempty"`
+	FP1ID             uint      `json:"fp1_id,omitempty"`
+	FP2ID             uint      `json:"fp2_id,omitempty"`
+	FP3ID             uint      `json:"fp3_id,omitempty"`
+	Date              time.Time `json:"date"`
 }
