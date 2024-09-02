@@ -17,8 +17,9 @@ type ProdeServiceInterface interface {
 	CreateProdeSession(ctx context.Context, request prodes.CreateProdeSessionDTO) (prodes.ResponseProdeSessionDTO, e.ApiError)
 	UpdateProdeCarrera(ctx context.Context, request prodes.UpdateProdeCarreraDTO) (prodes.ResponseProdeCarreraDTO, e.ApiError)
 	UpdateProdeSession(ctx context.Context, request prodes.UpdateProdeSessionDTO) (prodes.ResponseProdeSessionDTO, e.ApiError)
-	//DeleteProde(ctx context.Context, request prodes.DeleteProdeDTO) e.ApiError
-	//GetProdesByUserId(ctx context.Context, userID int) ([]prodes.ResponseProdeCarreraDTO, []prodes.ResponseProdeSessionDTO, e.ApiError)
+	DeleteProdeCarrera(ctx context.Context, prodeID int) e.ApiError
+	DeleteProdeSession(ctx context.Context, prodeID int) e.ApiError
+	GetProdesByUserId(ctx context.Context, userID int) ([]prodes.ResponseProdeCarreraDTO, []prodes.ResponseProdeSessionDTO, e.ApiError)
 }
 
 func NewPrediService(prodeRepo repository.ProdeRepository) ProdeServiceInterface {
@@ -28,23 +29,28 @@ func NewPrediService(prodeRepo repository.ProdeRepository) ProdeServiceInterface
 }
 
 func (s *prodeService) CreateProdeCarrera(ctx context.Context, request prodes.CreateProdeCarreraDTO) (prodes.ResponseProdeCarreraDTO, e.ApiError) {
+	// Convertir DTO a modelo
 	prode := model.ProdeCarrera{
-		UserID:     uint(request.UserID),
-		EventID:    uint(request.EventID),
-		P1:         uint(request.P1),
-		P2:         uint(request.P2),
-		P3:         uint(request.P3),
-		P4:         uint(request.P4),
-		P5:         uint(request.P5),
-		FastestLap: uint(request.FastestLap),
+		UserID:     request.UserID,
+		EventID:    request.EventID,
+		P1:         request.P1,
+		P2:         request.P2,
+		P3:         request.P3,
+		P4:         request.P4,
+		P5:         request.P5,
+		FastestLap: request.FastestLap,
 		VSC:        request.VSC,
 		SC:         request.SC,
 		DNF:        request.DNF,
 	}
+
+	// Crear el pronóstico de carrera en la base de datos
 	err := s.prodeRepo.CreateProdeCarrera(ctx, &prode)
 	if err != nil {
 		return prodes.ResponseProdeCarreraDTO{}, err
 	}
+
+	// Convertir el modelo a DTO de respuesta
 	response := prodes.ResponseProdeCarreraDTO{
 		ID:         prode.ID,
 		UserID:     prode.UserID,
@@ -59,16 +65,17 @@ func (s *prodeService) CreateProdeCarrera(ctx context.Context, request prodes.Cr
 		SC:         prode.SC,
 		DNF:        prode.DNF,
 	}
+
 	return response, nil
 }
 
 func (s *prodeService) CreateProdeSession(ctx context.Context, request prodes.CreateProdeSessionDTO) (prodes.ResponseProdeSessionDTO, e.ApiError) {
 	prode := model.ProdeSession{
-		UserID:  uint(request.UserID),
-		EventID: uint(request.EventID),
-		P1:      uint(request.P1),
-		P2:      uint(request.P2),
-		P3:      uint(request.P3),
+		UserID:  request.UserID,
+		EventID: request.EventID,
+		P1:      request.P1,
+		P2:      request.P2,
+		P3:      request.P3,
 	}
 	err := s.prodeRepo.CreateProdeSession(ctx, &prode)
 	if err != nil {
@@ -87,15 +94,15 @@ func (s *prodeService) CreateProdeSession(ctx context.Context, request prodes.Cr
 
 func (s *prodeService) UpdateProdeCarrera(ctx context.Context, request prodes.UpdateProdeCarreraDTO) (prodes.ResponseProdeCarreraDTO, e.ApiError) {
 	prode := model.ProdeCarrera{
-		ID:         uint(request.ProdeID),
-		UserID:     uint(request.UserID),
-		EventID:    uint(request.EventID),
-		P1:         uint(request.P1),
-		P2:         uint(request.P2),
-		P3:         uint(request.P3),
-		P4:         uint(request.P4),
-		P5:         uint(request.P5),
-		FastestLap: uint(request.FastestLap),
+		ID:         request.ProdeID,
+		UserID:     request.UserID,
+		EventID:    request.EventID,
+		P1:         request.P1,
+		P2:         request.P2,
+		P3:         request.P3,
+		P4:         request.P4,
+		P5:         request.P5,
+		FastestLap: request.FastestLap,
 		VSC:        request.VSC,
 		SC:         request.SC,
 		DNF:        request.DNF,
@@ -123,12 +130,12 @@ func (s *prodeService) UpdateProdeCarrera(ctx context.Context, request prodes.Up
 
 func (s *prodeService) UpdateProdeSession(ctx context.Context, request prodes.UpdateProdeSessionDTO) (prodes.ResponseProdeSessionDTO, e.ApiError) {
 	prode := model.ProdeSession{
-		ID:      uint(request.ProdeID),
-		UserID:  uint(request.UserID),
-		EventID: uint(request.EventID),
-		P1:      uint(request.P1),
-		P2:      uint(request.P2),
-		P3:      uint(request.P3),
+		ID:      request.ProdeID,
+		UserID:  request.UserID,
+		EventID: request.EventID,
+		P1:      request.P1,
+		P2:      request.P2,
+		P3:      request.P3,
 	}
 	err := s.prodeRepo.UpdateProdeSession(ctx, &prode)
 	if err != nil {
@@ -145,17 +152,38 @@ func (s *prodeService) UpdateProdeSession(ctx context.Context, request prodes.Up
 	return response, nil
 }
 
-/*
-func (s *prodeService) DeleteProde(ctx context.Context, request prodes.DeleteProdeDTO) e.ApiError {
-	err := s.prodeRepo.DeleteProdeByID(ctx, uint(request.ProdeID), uint(request.UserID))
+func (s *prodeService) DeleteProdeCarrera(ctx context.Context, prodeID int) e.ApiError {
+	// Buscar el prode de carrera por ID
+	prode, err := s.prodeRepo.GetProdeCarreraByID(ctx, prodeID)
 	if err != nil {
 		return err
 	}
+
+	// Eliminar el prode de carrera
+	if err := s.prodeRepo.DeleteProdeCarreraByID(ctx, prode.ID, prode.UserID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *prodeService) DeleteProdeSession(ctx context.Context, prodeID int) e.ApiError {
+	// Buscar el prode de sesión por ID
+	prode, err := s.prodeRepo.GetProdeSessionByID(ctx, prodeID)
+	if err != nil {
+		return err
+	}
+
+	// Eliminar el prode de sesión
+	if err := s.prodeRepo.DeleteProdeSessionByID(ctx, prode.ID, prode.UserID); err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (s *prodeService) GetProdesByUserId(ctx context.Context, userID int) ([]prodes.ResponseProdeCarreraDTO, []prodes.ResponseProdeSessionDTO, e.ApiError) {
-	carreraProdes, sessionProdes, err := s.prodeRepo.GetProdesByUserID(ctx, uint(userID))
+	carreraProdes, sessionProdes, err := s.prodeRepo.GetProdesByUserID(ctx, userID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -193,6 +221,7 @@ func (s *prodeService) GetProdesByUserId(ctx context.Context, userID int) ([]pro
 	return carreraResponses, sessionResponses, nil
 }
 
+/*
 // GetSessionNameAndType retrieves the session name and session type based on the event ID.
 func (s *prodeService) GetSessionNameAndType(ctx context.Context, eventID uint) (string, string, e.ApiError) {
 	session, apiErr := s.prodeRepo.GetSessionByEventID(ctx, eventID)
@@ -201,4 +230,5 @@ func (s *prodeService) GetSessionNameAndType(ctx context.Context, eventID uint) 
 	}
 
 	return session.SessionName, session.SessionType, nil
-}*/
+}
+*/

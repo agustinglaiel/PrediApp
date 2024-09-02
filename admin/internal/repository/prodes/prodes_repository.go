@@ -44,7 +44,7 @@ func (r *prodeRepository) CreateProdeSession(ctx context.Context, prode *prodes.
 	return nil
 }
 
-func (r *prodeRepository) GetProdeCarreraByID(ctx context.Context, prodeID uint) (*prodes.ProdeCarrera, e.ApiError) {
+func (r *prodeRepository) GetProdeCarreraByID(ctx context.Context, prodeID int) (*prodes.ProdeCarrera, e.ApiError) {
 	var prode prodes.ProdeCarrera
 	if err := r.db.WithContext(ctx).First(&prode, prodeID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -55,7 +55,7 @@ func (r *prodeRepository) GetProdeCarreraByID(ctx context.Context, prodeID uint)
 	return &prode, nil
 }
 
-func (r *prodeRepository) GetProdeSessionByID(ctx context.Context, prodeID uint) (*prodes.ProdeSession, e.ApiError) {
+func (r *prodeRepository) GetProdeSessionByID(ctx context.Context, prodeID int) (*prodes.ProdeSession, e.ApiError) {
 	var prode prodes.ProdeSession
 	if err := r.db.WithContext(ctx).First(&prode, prodeID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -81,7 +81,7 @@ func (r *prodeRepository) UpdateProdeSession(ctx context.Context, prode *prodes.
 }
 
 // DeleteProdeByID elimina un pronóstico de carrera por su ID y verifica el userID
-func (r *prodeRepository) DeleteProdeCarreraByID(ctx context.Context, prodeID uint, userID uint) e.ApiError {
+func (r *prodeRepository) DeleteProdeCarreraByID(ctx context.Context, prodeID int, userID int) e.ApiError {
     if err := r.db.WithContext(ctx).Where("id = ? AND user_id = ?", prodeID, userID).Delete(&prodes.ProdeCarrera{}).Error; err != nil {
         return e.NewInternalServerApiError("error deleting prode by ID", err)
     }
@@ -89,14 +89,14 @@ func (r *prodeRepository) DeleteProdeCarreraByID(ctx context.Context, prodeID ui
 }
 
 // DeleteProdeSessionByID elimina un pronóstico de sesión por su ID y verifica el userID
-func (r *prodeRepository) DeleteProdeSessionByID(ctx context.Context, prodeID uint, userID uint) e.ApiError {
+func (r *prodeRepository) DeleteProdeSessionByID(ctx context.Context, prodeID int, userID int) e.ApiError {
     if err := r.db.WithContext(ctx).Where("id = ? AND user_id = ?", prodeID, userID).Delete(&prodes.ProdeSession{}).Error; err != nil {
         return e.NewInternalServerApiError("error deleting prode session by ID", err)
     }
     return nil
 }
 
-func (r *prodeRepository) GetProdesByUserIDAndEventID(ctx context.Context, userID, eventID uint) ([]*prodes.ProdeCarrera, []*prodes.ProdeSession, e.ApiError) {
+func (r *prodeRepository) GetProdesByUserIDAndEventID(ctx context.Context, userID, eventID int) ([]*prodes.ProdeCarrera, []*prodes.ProdeSession, e.ApiError) {
 	var prodesCarrera []*prodes.ProdeCarrera
 	var prodesSession []*prodes.ProdeSession
 
@@ -111,7 +111,7 @@ func (r *prodeRepository) GetProdesByUserIDAndEventID(ctx context.Context, userI
 	return prodesCarrera, prodesSession, nil
 }
 
-func (r *prodeRepository) GetAllProdesByEventID(ctx context.Context, eventID uint) ([]*prodes.ProdeCarrera, []*prodes.ProdeSession, e.ApiError) {
+func (r *prodeRepository) GetAllProdesByEventID(ctx context.Context, eventID int) ([]*prodes.ProdeCarrera, []*prodes.ProdeSession, e.ApiError) {
 	var prodesCarrera []*prodes.ProdeCarrera
 	var prodesSession []*prodes.ProdeSession
 
@@ -127,7 +127,7 @@ func (r *prodeRepository) GetAllProdesByEventID(ctx context.Context, eventID uin
 }
 
 // GetProdesByUserID obtiene todos los prodes (carrera y sesión) realizados por un usuario
-func (r *prodeRepository) GetProdesByUserID(ctx context.Context, userID uint) ([]*prodes.ProdeCarrera, []*prodes.ProdeSession, e.ApiError) {
+func (r *prodeRepository) GetProdesByUserID(ctx context.Context, userID int) ([]*prodes.ProdeCarrera, []*prodes.ProdeSession, e.ApiError) {
     var prodesCarrera []*prodes.ProdeCarrera
     var prodesSession []*prodes.ProdeSession
 
