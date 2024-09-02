@@ -15,15 +15,15 @@ type prodeRepository struct{
 type ProdeRepository interface {
 	CreateProdeCarrera(ctx context.Context, prode *prodes.ProdeCarrera) e.ApiError
 	CreateProdeSession(ctx context.Context, prode *prodes.ProdeSession) e.ApiError
-	GetProdeCarreraByID(ctx context.Context, prodeID uint) (*prodes.ProdeCarrera, e.ApiError)
-	GetProdeSessionByID(ctx context.Context, prodeID uint) (*prodes.ProdeSession, e.ApiError)
+	GetProdeCarreraByID(ctx context.Context, prodeID int) (*prodes.ProdeCarrera, e.ApiError)
+	GetProdeSessionByID(ctx context.Context, prodeID int) (*prodes.ProdeSession, e.ApiError)
 	UpdateProdeCarrera(ctx context.Context, prode *prodes.ProdeCarrera) e.ApiError
 	UpdateProdeSession(ctx context.Context, prode *prodes.ProdeSession) e.ApiError
-	DeleteProdeCarreraByID(ctx context.Context, prodeID uint, userID uint) e.ApiError
-	DeleteProdeSessionByID(ctx context.Context, prodeID uint, userID uint) e.ApiError
-	GetProdesByUserIDAndEventID(ctx context.Context, userID, eventID uint) ([]*prodes.ProdeCarrera, []*prodes.ProdeSession, e.ApiError)
-	GetAllProdesByEventID(ctx context.Context, eventID uint) ([]*prodes.ProdeCarrera, []*prodes.ProdeSession, e.ApiError)
-	GetProdesByUserID(ctx context.Context, userID uint) ([]*prodes.ProdeCarrera, []*prodes.ProdeSession, e.ApiError)
+	DeleteProdeCarreraByID(ctx context.Context, prodeID int, userID int) e.ApiError
+    DeleteProdeSessionByID(ctx context.Context, prodeID int, userID int) e.ApiError
+	GetProdesByUserIDAndEventID(ctx context.Context, userID, eventID int) ([]*prodes.ProdeCarrera, []*prodes.ProdeSession, e.ApiError)
+	GetAllProdesByEventID(ctx context.Context, eventID int) ([]*prodes.ProdeCarrera, []*prodes.ProdeSession, e.ApiError)
+	GetProdesByUserID(ctx context.Context, userID int) ([]*prodes.ProdeCarrera, []*prodes.ProdeSession, e.ApiError)
 }
 
 func NewProdeRepository(db *gorm.DB) ProdeRepository {
@@ -88,7 +88,6 @@ func (r *prodeRepository) DeleteProdeCarreraByID(ctx context.Context, prodeID in
     return nil
 }
 
-// DeleteProdeSessionByID elimina un pronóstico de sesión por su ID y verifica el userID
 func (r *prodeRepository) DeleteProdeSessionByID(ctx context.Context, prodeID int, userID int) e.ApiError {
     if err := r.db.WithContext(ctx).Where("id = ? AND user_id = ?", prodeID, userID).Delete(&prodes.ProdeSession{}).Error; err != nil {
         return e.NewInternalServerApiError("error deleting prode session by ID", err)

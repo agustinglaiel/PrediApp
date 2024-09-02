@@ -4,12 +4,14 @@ import (
 	prodes "admin/internal/dto/prodes"
 	model "admin/internal/model/prodes"
 	repository "admin/internal/repository/prodes"
+	sessions "admin/internal/service/sessions" // Importa el sessionService
 	e "admin/pkg/utils"
 	"context"
 )
 
 type prodeService struct {
 	prodeRepo repository.ProdeRepository
+	sessionService sessions.SessionServiceInterface // Inyecta el sessionService
 }
 
 type ProdeServiceInterface interface {
@@ -17,14 +19,14 @@ type ProdeServiceInterface interface {
 	CreateProdeSession(ctx context.Context, request prodes.CreateProdeSessionDTO) (prodes.ResponseProdeSessionDTO, e.ApiError)
 	UpdateProdeCarrera(ctx context.Context, request prodes.UpdateProdeCarreraDTO) (prodes.ResponseProdeCarreraDTO, e.ApiError)
 	UpdateProdeSession(ctx context.Context, request prodes.UpdateProdeSessionDTO) (prodes.ResponseProdeSessionDTO, e.ApiError)
-	DeleteProdeCarrera(ctx context.Context, prodeID int) e.ApiError
-	DeleteProdeSession(ctx context.Context, prodeID int) e.ApiError
+	DeleteProdeById(ctx context.Context, prodeID int) e.ApiError 
 	GetProdesByUserId(ctx context.Context, userID int) ([]prodes.ResponseProdeCarreraDTO, []prodes.ResponseProdeSessionDTO, e.ApiError)
 }
 
-func NewPrediService(prodeRepo repository.ProdeRepository) ProdeServiceInterface {
+func NewPrediService(prodeRepo repository.ProdeRepository, sessionService sessions.SessionServiceInterface) ProdeServiceInterface {
     return &prodeService{
-        prodeRepo: prodeRepo,
+        prodeRepo:      prodeRepo,
+        sessionService: sessionService,
     }
 }
 
@@ -182,6 +184,28 @@ func (s *prodeService) DeleteProdeSession(ctx context.Context, prodeID int) e.Ap
 	return nil
 }
 
+func (s *prodeService) DeleteProdeById(ctx context.Context, prodeID int) e.ApiError {
+    // Obtener el nombre y tipo de la sesión asociada
+    sessionType, err := s.sessionService.GetSessionNameAndTypeById(ctx, uint(prodeID))
+    if err != nil {
+        return err
+    }
+
+    if sessionType.SessionType == "Race" {
+        // Es una carrera, eliminar el prode de carrera
+        if err := s.DeleteProdeCarrera(ctx, prodeID); err != nil {
+            return err
+        }
+    } else {
+        // Es una sesión, eliminar el prode de sesión
+        if err := s.DeleteProdeSession(ctx, prodeID); err != nil {
+            return err
+        }
+    }
+
+    return nil
+}
+
 func (s *prodeService) GetProdesByUserId(ctx context.Context, userID int) ([]prodes.ResponseProdeCarreraDTO, []prodes.ResponseProdeSessionDTO, e.ApiError) {
 	carreraProdes, sessionProdes, err := s.prodeRepo.GetProdesByUserID(ctx, userID)
 	if err != nil {
@@ -220,15 +244,3 @@ func (s *prodeService) GetProdesByUserId(ctx context.Context, userID int) ([]pro
 
 	return carreraResponses, sessionResponses, nil
 }
-
-/*
-// GetSessionNameAndType retrieves the session name and session type based on the event ID.
-func (s *prodeService) GetSessionNameAndType(ctx context.Context, eventID uint) (string, string, e.ApiError) {
-	session, apiErr := s.prodeRepo.GetSessionByEventID(ctx, eventID)
-	if apiErr != nil {
-		return "", "", apiErr
-	}
-
-	return session.SessionName, session.SessionType, nil
-}
-*/
