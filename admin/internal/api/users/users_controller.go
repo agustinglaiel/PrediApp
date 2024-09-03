@@ -218,14 +218,23 @@ func (ctrl *UserController) UpdateUserRoleByID(c *gin.Context) {
         return
     }
 
-    newRole := c.PostForm("role")
-    if newRole == "" {
+    var request struct {
+        Role string `json:"role"`
+    }
+
+    if err := c.ShouldBindJSON(&request); err != nil {
+        apiErr := e.NewBadRequestApiError("invalid request")
+        c.JSON(apiErr.Status(), apiErr)
+        return
+    }
+
+    if request.Role == "" {
         apiErr := e.NewBadRequestApiError("role is required")
         c.JSON(apiErr.Status(), apiErr)
         return
     }
 
-    apiErr := ctrl.userService.UpdateUserRole(c.Request.Context(), uint(uintID), newRole)
+    apiErr := ctrl.userService.UpdateUserRole(c.Request.Context(), uint(uintID), request.Role)
     if apiErr != nil {
         c.JSON(apiErr.Status(), apiErr)
         return
@@ -233,6 +242,7 @@ func (ctrl *UserController) UpdateUserRoleByID(c *gin.Context) {
 
     c.JSON(http.StatusOK, gin.H{"message": "User role updated successfully"})
 }
+
 
 // DeactivateUserByID handles deactivating a user by their ID
 func (ctrl *UserController) DeactivateUserByID(c *gin.Context) {
