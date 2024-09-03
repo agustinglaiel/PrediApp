@@ -101,7 +101,7 @@ func (c *DriverController) ListDrivers(ctx *gin.Context) {
 }
 
 func (c *DriverController) ListDriversByTeam(ctx *gin.Context) {
-	teamName := ctx.Param("team")
+	teamName := ctx.Param("teamName")
 
 	response, apiErr := c.driversService.ListDriversByTeam(ctx.Request.Context(), teamName)
 	if apiErr != nil {
@@ -113,7 +113,7 @@ func (c *DriverController) ListDriversByTeam(ctx *gin.Context) {
 }
 
 func (c *DriverController) ListDriversByCountry(ctx *gin.Context) {
-	countryCode := ctx.Param("country")
+	countryCode := ctx.Param("countryCode")
 
 	response, apiErr := c.driversService.ListDriversByCountry(ctx.Request.Context(), countryCode)
 	if apiErr != nil {
@@ -125,7 +125,7 @@ func (c *DriverController) ListDriversByCountry(ctx *gin.Context) {
 }
 
 func (c *DriverController) ListDriversByFullName(ctx *gin.Context) {
-	fullName := ctx.Param("fullname")
+	fullName := ctx.Param("fullName")
 
 	response, apiErr := c.driversService.ListDriversByFullName(ctx.Request.Context(), fullName)
 	if apiErr != nil {
