@@ -1,19 +1,18 @@
 package api
 
-/*
 import (
 	"net/http"
 	"strconv"
 
+	dto "events/internal/dto"
+	events "events/internal/service"
 	e "events/pkg/utils"
-
-	"admin/internal/service/events"
 
 	"github.com/gin-gonic/gin"
 )
 
 type EventController struct {
-	eventService events.EventServiceInterface
+	eventService events.EventService
 }
 
 func NewEventController(eventService events.EventService) *EventController {
@@ -24,7 +23,7 @@ func NewEventController(eventService events.EventService) *EventController {
 
 // CreateEvent - Crea un nuevo evento
 func (ctrl *EventController) CreateEvent(c *gin.Context) {
-	var request events.CreateEventDTO
+	var request dto.CreateEventDTO
 	if err := c.ShouldBindJSON(&request); err != nil {
 		apiErr := e.NewBadRequestApiError("Invalid request")
 		c.JSON(apiErr.Status(), apiErr)
@@ -41,21 +40,21 @@ func (ctrl *EventController) CreateEvent(c *gin.Context) {
 }
 
 // GetEventByID - Obtiene un evento por su ID
-func (c *EventController) GetEventByID(ctx *gin.Context) {
-	idStr := ctx.Param("id")
+func (c *EventController) GetEventByID(ctrl *gin.Context) {
+	idStr := ctrl.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid event id"})
+		ctrl.JSON(http.StatusBadRequest, gin.H{"error": "invalid event id"})
 		return
 	}
 
-	session, err := c.eventService.GetSessionById(ctx.Request.Context(), id)
+	session, err := c.eventService.GetSessionById(ctrl.Request.Context(), id)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "could not retrieve session"})
+		ctrl.JSON(http.StatusInternalServerError, gin.H{"error": "could not retrieve session"})
 		return
 	}
 
-	ctx.JSON(http.StatusOK, session)
+	ctrl.JSON(http.StatusOK, session)
 }
 
 // UpdateEvent - Actualiza un evento existente
@@ -68,7 +67,7 @@ func (ctrl *EventController) UpdateEvent(c *gin.Context) {
 		return
 	}
 
-	var request events.UpdateEventDTO
+	var request dto.UpdateEventDTO
 	if err := c.ShouldBindJSON(&request); err != nil {
 		apiErr := e.NewBadRequestApiError("Invalid request")
 		c.JSON(apiErr.Status(), apiErr)
@@ -113,4 +112,3 @@ func (ctrl *EventController) ListEvents(c *gin.Context) {
 
 	c.JSON(http.StatusOK, response)
 }
-*/

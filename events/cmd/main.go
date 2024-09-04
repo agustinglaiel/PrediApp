@@ -1,10 +1,10 @@
 package main
 
 import (
-	"admin/internal/api"
-	"admin/internal/repository"
-	"admin/internal/service"
-	"admin/pkg/utils"
+	"events/internal/api"
+	"events/internal/repository"
+	"events/internal/service"
+	utils "events/pkg/utils"
 
 	"github.com/gin-gonic/gin"
 )
