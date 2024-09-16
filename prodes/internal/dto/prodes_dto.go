@@ -87,3 +87,17 @@ type UpdateProdeSessionDTO struct {
     P2         int `json:"p2"` // driver_id
     P3         int `json:"p3"` // driver_id
 }
+
+type SessionNameAndTypeDTO struct {
+	SessionName string `json:"session_name"`
+	SessionType string `json:"session_type"`
+}
+
+/*
+¿Por qué esta solución?
+Independencia de microservicios: Mantienes a prodes separado de sessions sin depender directamente de sus DTOs. 
+Cada microservicio tiene su propia lógica y estructura de datos.
+Uso de DTOs equivalentes: El cliente HTTP en prodes hace una solicitud a sessions, 
+recibe una respuesta en formato JSON, y usamos el DTO definido en prodes para deserializar esa respuesta. 
+Esto asegura que los dos servicios sigan siendo independientes.
+*/

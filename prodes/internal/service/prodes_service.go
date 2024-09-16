@@ -2,16 +2,18 @@ package service
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	client "prodes/internal/client"
 	prodes "prodes/internal/dto"
 	model "prodes/internal/model"
 	repository "prodes/internal/repository"
-	sessions "prodes/internal/service" // Importa el sessionService
 	e "prodes/pkg/utils"
 )
 
 type prodeService struct {
-	prodeRepo repository.ProdeRepository
-	sessionService sessions.SessionServiceInterface // Inyecta el sessionService
+	prodeRepo  repository.ProdeRepository
+	httpClient *client.HttpClient // Agregar el cliente HTTP
 }
 
 type ProdeServiceInterface interface {
@@ -23,20 +25,32 @@ type ProdeServiceInterface interface {
 	GetProdesByUserId(ctx context.Context, userID int) ([]prodes.ResponseProdeCarreraDTO, []prodes.ResponseProdeSessionDTO, e.ApiError)
 }
 
-func NewPrediService(prodeRepo repository.ProdeRepository, sessionService sessions.SessionServiceInterface) ProdeServiceInterface {
-    return &prodeService{
-        prodeRepo:      prodeRepo,
-        sessionService: sessionService,
-    }
+// NewProdeService crea una nueva instancia de ProdeService con inyección de dependencias
+func NewPrediService(prodeRepo repository.ProdeRepository, httpClient *client.HttpClient) ProdeServiceInterface {
+	return &prodeService{
+		prodeRepo:  prodeRepo,
+		httpClient: httpClient, // Inyectar el cliente HTTP
+	}
 }
 
 func (s *prodeService) CreateProdeCarrera(ctx context.Context, request prodes.CreateProdeCarreraDTO) (prodes.ResponseProdeCarreraDTO, e.ApiError) {
-    // Verificar el nombre de la sesión
-    sessionInfo, err := s.sessionService.GetSessionNameAndTypeById(ctx, uint(request.EventID))
+    // Hacer la llamada HTTP al microservicio de sessions para obtener el nombre y tipo de sesión
+    endpoint := fmt.Sprintf("/sessions/%d/name-type", request.EventID)
+    responseData, err := s.httpClient.Get(endpoint)
     if err != nil {
-        return prodes.ResponseProdeCarreraDTO{}, err
+        // Convertir el error estándar a ApiError utilizando la función de errores personalizada
+        return prodes.ResponseProdeCarreraDTO{}, e.NewInternalServerApiError("Error en la solicitud HTTP a sessions", err)
     }
 
+    // Parsear la respuesta JSON del microservicio de sessions
+    var sessionInfo prodes.SessionNameAndTypeDTO //Aca defini este dto y en ese archivo explico porqué!
+    err = json.Unmarshal(responseData, &sessionInfo)
+    if err != nil {
+        // Convertir el error estándar a ApiError si hay un problema al parsear la respuesta
+        return prodes.ResponseProdeCarreraDTO{}, e.NewInternalServerApiError("Error parseando respuesta de sessions", err)
+    }
+
+    // Verificar si la sesión es una carrera
     if sessionInfo.SessionName != "Race" {
         return prodes.ResponseProdeCarreraDTO{}, e.NewBadRequestApiError("La sesión asociada no es una carrera, no se puede crear un ProdeCarrera")
     }
@@ -59,7 +73,8 @@ func (s *prodeService) CreateProdeCarrera(ctx context.Context, request prodes.Cr
     // Crear el pronóstico de carrera en la base de datos
     err = s.prodeRepo.CreateProdeCarrera(ctx, &prode)
     if err != nil {
-        return prodes.ResponseProdeCarreraDTO{}, err
+        // Convertir el error estándar a ApiError al crear el prode
+        return prodes.ResponseProdeCarreraDTO{}, e.NewInternalServerApiError("Error creando el pronóstico de carrera", err)
     }
 
     // Convertir el modelo a DTO de respuesta
@@ -82,37 +97,51 @@ func (s *prodeService) CreateProdeCarrera(ctx context.Context, request prodes.Cr
 }
 
 func (s *prodeService) CreateProdeSession(ctx context.Context, request prodes.CreateProdeSessionDTO) (prodes.ResponseProdeSessionDTO, e.ApiError) {
-	// Verificar el nombre de la sesión
-    sessionInfo, err := s.sessionService.GetSessionNameAndTypeById(ctx, uint(request.EventID))
+    // Hacer la llamada HTTP al microservicio de sessions para obtener el nombre y tipo de sesión
+    endpoint := fmt.Sprintf("/sessions/%d/name-type", request.EventID)
+    responseData, err := s.httpClient.Get(endpoint)
     if err != nil {
-        return prodes.ResponseProdeSessionDTO{}, err
+        return prodes.ResponseProdeSessionDTO{}, e.NewInternalServerApiError("Error en la solicitud HTTP a sessions", err)
     }
 
+    // Parsear la respuesta JSON del microservicio de sessions
+    var sessionInfo prodes.SessionNameAndTypeDTO
+    err = json.Unmarshal(responseData, &sessionInfo)
+    if err != nil {
+        return prodes.ResponseProdeSessionDTO{}, e.NewInternalServerApiError("Error parseando respuesta de sessions", err)
+    }
+
+    // Verificar si la sesión es de tipo "Race"
     if sessionInfo.SessionType == "Race" {
         return prodes.ResponseProdeSessionDTO{}, e.NewBadRequestApiError("La sesión asociada es una carrera, no se puede crear un ProdeSession")
     }
-	
-	prode := model.ProdeSession{
-		UserID:  request.UserID,
-		EventID: request.EventID,
-		P1:      request.P1,
-		P2:      request.P2,
-		P3:      request.P3,
-	}
-	// Crear el pronóstico de sesión en la base de datos
+
+    // Convertir DTO a modelo
+    prode := model.ProdeSession{
+        UserID:  request.UserID,
+        EventID: request.EventID,
+        P1:      request.P1,
+        P2:      request.P2,
+        P3:      request.P3,
+    }
+
+    // Crear el pronóstico de sesión en la base de datos
     err = s.prodeRepo.CreateProdeSession(ctx, &prode)
     if err != nil {
-        return prodes.ResponseProdeSessionDTO{}, err
+        return prodes.ResponseProdeSessionDTO{}, e.NewInternalServerApiError("Error creando el pronóstico de sesión", err)
     }
-	response := prodes.ResponseProdeSessionDTO{
-		ID:      prode.ID,
-		UserID:  prode.UserID,
-		EventID: prode.EventID,
-		P1:      prode.P1,
-		P2:      prode.P2,
-		P3:      prode.P3,
-	}
-	return response, nil
+
+    // Convertir el modelo a DTO de respuesta
+    response := prodes.ResponseProdeSessionDTO{
+        ID:      prode.ID,
+        UserID:  prode.UserID,
+        EventID: prode.EventID,
+        P1:      prode.P1,
+        P2:      prode.P2,
+        P3:      prode.P3,
+    }
+
+    return response, nil
 }
 
 func (s *prodeService) UpdateProdeCarrera(ctx context.Context, request prodes.UpdateProdeCarreraDTO) (prodes.ResponseProdeCarreraDTO, e.ApiError) {
@@ -206,13 +235,22 @@ func (s *prodeService) DeleteProdeSession(ctx context.Context, prodeID int) e.Ap
 }
 
 func (s *prodeService) DeleteProdeById(ctx context.Context, prodeID int) e.ApiError {
-    // Obtener el nombre y tipo de la sesión asociada
-    sessionName, err := s.sessionService.GetSessionNameAndTypeById(ctx, uint(prodeID))
+    // Hacer la llamada HTTP al microservicio de sessions para obtener el nombre y tipo de sesión
+    endpoint := fmt.Sprintf("/sessions/%d/name-type", prodeID)
+    responseData, err := s.httpClient.Get(endpoint)
     if err != nil {
-        return err
+        return e.NewInternalServerApiError("Error en la solicitud HTTP a sessions", err)
     }
 
-    if sessionName.SessionName == "Race" {
+    // Parsear la respuesta JSON del microservicio de sessions
+    var sessionInfo prodes.SessionNameAndTypeDTO
+    err = json.Unmarshal(responseData, &sessionInfo)
+    if err != nil {
+        return e.NewInternalServerApiError("Error parseando respuesta de sessions", err)
+    }
+
+    // Verificar si la sesión es de tipo "Race"
+    if sessionInfo.SessionName == "Race" {
         // Es una carrera, eliminar el prode de carrera
         if err := s.DeleteProdeCarrera(ctx, prodeID); err != nil {
             return err
