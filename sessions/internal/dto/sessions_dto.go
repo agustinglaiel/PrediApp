@@ -14,21 +14,33 @@ type CreateSessionDTO struct {
     SessionName       string    `json:"session_name" binding:"required"`
     SessionType       string    `json:"session_type" binding:"required"`
     Year              int       `json:"year" binding:"required"`
+    
+    // Solo para "Race"
+    DFastLap          *int      `json:"d_fast_lap,omitempty"`  // ID del piloto con la vuelta más rápida
+    VSC               *bool     `json:"vsc,omitempty"`         // Indica si hubo Virtual Safety Car
+    SF                *bool     `json:"sf,omitempty"`          // Indica si hubo Safety Car
+    DNF               *int      `json:"dnf,omitempty"`         // Número de pilotos que no terminaron
 }
 
 type UpdateSessionDTO struct {
-    CircuitKey        int       `json:"circuit_key,omitempty"`
-    CircuitShortName  string    `json:"circuit_short_name,omitempty"`
-    CountryCode       string    `json:"country_code,omitempty"`
-    CountryKey        int       `json:"country_key,omitempty"`
-    CountryName       string    `json:"country_name,omitempty"`
-    DateStart         time.Time `json:"date_start,omitempty"`
-    DateEnd           time.Time `json:"date_end,omitempty"`
-    Location          string    `json:"location,omitempty"`
-    SessionKey        int       `json:"session_key,omitempty"`
-    SessionName       string    `json:"session_name,omitempty"`
-    SessionType       string    `json:"session_type,omitempty"`
-    Year              int       `json:"year,omitempty"`
+    CircuitKey        *int       `json:"circuit_key,omitempty"`
+    CircuitShortName  *string    `json:"circuit_short_name,omitempty"`
+    CountryCode       *string    `json:"country_code,omitempty"`
+    CountryKey        *int       `json:"country_key,omitempty"`
+    CountryName       *string    `json:"country_name,omitempty"`
+    DateStart         *time.Time `json:"date_start,omitempty"`
+    DateEnd           *time.Time `json:"date_end,omitempty"`
+    Location          *string    `json:"location,omitempty"`
+    SessionKey        *int       `json:"session_key,omitempty"`
+    SessionName       *string    `json:"session_name,omitempty"`
+    SessionType       *string    `json:"session_type,omitempty"`
+    Year              *int       `json:"year,omitempty"`
+
+    // Solo para "Race"
+    DFastLap          *int       `json:"d_fast_lap,omitempty"`
+    VSC               *bool      `json:"vsc,omitempty"`
+    SF                *bool      `json:"sf,omitempty"`
+    DNF               *int       `json:"dnf,omitempty"`
 }
 
 type ResponseSessionDTO struct {
@@ -44,6 +56,12 @@ type ResponseSessionDTO struct {
     SessionName      string    `json:"session_name"`
     SessionType      string    `json:"session_type"`
     Year             int       `json:"year"`
+
+    // Solo para "Race"
+    DFastLap         *int      `json:"d_fast_lap,omitempty"`
+    VSC              *bool     `json:"vsc,omitempty"`
+    SF               *bool     `json:"sf,omitempty"`
+    DNF              *int      `json:"dnf,omitempty"`
 }
 
 type DeleteSessionDTO struct {
