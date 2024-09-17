@@ -97,3 +97,7 @@ type LapData struct {
     LapDuration    *float64 `json:"lap_duration"`  // Tiempo de vuelta en segundos
     LapNumber      int      `json:"lap_number"`    // Número de la vuelta
 }
+
+type UpdateDNFDTO struct {
+    DNF int `json:"dnf" binding:"required"`
+}

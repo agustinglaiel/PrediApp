@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	dto "sessions/internal/dto"
-	e "sessions/pkg/utils"
 	"time"
 )
 
@@ -149,6 +148,7 @@ func (c *HttpClient) GetRaceControlData(sessionKey int) ([]dto.RaceControlEvent,
     return raceControlEvents, nil
 }
 
+/*
 // GetLapsData obtiene las vueltas de los pilotos para una sesión específica
 func (c *HttpClient) GetLapsData(sessionKey int) ([]dto.LapData, e.ApiError) {
     // Definir el endpoint para la solicitud GET de las vueltas
@@ -168,4 +168,4 @@ func (c *HttpClient) GetLapsData(sessionKey int) ([]dto.LapData, e.ApiError) {
 
     // Retornar los datos de las vueltas y nil en caso de éxito
     return lapsData, nil
-}
+}*/

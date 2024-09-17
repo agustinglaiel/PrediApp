@@ -31,7 +31,8 @@ type SessionServiceInterface interface{
 	GetAllSessions(ctx context.Context) ([]dto.ResponseSessionDTO, e.ApiError)
 	GetRaceResultsById(ctx context.Context, sessionID uint) (dto.RaceResultsDTO, e.ApiError)
 	UpdateResultSCAndVSC(ctx context.Context, sessionID uint) e.ApiError 
-	CalculateDNF(ctx context.Context, sessionID uint) e.ApiError
+	//CalculateDNF(ctx context.Context, sessionID uint) e.ApiError
+	UpdateDNFBySessionID(ctx context.Context, sessionID uint, dnf int) e.ApiError
 }
 
 func NewSessionService(sessionsRepo repository.SessionRepository, client *client.HttpClient) SessionServiceInterface{
@@ -620,16 +621,15 @@ func (s *sessionService) UpdateResultSCAndVSC(ctx context.Context, sessionID uin
         }
     }
 
-    // Actualizar la sesión con los valores de VSC y SC
-    session.VSC = &vsc
-    session.SF = &sc
-    if err := s.sessionsRepo.UpdateSessionById(ctx, session); err != nil {
-        return e.NewInternalServerApiError("Error updating session results", err)
+    // Llamar al repository para actualizar solo los campos SC y VSC
+    if err := s.sessionsRepo.UpdateSCAndVSC(ctx, sessionID, sc, vsc); err != nil {
+        return e.NewInternalServerApiError("Error updating SC and VSC in session", err)
     }
 
     return nil
 }
 
+/*
 func (s *sessionService) CalculateDNF(ctx context.Context, sessionID uint) e.ApiError {
     // Obtener la sesión de la base de datos
     session, err := s.sessionsRepo.GetSessionById(ctx, sessionID)
@@ -664,6 +664,30 @@ func (s *sessionService) CalculateDNF(ctx context.Context, sessionID uint) e.Api
     session.DNF = &totalDNF
     if err := s.sessionsRepo.UpdateSessionById(ctx, session); err != nil {
         return e.NewInternalServerApiError("Error actualizando la sesión con el valor de DNF", err)
+    }
+
+    return nil
+}
+*/
+
+func (s *sessionService) UpdateDNFBySessionID(ctx context.Context, sessionID uint, dnf int) e.ApiError {
+    // Obtener la sesión por su ID para asegurarnos que existe y que sea una carrera
+    session, apiErr := s.sessionsRepo.GetSessionById(ctx, sessionID)
+    if apiErr != nil {
+        return apiErr
+    }
+
+    // Validar que sea una sesión de tipo "Race"
+    if session.SessionName != "Race" || session.SessionType != "Race" {
+        return e.NewBadRequestApiError("La sesión no es una carrera (Race)")
+    }
+
+    // Actualizar el valor de DNF en la sesión
+    session.DNF = &dnf
+
+    // Guardar la actualización en el repositorio
+    if err := s.sessionsRepo.UpdateSessionById(ctx, session); err != nil {
+        return e.NewInternalServerApiError("Error actualizando la cantidad de DNF", err)
     }
 
     return nil

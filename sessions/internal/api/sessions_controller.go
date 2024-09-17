@@ -279,6 +279,7 @@ func (sc *SessionController) UpdateResultSCAndVSC(c *gin.Context) {
     c.Status(http.StatusOK)
 }
 
+/*
 func (sc *SessionController) CalculateDNF(c *gin.Context) {
     // Obtener el ID de la sesión desde los parámetros de la URL
     sessionID, err := ParseUintParam(c.Param("id"))
@@ -295,5 +296,32 @@ func (sc *SessionController) CalculateDNF(c *gin.Context) {
     }
 
     // Responder con un estado 200 si la actualización fue exitosa
+    c.Status(http.StatusOK)
+}
+*/
+
+func (sc *SessionController) UpdateDNF(c *gin.Context) {
+    // Obtener el ID de la sesión desde los parámetros de la URL
+    sessionID, err := ParseUintParam(c.Param("id"))
+    if err != nil {
+        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID inválido"))
+        return
+    }
+
+    // Vincular la carga útil JSON al DTO de actualización del DNF
+    var request dto.UpdateDNFDTO
+    if err := c.ShouldBindJSON(&request); err != nil {
+        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Datos inválidos"))
+        return
+    }
+
+    // Llamar al servicio para actualizar el DNF
+    apiErr := sc.sessionService.UpdateDNFBySessionID(c.Request.Context(), sessionID, request.DNF)
+    if apiErr != nil {
+        c.JSON(apiErr.Status(), apiErr)
+        return
+    }
+
+    // Responder con un estado 200 (OK) si la actualización fue exitosa
     c.Status(http.StatusOK)
 }
