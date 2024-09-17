@@ -29,6 +29,7 @@ type SessionRepository interface{
 	GetSessionBySessionKey(ctx context.Context, sessionKey int) (*model.Session, e.ApiError)
 	GetAllSessions(ctx context.Context) ([]*model.Session, e.ApiError)
 	GetSessionsByCircuitKeyAndYear(ctx context.Context, circuitKey, year int) ([]*model.Session, e.ApiError)
+	UpdateSCAndVSC(ctx context.Context, sessionID uint, sc bool, vsc bool) e.ApiError
 }
 
 func NewSessionRepository(db *gorm.DB) SessionRepository{
@@ -160,4 +161,15 @@ func (s *sessionRepository) GetSessionsByCircuitKeyAndYear(ctx context.Context, 
 		return nil, e.NewInternalServerApiError("Error obteniendo sesiones por circuito y año", err)
 	}
 	return sessions, nil
+}
+
+func (s *sessionRepository) UpdateSCAndVSC(ctx context.Context, sessionID uint, sc bool, vsc bool) e.ApiError {
+    // Actualizar solo los campos SC y VSC en la sesión
+    if err := s.db.WithContext(ctx).Model(&model.Session{}).Where("id = ?", sessionID).Updates(map[string]interface{}{
+        "sf":  sc,
+        "vsc": vsc,
+    }).Error; err != nil {
+        return e.NewInternalServerApiError("Error actualizando SC y VSC en la sesión", err)
+    }
+    return nil
 }
