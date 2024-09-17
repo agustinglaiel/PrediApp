@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	dto "sessions/internal/dto"
+	e "sessions/pkg/utils"
 	"time"
 )
 
@@ -146,4 +147,25 @@ func (c *HttpClient) GetRaceControlData(sessionKey int) ([]dto.RaceControlEvent,
     }
 
     return raceControlEvents, nil
+}
+
+// GetLapsData obtiene las vueltas de los pilotos para una sesión específica
+func (c *HttpClient) GetLapsData(sessionKey int) ([]dto.LapData, e.ApiError) {
+    // Definir el endpoint para la solicitud GET de las vueltas
+    endpoint := fmt.Sprintf("/laps?session_key=%d", sessionKey)
+
+    // Hacer la solicitud GET utilizando el cliente HTTP
+    body, err := c.Get(endpoint)
+    if err != nil {
+        return nil, e.NewInternalServerApiError("Error al obtener los datos de las vueltas", err)
+    }
+
+    // Deserializar la respuesta JSON en una estructura Go
+    var lapsData []dto.LapData
+    if err := json.Unmarshal(body, &lapsData); err != nil {
+        return nil, e.NewInternalServerApiError("Error al decodificar la respuesta de las vueltas", err)
+    }
+
+    // Retornar los datos de las vueltas y nil en caso de éxito
+    return lapsData, nil
 }

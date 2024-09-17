@@ -91,3 +91,9 @@ type RaceControlEvent struct {
     Message      string `json:"message"`
     SessionKey   int    `json:"session_key"`
 }
+
+type LapData struct {
+    DriverNumber   int      `json:"driver_number"`
+    LapDuration    *float64 `json:"lap_duration"`  // Tiempo de vuelta en segundos
+    LapNumber      int      `json:"lap_number"`    // Número de la vuelta
+}

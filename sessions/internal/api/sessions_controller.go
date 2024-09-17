@@ -259,3 +259,41 @@ func (sc *SessionController) GetAllSessions(c *gin.Context) {
 	// Responder con el listado de todas las sesiones
 	c.JSON(http.StatusOK, response)
 }
+
+func (sc *SessionController) UpdateResultSCAndVSC(c *gin.Context) {
+    // Obtener el ID de la sesión desde los parámetros de la URL
+    sessionID, err := ParseUintParam(c.Param("id"))
+    if err != nil {
+        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID inválido"))
+        return
+    }
+
+    // Llamar al servicio para actualizar los resultados de SC y VSC
+    apiErr := sc.sessionService.UpdateResultSCAndVSC(c.Request.Context(), sessionID)
+    if apiErr != nil {
+        c.JSON(apiErr.Status(), apiErr)
+        return
+    }
+
+    // Responder con un estado 200 (OK) si la actualización fue exitosa
+    c.Status(http.StatusOK)
+}
+
+func (sc *SessionController) CalculateDNF(c *gin.Context) {
+    // Obtener el ID de la sesión desde los parámetros de la URL
+    sessionID, err := ParseUintParam(c.Param("id"))
+    if err != nil {
+        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID inválido"))
+        return
+    }
+
+    // Llamar al servicio para calcular los DNF
+    apiErr := sc.sessionService.CalculateDNF(c.Request.Context(), sessionID)
+    if apiErr != nil {
+        c.JSON(apiErr.Status(), apiErr)
+        return
+    }
+
+    // Responder con un estado 200 si la actualización fue exitosa
+    c.Status(http.StatusOK)
+}

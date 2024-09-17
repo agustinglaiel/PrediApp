@@ -30,6 +30,9 @@ func MapUrls(engine *gin.Engine, sessionController *api.SessionController) {
 	engine.GET("/sessions/name-type", sessionController.FindSessionsByNameAndType)
 	engine.GET("/sessions/:id/name-type", sessionController.GetSessionNameAndTypeById)
 	engine.GET("/sessions", sessionController.GetAllSessions)
+	engine.PUT("/sessions/:id/scvsc", sessionController.UpdateResultSCAndVSC)
+	engine.PUT("/sessions/:id/dnf", sessionController.CalculateDNF)
+
 
 	// Debugging purpose
 	engine.GET("/ping", func(c *gin.Context) {
