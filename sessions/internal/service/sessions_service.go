@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"sessions/internal/client"
 	dto "sessions/internal/dto"
 	model "sessions/internal/model"
 	repository "sessions/internal/repository"
@@ -10,8 +11,9 @@ import (
 	"time"
 )
 
-type sessionService struct{
-	sessionsRepo repository.SessionRepository
+type sessionService struct {
+    sessionsRepo repository.SessionRepository
+    client       *client.HttpClient  // Agregar el cliente HTTP
 }
 
 type SessionServiceInterface interface{
@@ -27,11 +29,13 @@ type SessionServiceInterface interface{
 	ListSessionsBetweenDates(ctx context.Context, startDate time.Time, endDate time.Time) ([]dto.ResponseSessionDTO, e.ApiError)
 	FindSessionsByNameAndType(ctx context.Context, sessionName string, sessionType string) ([]dto.ResponseSessionDTO, e.ApiError)
 	GetAllSessions(ctx context.Context) ([]dto.ResponseSessionDTO, e.ApiError)
+	GetRaceResultsById(ctx context.Context, sessionID uint) (dto.RaceResultsDTO, e.ApiError)
 }
 
-func NewSessionService(sessionsRepo repository.SessionRepository) SessionServiceInterface{
+func NewSessionService(sessionsRepo repository.SessionRepository, client *client.HttpClient) SessionServiceInterface{
 	return &sessionService{
 		sessionsRepo: sessionsRepo,
+		client:       client,  // Pasar el cliente HTTP
 	}
 }
 
@@ -564,4 +568,62 @@ func (s *sessionService) GetAllSessions(ctx context.Context) ([]dto.ResponseSess
 	}
 
 	return response, nil
+}
+
+func (s *sessionService) GetRaceResultsById(ctx context.Context, sessionID uint) (dto.RaceResultsDTO, e.ApiError) {
+    // Obtener la sesión por ID
+    session, apiErr := s.sessionsRepo.GetSessionById(ctx, sessionID)
+    if apiErr != nil {
+        return dto.RaceResultsDTO{}, apiErr
+    }
+
+    // Validar que la sesión sea de tipo "Race"
+    if session.SessionType != "Race" || session.SessionName != "Race" {
+        return dto.RaceResultsDTO{}, e.NewBadRequestApiError("Solo las sesiones de tipo 'Race' tienen resultados de carrera")
+    }
+
+    // Construir y devolver el DTO de resultados de carrera
+    response := dto.RaceResultsDTO{
+        DNF:          session.DNF,
+        VSC:          session.VSC,
+        SF:           session.SF,
+        DFastLap:     session.DFastLap,
+    }
+
+    return response, nil
+}
+
+func (s *sessionService) UpdateResultSCAndVSC(ctx context.Context, sessionID uint) e.ApiError {
+    // Obtener la sesión por su ID para tener el SessionKey
+    session, apiErr := s.sessionsRepo.GetSessionById(ctx, sessionID)
+    if apiErr != nil {
+        return apiErr
+    }
+
+    // Usar el SessionKey para hacer la llamada a la API externa
+    raceControlData, err := s.client.GetRaceControlData(session.SessionKey)
+    if err != nil {
+        return e.NewInternalServerApiError("Error fetching race control data", err)
+    }
+
+    // Procesar los datos de control de carrera para actualizar VSC y SC
+    var vsc, sc bool
+    for _, event := range raceControlData {
+        if event.Category == "SafetyCar" {
+            if event.Message == "VIRTUAL SAFETY CAR DEPLOYED" {
+                vsc = true
+            } else if event.Message == "SAFETY CAR DEPLOYED" {
+                sc = true
+            }
+        }
+    }
+
+    // Actualizar la sesión con los valores de VSC y SC
+    session.VSC = &vsc
+    session.SF = &sc
+    if err := s.sessionsRepo.UpdateSessionById(ctx, session); err != nil {
+        return e.NewInternalServerApiError("Error updating session results", err)
+    }
+
+    return nil
 }

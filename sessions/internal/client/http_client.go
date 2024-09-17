@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	dto "sessions/internal/dto"
 	"time"
 )
 
@@ -125,4 +126,24 @@ func (c *HttpClient) Delete(endpoint string) error {
 	}
 
 	return nil
+}
+
+// GetRaceControlData realiza una solicitud GET para obtener los datos de control de carrera (VSC/SC) de la API externa
+func (c *HttpClient) GetRaceControlData(sessionKey int) ([]dto.RaceControlEvent, error) {
+    // Definir el endpoint para la solicitud GET
+    endpoint := fmt.Sprintf("/race_control?session_key=%d", sessionKey)
+
+    // Hacer la solicitud GET utilizando el cliente HTTP
+    body, err := c.Get(endpoint)
+    if err != nil {
+        return nil, fmt.Errorf("error fetching race control data: %w", err)
+    }
+
+    // Deserializar la respuesta JSON en una estructura Go
+    var raceControlEvents []dto.RaceControlEvent
+    if err := json.Unmarshal(body, &raceControlEvents); err != nil {
+        return nil, fmt.Errorf("error decoding race control response: %w", err)
+    }
+
+    return raceControlEvents, nil
 }

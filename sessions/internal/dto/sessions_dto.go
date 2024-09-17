@@ -72,3 +72,22 @@ type SessionNameAndTypeDTO struct {
 	SessionName string `json:"session_name"`
 	SessionType string `json:"session_type"`
 }
+
+type RaceResultsDTO struct {
+    DNF          *int  `json:"dnf,omitempty"`
+    VSC          *bool `json:"vsc,omitempty"`
+    SF           *bool `json:"sf,omitempty"`
+    DFastLap     *int  `json:"d_fast_lap,omitempty"`
+}
+
+// RaceControlEvent representa un evento de control de carrera como SC, VSC o banderas
+type RaceControlEvent struct {
+    Category     string `json:"category"`
+    Date         string `json:"date"`
+    DriverNumber *int   `json:"driver_number,omitempty"`
+    Flag         string `json:"flag,omitempty"`
+    LapNumber    *int   `json:"lap_number,omitempty"`
+    MeetingKey   int    `json:"meeting_key"`
+    Message      string `json:"message"`
+    SessionKey   int    `json:"session_key"`
+}
