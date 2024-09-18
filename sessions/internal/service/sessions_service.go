@@ -7,6 +7,7 @@ import (
 	dto "sessions/internal/dto"
 	model "sessions/internal/model"
 	repository "sessions/internal/repository"
+	"sessions/pkg/utils"
 	e "sessions/pkg/utils"
 	"time"
 )
@@ -33,6 +34,7 @@ type SessionServiceInterface interface{
 	UpdateResultSCAndVSC(ctx context.Context, sessionID uint) e.ApiError 
 	//CalculateDNF(ctx context.Context, sessionID uint) e.ApiError
 	UpdateDNFBySessionID(ctx context.Context, sessionID uint, dnf int) e.ApiError
+	UpdateSessionKey(ctx context.Context, sessionID uint, location, sessionName, sessionType string, year int) utils.ApiError
 }
 
 func NewSessionService(sessionsRepo repository.SessionRepository, client *client.HttpClient) SessionServiceInterface{
@@ -43,11 +45,13 @@ func NewSessionService(sessionsRepo repository.SessionRepository, client *client
 }
 
 func (s *sessionService) CreateSession(ctx context.Context, request dto.CreateSessionDTO) (dto.ResponseSessionDTO, e.ApiError) {
-    // Validar que session_key sea único
+    /* ESTO LO ELIMINO PORQUE DEJAMOS DE PASAR EL SESSION_KEY SINO QUE AHORA LO OBTENEMOS A PARTIR DE LA API
+	// Validar que session_key sea único
     existingSession, _ := s.sessionsRepo.GetSessionBySessionKey(ctx, request.SessionKey)
     if existingSession != nil {
         return dto.ResponseSessionDTO{}, e.NewBadRequestApiError("session_key ya está en uso")
     }
+	*/
 
     // Validar que la combinación de session_name y session_type sea válida
     validCombinations := map[string]string{
@@ -98,7 +102,7 @@ func (s *sessionService) CreateSession(ctx context.Context, request dto.CreateSe
         DateStart:         request.DateStart,
         DateEnd:           request.DateEnd,
         Location:          request.Location,
-        SessionKey:        request.SessionKey,
+        SessionKey:        nil,
         SessionName:       request.SessionName,
         SessionType:       request.SessionType,
         Year:              request.Year,
@@ -245,7 +249,7 @@ func (s *sessionService) UpdateSessionById(ctx context.Context, sessionID uint, 
         session.Location = *request.Location
     }
     if request.SessionKey != nil {
-        session.SessionKey = *request.SessionKey
+        session.SessionKey = request.SessionKey
     }
     if request.SessionName != nil {
         session.SessionName = *request.SessionName
@@ -603,11 +607,16 @@ func (s *sessionService) UpdateResultSCAndVSC(ctx context.Context, sessionID uin
         return apiErr
     }
 
+	fmt.Printf("Session Key: %v\n", session.SessionKey)
+
     // Usar el SessionKey para hacer la llamada a la API externa
     raceControlData, err := s.client.GetRaceControlData(session.SessionKey)
     if err != nil {
         return e.NewInternalServerApiError("Error fetching race control data", err)
     }
+
+	// Depurar los datos de control de carrera
+	//fmt.Printf("Race Control Data: %+v\n", raceControlData)
 
     // Procesar los datos de control de carrera para actualizar VSC y SC
     var vsc, sc bool
@@ -621,7 +630,10 @@ func (s *sessionService) UpdateResultSCAndVSC(ctx context.Context, sessionID uin
         }
     }
 
+	fmt.Printf("VSC: %t, SC: %t\n", vsc, sc)
+
     // Llamar al repository para actualizar solo los campos SC y VSC
+	//fmt.Printf("Actualizando SC: %t, VSC: %t para la session ID: %d\n", sc, vsc, sessionID)
     if err := s.sessionsRepo.UpdateSCAndVSC(ctx, sessionID, sc, vsc); err != nil {
         return e.NewInternalServerApiError("Error updating SC and VSC in session", err)
     }
@@ -691,4 +703,29 @@ func (s *sessionService) UpdateDNFBySessionID(ctx context.Context, sessionID uin
     }
 
     return nil
+}
+
+func (s *sessionService) UpdateSessionKey(ctx context.Context, sessionID uint, location, sessionName, sessionType string, year int) utils.ApiError {
+	// Obtener el session_key desde la API externa usando el cliente HTTP
+	sessionKey, err := s.client.GetSessionKey(location, sessionName, sessionType, year)
+	if err != nil {
+		return utils.NewInternalServerApiError("Error fetching session key", err)
+	}
+
+	// Si se encontró un session_key, actualizar la sesión en la base de datos
+	if sessionKey != nil {
+		// Obtener la sesión actual
+		session, apiErr := s.sessionsRepo.GetSessionById(ctx, sessionID)
+		if apiErr != nil {
+			return apiErr
+		}
+
+		// Actualizar el session_key de la sesión
+		session.SessionKey = sessionKey
+		if apiErr := s.sessionsRepo.UpdateSessionKey(ctx, session); apiErr != nil {
+			return apiErr
+		}
+	}
+
+	return nil
 }

@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	dto "sessions/internal/dto"
+	"sessions/pkg/utils"
 	"time"
 )
 
@@ -129,9 +130,9 @@ func (c *HttpClient) Delete(endpoint string) error {
 }
 
 // GetRaceControlData realiza una solicitud GET para obtener los datos de control de carrera (VSC/SC) de la API externa
-func (c *HttpClient) GetRaceControlData(sessionKey int) ([]dto.RaceControlEvent, error) {
+func (c *HttpClient) GetRaceControlData(sessionKey *int) ([]dto.RaceControlEvent, error) {
     // Definir el endpoint para la solicitud GET
-    endpoint := fmt.Sprintf("/race_control?session_key=%d", sessionKey)
+    endpoint := fmt.Sprintf("race_control?session_key=%d", *sessionKey)
 
     // Hacer la solicitud GET utilizando el cliente HTTP
     body, err := c.Get(endpoint)
@@ -169,3 +170,30 @@ func (c *HttpClient) GetLapsData(sessionKey int) ([]dto.LapData, e.ApiError) {
     // Retornar los datos de las vueltas y nil en caso de éxito
     return lapsData, nil
 }*/
+
+//Esta función la usamos para obtener el session_key de una session para luego poder hacer el update de sc y vsc
+// GetSessionKey obtiene el session_key basado en location, session_name, session_type, y year
+func (c *HttpClient) GetSessionKey(location string, sessionName string, sessionType string, year int) (*int, utils.ApiError) {
+	// Definir el endpoint con los parámetros
+	endpoint := fmt.Sprintf("/sessions?location=%s&session_name=%s&session_type=%s&year=%d", location, sessionName, sessionType, year)
+
+	// Hacer la solicitud GET
+	body, err := c.Get(endpoint)
+	if err != nil {
+		return nil, utils.NewInternalServerApiError("Error fetching session data", err)
+	}
+
+	// Deserializar la respuesta JSON como un array de SessionKeyResponseDTO
+	var response []dto.SessionKeyResponseDTO
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, utils.NewInternalServerApiError("Error decoding session key response", err)
+	}
+
+	// Verificar si el array tiene al menos un resultado y si el session_key está presente
+	if len(response) == 0 || response[0].SessionKey == nil {
+		return nil, utils.NewNotFoundApiError("Session key not found for the given parameters")
+	}
+
+	// Retornar el session_key del primer resultado (suponiendo que el primer resultado es el correcto)
+	return response[0].SessionKey, nil
+}

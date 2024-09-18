@@ -30,6 +30,7 @@ type SessionRepository interface{
 	GetAllSessions(ctx context.Context) ([]*model.Session, e.ApiError)
 	GetSessionsByCircuitKeyAndYear(ctx context.Context, circuitKey, year int) ([]*model.Session, e.ApiError)
 	UpdateSCAndVSC(ctx context.Context, sessionID uint, sc bool, vsc bool) e.ApiError
+	UpdateSessionKey(ctx context.Context, session *model.Session) e.ApiError
 }
 
 func NewSessionRepository(db *gorm.DB) SessionRepository{
@@ -172,4 +173,12 @@ func (s *sessionRepository) UpdateSCAndVSC(ctx context.Context, sessionID uint, 
         return e.NewInternalServerApiError("Error actualizando SC y VSC en la sesión", err)
     }
     return nil
+}
+
+func (s *sessionRepository) UpdateSessionKey(ctx context.Context, session *model.Session) e.ApiError {
+	// Actualizar el campo session_key de la sesión
+	if err := s.db.WithContext(ctx).Model(&model.Session{}).Where("id = ?", session.ID).Update("session_key", session.SessionKey).Error; err != nil {
+		return e.NewInternalServerApiError("Error actualizando el session_key en la base de datos", err)
+	}
+	return nil
 }

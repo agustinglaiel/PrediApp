@@ -15,7 +15,7 @@ type Session struct {
 	CountryKey       int            `json:"country_key"`          // Clave única del país
 	CountryName      string         `json:"country_name"`         // Nombre del país
 	Location         string         `json:"location"`             // Ubicación del circuito
-	SessionKey       int            `json:"session_key"`          // Clave única de la sesión
+	SessionKey       *int           `json:"session_key"`          // Clave única de la sesión
 	SessionName      string         `json:"session_name"`         // Nombre de la sesión (por ejemplo, Carrera, Qualy, Práctica)
 	SessionType      string         `json:"session_type"`         // Tipo de sesión (por ejemplo, Carrera, Práctica)
 	DateStart        time.Time      `json:"date_start"`           // Fecha y hora de inicio de la sesión

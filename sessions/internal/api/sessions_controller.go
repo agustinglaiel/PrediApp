@@ -325,3 +325,29 @@ func (sc *SessionController) UpdateDNF(c *gin.Context) {
     // Responder con un estado 200 (OK) si la actualización fue exitosa
     c.Status(http.StatusOK)
 }
+
+func (sc *SessionController) UpdateSessionKey(c *gin.Context) {
+    // Obtener el ID de la sesión desde los parámetros de la URL
+    sessionID, err := ParseUintParam(c.Param("id"))
+    if err != nil {
+        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID inválido"))
+        return
+    }
+
+    // Bindear los datos del cuerpo de la solicitud a un DTO
+    var request dto.UpdateSessionKeyDTO
+    if err := c.ShouldBindJSON(&request); err != nil {
+        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Datos inválidos"))
+        return
+    }
+
+    // Llamar al servicio para actualizar el session_key
+    apiErr := sc.sessionService.UpdateSessionKey(c.Request.Context(), sessionID, request.Location, request.SessionName, request.SessionType, request.Year)
+    if apiErr != nil {
+        c.JSON(apiErr.Status(), apiErr)
+        return
+    }
+
+    // Responder con un estado 200 (OK) si la actualización fue exitosa
+    c.Status(http.StatusOK)
+}

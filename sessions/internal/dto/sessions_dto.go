@@ -10,7 +10,7 @@ type CreateSessionDTO struct {
     DateStart         time.Time `json:"date_start" binding:"required"`
     DateEnd           time.Time `json:"date_end" binding:"required"`
     Location          string    `json:"location" binding:"required"`
-    SessionKey        int       `json:"session_key" binding:"required"`
+    SessionKey        *int      `json:"session_key"`
     SessionName       string    `json:"session_name" binding:"required"`
     SessionType       string    `json:"session_type" binding:"required"`
     Year              int       `json:"year" binding:"required"`
@@ -52,7 +52,7 @@ type ResponseSessionDTO struct {
     DateStart        time.Time `json:"date_start"`
     DateEnd          time.Time `json:"date_end"`
     Location         string    `json:"location"`
-    SessionKey       int       `json:"session_key"`  // Identificador lógico o de negocio
+    SessionKey       *int      `json:"session_key"`  // Identificador lógico o de negocio
     SessionName      string    `json:"session_name"`
     SessionType      string    `json:"session_type"`
     Year             int       `json:"year"`
@@ -100,4 +100,16 @@ type LapData struct {
 
 type UpdateDNFDTO struct {
     DNF int `json:"dnf" binding:"required"`
+}
+
+// SessionKeyResponseDTO representa la respuesta que incluye el session_key
+type SessionKeyResponseDTO struct {
+	SessionKey *int `json:"session_key"`
+}
+
+type UpdateSessionKeyDTO struct {
+    Location    string `json:"location" binding:"required"`
+    SessionName string `json:"session_name" binding:"required"`
+    SessionType string `json:"session_type" binding:"required"`
+    Year        int    `json:"year" binding:"required"`
 }

@@ -1,27 +1,46 @@
 package main
 
-/*
 import (
+	"fmt"
+	"log"
+	"sessions/internal/api"
 	"sessions/internal/client"
 	"sessions/internal/repository"
+	"sessions/internal/router"
 	"sessions/internal/service"
 	"sessions/pkg/utils"
+
+	"github.com/gin-gonic/gin"
 )
 
-
 func main() {
-	// Inicializar la base de datos
-	db, err := utils.InitDB()
-	if err != nil {
-		panic(err)
-	}
+	// Initialize database
+    db, err := utils.InitDB()
+    if err != nil {
+        fmt.Println("Error al conectar con la Base de Datos")
+        panic(err)
+    }
+    defer utils.DisconnectDB()
 
-	// Crear el cliente HTTP para la API externa
-	httpClient := client.NewHttpClient("http://api.openf1.org") // Cambia la base URL según sea necesario
+    // Start the database engine to migrate tables
+    utils.StartDbEngine()
 
-	// Crear repositorio y servicio
+	// Crear el cliente HTTP para interactuar con la API externa
+	externalAPIClient := client.NewHttpClient("https://api.openf1.org/v1/")
+
+	// Initialize repositories and services
 	sessionRepo := repository.NewSessionRepository(db)
-	sessionService := service.NewSessionService(sessionRepo, httpClient)
+	sessionService := service.NewSessionService(sessionRepo, externalAPIClient)
+	sessionController := api.NewSessionController(sessionService)
 
-	// Aquí puedes seguir con el resto del código de inicialización
-}*/
+	// Set up router
+    ginRouter := gin.Default()
+
+    // Map URLs
+    router.MapUrls(ginRouter, sessionController)
+
+	// Start server
+    if err := ginRouter.Run(":8060"); err != nil {
+        log.Fatalf("Failed to run server: %v", err)
+    }
+}
