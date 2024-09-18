@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"prodes/internal/api"
 	client "prodes/internal/client"
 	"prodes/internal/repository"
@@ -12,14 +13,19 @@ import (
 )
 
 func main() {
-	// Inicializar la base de datos
-	db, err := utils.InitDB()
-	if err != nil {
-		panic(err)
-	}
+	// Initialize database
+    db, err := utils.InitDB()
+    if err != nil {
+        fmt.Println("Error al conectar con la Base de Datos")
+        panic(err)
+    }
+    defer utils.DisconnectDB()
+
+    // Start the database engine to migrate tables
+    utils.StartDbEngine()
 
 	// Inicializar el cliente HTTP para comunicarte con el microservicio de sessions
-	httpClient := client.NewHttpClient("http://sessions-service-url")
+	httpClient := client.NewHttpClient("http://localhost:8060/sessions")
 
 	// Inicializar repositorios y servicios
 	prodeRepo := repository.NewProdeRepository(db)
@@ -35,7 +41,7 @@ func main() {
 	router.MapUrls(r, prodeController)  // Llama a la función de enrutamiento
 
 	// Iniciar el servidor
-	if err := r.Run(":8080"); err != nil {
+	if err := r.Run(":8081"); err != nil {
 		panic(err)
 	}
 }

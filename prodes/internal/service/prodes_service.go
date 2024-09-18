@@ -34,25 +34,15 @@ func NewPrediService(prodeRepo repository.ProdeRepository, httpClient *client.Ht
 }
 
 func (s *prodeService) CreateProdeCarrera(ctx context.Context, request prodes.CreateProdeCarreraDTO) (prodes.ResponseProdeCarreraDTO, e.ApiError) {
-    // Hacer la llamada HTTP al microservicio de sessions para obtener el nombre y tipo de sesión
-    endpoint := fmt.Sprintf("/sessions/%d/name-type", request.EventID)
-    responseData, err := s.httpClient.Get(endpoint)
+    // Llamar al cliente HTTP para obtener el nombre y tipo de sesión
+    sessionInfo, err := s.httpClient.GetSessionNameAndType(request.EventID)
     if err != nil {
-        // Convertir el error estándar a ApiError utilizando la función de errores personalizada
-        return prodes.ResponseProdeCarreraDTO{}, e.NewInternalServerApiError("Error en la solicitud HTTP a sessions", err)
+        return prodes.ResponseProdeCarreraDTO{}, e.NewInternalServerApiError("Error fetching session name and type from sessions service", err)
     }
 
-    // Parsear la respuesta JSON del microservicio de sessions
-    var sessionInfo prodes.SessionNameAndTypeDTO //Aca defini este dto y en ese archivo explico porqué!
-    err = json.Unmarshal(responseData, &sessionInfo)
-    if err != nil {
-        // Convertir el error estándar a ApiError si hay un problema al parsear la respuesta
-        return prodes.ResponseProdeCarreraDTO{}, e.NewInternalServerApiError("Error parseando respuesta de sessions", err)
-    }
-
-    // Verificar si la sesión es una carrera
-    if sessionInfo.SessionName != "Race" {
-        return prodes.ResponseProdeCarreraDTO{}, e.NewBadRequestApiError("La sesión asociada no es una carrera, no se puede crear un ProdeCarrera")
+    // Validar tanto el session_name como el session_type
+    if sessionInfo.SessionName != "Race" || sessionInfo.SessionType != "Race" {
+        return prodes.ResponseProdeCarreraDTO{}, e.NewBadRequestApiError("La sesión asociada no es una carrera válida (Race), no se puede crear un ProdeCarrera")
     }
 
     // Convertir DTO a modelo

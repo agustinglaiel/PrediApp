@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	dto "prodes/internal/dto"
 	"time"
 )
 
@@ -125,4 +126,24 @@ func (c *HttpClient) Delete(endpoint string) error {
 	}
 
 	return nil
+}
+
+// GetSessionNameAndType realiza una solicitud GET para obtener el nombre y tipo de una sesión desde el microservicio de sessions
+func (c *HttpClient) GetSessionNameAndType(eventID int) (dto.SessionNameAndTypeDTO, error) {
+    // Definir el endpoint para la solicitud GET
+    endpoint := fmt.Sprintf("/sessions/%d/name-type", eventID)
+
+    // Hacer la solicitud GET utilizando el cliente HTTP
+    body, err := c.Get(endpoint)
+    if err != nil {
+        return dto.SessionNameAndTypeDTO{}, fmt.Errorf("error fetching session name and type: %w", err)
+    }
+
+    // Deserializar la respuesta JSON en una estructura Go
+    var sessionNameAndType dto.SessionNameAndTypeDTO
+    if err := json.Unmarshal(body, &sessionNameAndType); err != nil {
+        return dto.SessionNameAndTypeDTO{}, fmt.Errorf("error decoding session name and type response: %w", err)
+    }
+
+    return sessionNameAndType, nil
 }

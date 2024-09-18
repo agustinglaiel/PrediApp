@@ -640,47 +640,6 @@ func (s *sessionService) UpdateResultSCAndVSC(ctx context.Context, sessionID uin
     return nil
 }
 
-/*
-func (s *sessionService) CalculateDNF(ctx context.Context, sessionID uint) e.ApiError {
-    // Obtener la sesión de la base de datos
-    session, err := s.sessionsRepo.GetSessionById(ctx, sessionID)
-    if err != nil {
-        return err
-    }
-
-    // Validar que sea una sesión de tipo "Race"
-    if session.SessionType != "Race" || session.SessionName != "Race" {
-        return e.NewBadRequestApiError("Esta sesión no es de tipo 'Race'")
-    }
-
-    // Obtener el session_key (clave única) para la API externa
-    sessionKey := session.SessionKey
-
-    // Obtener las vueltas de todos los pilotos para la sesión a través del cliente HTTP
-    lapsData, err := s.client.GetLapsData(sessionKey)
-    if err != nil {
-        return e.NewInternalServerApiError("Error obteniendo los datos de las vueltas", err)  // Adaptamos el error
-    }
-
-    // Lógica para calcular cuántos pilotos no completaron la carrera (DNF)
-    totalDNF := 0
-    for _, lap := range lapsData {
-        // Si el tiempo de vuelta es nulo o cero, se considera que el piloto no terminó
-        if lap.LapDuration == nil || *lap.LapDuration == 0 {  // Corregimos la comparación
-            totalDNF++
-        }
-    }
-
-    // Actualizar el campo DNF de la sesión con el valor calculado
-    session.DNF = &totalDNF
-    if err := s.sessionsRepo.UpdateSessionById(ctx, session); err != nil {
-        return e.NewInternalServerApiError("Error actualizando la sesión con el valor de DNF", err)
-    }
-
-    return nil
-}
-*/
-
 func (s *sessionService) UpdateDNFBySessionID(ctx context.Context, sessionID uint, dnf int) e.ApiError {
     // Obtener la sesión por su ID para asegurarnos que existe y que sea una carrera
     session, apiErr := s.sessionsRepo.GetSessionById(ctx, sessionID)
@@ -728,3 +687,44 @@ func (s *sessionService) UpdateSessionKey(ctx context.Context, sessionID uint, l
 
 	return nil
 }
+
+/*
+func (s *sessionService) CalculateDNF(ctx context.Context, sessionID uint) e.ApiError {
+    // Obtener la sesión de la base de datos
+    session, err := s.sessionsRepo.GetSessionById(ctx, sessionID)
+    if err != nil {
+        return err
+    }
+
+    // Validar que sea una sesión de tipo "Race"
+    if session.SessionType != "Race" || session.SessionName != "Race" {
+        return e.NewBadRequestApiError("Esta sesión no es de tipo 'Race'")
+    }
+
+    // Obtener el session_key (clave única) para la API externa
+    sessionKey := session.SessionKey
+
+    // Obtener las vueltas de todos los pilotos para la sesión a través del cliente HTTP
+    lapsData, err := s.client.GetLapsData(sessionKey)
+    if err != nil {
+        return e.NewInternalServerApiError("Error obteniendo los datos de las vueltas", err)  // Adaptamos el error
+    }
+
+    // Lógica para calcular cuántos pilotos no completaron la carrera (DNF)
+    totalDNF := 0
+    for _, lap := range lapsData {
+        // Si el tiempo de vuelta es nulo o cero, se considera que el piloto no terminó
+        if lap.LapDuration == nil || *lap.LapDuration == 0 {  // Corregimos la comparación
+            totalDNF++
+        }
+    }
+
+    // Actualizar el campo DNF de la sesión con el valor calculado
+    session.DNF = &totalDNF
+    if err := s.sessionsRepo.UpdateSessionById(ctx, session); err != nil {
+        return e.NewInternalServerApiError("Error actualizando la sesión con el valor de DNF", err)
+    }
+
+    return nil
+}
+*/
