@@ -7,7 +7,6 @@ import (
 	dto "sessions/internal/dto"
 	model "sessions/internal/model"
 	repository "sessions/internal/repository"
-	"sessions/pkg/utils"
 	e "sessions/pkg/utils"
 	"time"
 )
@@ -34,7 +33,7 @@ type SessionServiceInterface interface{
 	UpdateResultSCAndVSC(ctx context.Context, sessionID uint) e.ApiError 
 	//CalculateDNF(ctx context.Context, sessionID uint) e.ApiError
 	UpdateDNFBySessionID(ctx context.Context, sessionID uint, dnf int) e.ApiError
-	UpdateSessionKey(ctx context.Context, sessionID uint, location, sessionName, sessionType string, year int) utils.ApiError
+	UpdateSessionKey(ctx context.Context, sessionID uint, location, sessionName, sessionType string, year int) e.ApiError
 }
 
 func NewSessionService(sessionsRepo repository.SessionRepository, client *client.HttpClient) SessionServiceInterface{
@@ -705,11 +704,11 @@ func (s *sessionService) UpdateDNFBySessionID(ctx context.Context, sessionID uin
     return nil
 }
 
-func (s *sessionService) UpdateSessionKey(ctx context.Context, sessionID uint, location, sessionName, sessionType string, year int) utils.ApiError {
+func (s *sessionService) UpdateSessionKey(ctx context.Context, sessionID uint, location, sessionName, sessionType string, year int) e.ApiError {
 	// Obtener el session_key desde la API externa usando el cliente HTTP
 	sessionKey, err := s.client.GetSessionKey(location, sessionName, sessionType, year)
 	if err != nil {
-		return utils.NewInternalServerApiError("Error fetching session key", err)
+		return e.NewInternalServerApiError("Error fetching session key", err)
 	}
 
 	// Si se encontró un session_key, actualizar la sesión en la base de datos
