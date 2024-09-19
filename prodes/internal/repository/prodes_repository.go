@@ -46,23 +46,29 @@ func (r *prodeRepository) CreateProdeSession(ctx context.Context, prode *prodes.
 
 func (r *prodeRepository) GetProdeCarreraByID(ctx context.Context, prodeID int) (*prodes.ProdeCarrera, e.ApiError) {
 	var prode prodes.ProdeCarrera
-	if err := r.db.WithContext(ctx).First(&prode, prodeID).Error; err != nil {
+
+	// Usar Preload para cargar la información de la sesión relacionada
+	if err := r.db.WithContext(ctx).Preload("Session").First(&prode, prodeID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, e.NewNotFoundApiError("prode carrera not found")
 		}
 		return nil, e.NewInternalServerApiError("error finding prode carrera", err)
 	}
+
 	return &prode, nil
 }
 
 func (r *prodeRepository) GetProdeSessionByID(ctx context.Context, prodeID int) (*prodes.ProdeSession, e.ApiError) {
 	var prode prodes.ProdeSession
-	if err := r.db.WithContext(ctx).First(&prode, prodeID).Error; err != nil {
+
+	// Usar Preload para cargar la información de la sesión relacionada
+	if err := r.db.WithContext(ctx).Preload("Session").First(&prode, prodeID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, e.NewNotFoundApiError("prode session not found")
 		}
 		return nil, e.NewInternalServerApiError("error finding prode session", err)
 	}
+
 	return &prode, nil
 }
 
@@ -109,11 +115,12 @@ func (r *prodeRepository) GetProdesByUserIDAndSessionID(ctx context.Context, use
 	var prodesCarrera []*prodes.ProdeCarrera
 	var prodesSession []*prodes.ProdeSession
 
-	if err := r.db.WithContext(ctx).Where("user_id = ? AND event_id = ?", userID, sessionId).Find(&prodesCarrera).Error; err != nil {
+	// Usar Preload para cargar la información de la sesión relacionada
+	if err := r.db.WithContext(ctx).Preload("Session").Where("user_id = ? AND session_id = ?", userID, sessionId).Find(&prodesCarrera).Error; err != nil {
 		return nil, nil, e.NewInternalServerApiError("error finding prodes carrera", err)
 	}
 
-	if err := r.db.WithContext(ctx).Where("user_id = ? AND event_id = ?", userID, sessionId).Find(&prodesSession).Error; err != nil {
+	if err := r.db.WithContext(ctx).Preload("Session").Where("user_id = ? AND session_id = ?", userID, sessionId).Find(&prodesSession).Error; err != nil {
 		return nil, nil, e.NewInternalServerApiError("error finding prodes session", err)
 	}
 
@@ -124,11 +131,12 @@ func (r *prodeRepository) GetAllProdesBySessionID(ctx context.Context, sessionId
 	var prodesCarrera []*prodes.ProdeCarrera
 	var prodesSession []*prodes.ProdeSession
 
-	if err := r.db.WithContext(ctx).Where("event_id = ?", sessionId).Find(&prodesCarrera).Error; err != nil {
+	// Usar Preload para cargar la información de la sesión relacionada
+	if err := r.db.WithContext(ctx).Preload("Session").Where("session_id = ?", sessionId).Find(&prodesCarrera).Error; err != nil {
 		return nil, nil, e.NewInternalServerApiError("error finding prodes carrera", err)
 	}
 
-	if err := r.db.WithContext(ctx).Where("event_id = ?", sessionId).Find(&prodesSession).Error; err != nil {
+	if err := r.db.WithContext(ctx).Preload("Session").Where("session_id = ?", sessionId).Find(&prodesSession).Error; err != nil {
 		return nil, nil, e.NewInternalServerApiError("error finding prodes session", err)
 	}
 
@@ -137,19 +145,17 @@ func (r *prodeRepository) GetAllProdesBySessionID(ctx context.Context, sessionId
 
 // GetProdesByUserID obtiene todos los prodes (carrera y sesión) realizados por un usuario
 func (r *prodeRepository) GetProdesByUserID(ctx context.Context, userID int) ([]*prodes.ProdeCarrera, []*prodes.ProdeSession, e.ApiError) {
-    var prodesCarrera []*prodes.ProdeCarrera
-    var prodesSession []*prodes.ProdeSession
+	var prodesCarrera []*prodes.ProdeCarrera
+	var prodesSession []*prodes.ProdeSession
 
-    // Buscar todos los pronósticos de carrera del usuario
-    if err := r.db.WithContext(ctx).Where("user_id = ?", userID).Find(&prodesCarrera).Error; err != nil {
-        return nil, nil, e.NewInternalServerApiError("error finding race predictions", err)
-    }
+	// Usar Preload para cargar la información de la sesión relacionada
+	if err := r.db.WithContext(ctx).Preload("Session").Where("user_id = ?", userID).Find(&prodesCarrera).Error; err != nil {
+		return nil, nil, e.NewInternalServerApiError("error finding race predictions", err)
+	}
 
-    // Buscar todos los pronósticos de sesión del usuario
-    if err := r.db.WithContext(ctx).Where("user_id = ?", userID).Find(&prodesSession).Error; err != nil {
-        return nil, nil, e.NewInternalServerApiError("error finding session predictions", err)
-    }
+	if err := r.db.WithContext(ctx).Preload("Session").Where("user_id = ?", userID).Find(&prodesSession).Error; err != nil {
+		return nil, nil, e.NewInternalServerApiError("error finding session predictions", err)
+	}
 
-    return prodesCarrera, prodesSession, nil
+	return prodesCarrera, prodesSession, nil
 }
-
