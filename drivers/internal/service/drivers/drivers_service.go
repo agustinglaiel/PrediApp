@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	dto "drivers/internal/dto/drivers"
-	model "drivers/internal/model/drivers"
+	model "drivers/internal/model"
 	repository "drivers/internal/repository/drivers"
 	e "drivers/pkg/utils"
 )

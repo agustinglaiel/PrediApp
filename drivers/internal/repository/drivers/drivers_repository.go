@@ -2,7 +2,7 @@ package repository
 
 import (
 	"context"
-	model "drivers/internal/model/drivers"
+	model "drivers/internal/model"
 	e "drivers/pkg/utils"
 
 	"gorm.io/gorm"
@@ -70,7 +70,7 @@ func (r *driverRepository) ListDrivers(ctx context.Context) ([]*model.Driver, e.
 	return model, nil
 }
 
-func (r *driverRepository) GetDriverByName(ctx context.Context, firstName, lastName string) (*model.Driver, e.ApiError) {
+func (r *driverRepository) GetDriverByName(ctx context.Context, firstName string, lastName string) (*model.Driver, e.ApiError) {
 	var driver model.Driver
 	if err := r.db.WithContext(ctx).Where("first_name = ? AND last_name = ?", firstName, lastName).First(&driver).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
