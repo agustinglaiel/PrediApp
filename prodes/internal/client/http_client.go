@@ -147,3 +147,23 @@ func (c *HttpClient) GetSessionNameAndType(eventID int) (dto.SessionNameAndTypeD
 
     return sessionNameAndType, nil
 }
+
+// GetSessionByID realiza una solicitud GET para obtener los detalles completos de una sesión desde el microservicio de sessions
+func (c *HttpClient) GetSessionByID(sessionID int) (dto.SessionDTO, error) {
+    // Definir el endpoint para la solicitud GET
+    endpoint := fmt.Sprintf("/sessions/%d", sessionID)
+
+    // Hacer la solicitud GET utilizando el cliente HTTP
+    body, err := c.Get(endpoint)
+    if err != nil {
+        return dto.SessionDTO{}, fmt.Errorf("error fetching session by ID: %w", err)
+    }
+
+    // Deserializar la respuesta JSON en una estructura Go
+    var session dto.SessionDTO
+    if err := json.Unmarshal(body, &session); err != nil {
+        return dto.SessionDTO{}, fmt.Errorf("error decoding session response: %w", err)
+    }
+
+    return session, nil
+}

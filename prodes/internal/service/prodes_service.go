@@ -35,20 +35,20 @@ func NewPrediService(prodeRepo repository.ProdeRepository, httpClient *client.Ht
 
 func (s *prodeService) CreateProdeCarrera(ctx context.Context, request prodes.CreateProdeCarreraDTO) (prodes.ResponseProdeCarreraDTO, e.ApiError) {
     // Llamar al cliente HTTP para obtener el nombre y tipo de sesión
-    sessionInfo, err := s.httpClient.GetSessionNameAndType(request.EventID)
+    sessionInfo, err := s.httpClient.GetSessionNameAndType(request.SessionID)
     if err != nil {
         return prodes.ResponseProdeCarreraDTO{}, e.NewInternalServerApiError("Error fetching session name and type from sessions service", err)
     }
 
     // Validar tanto el session_name como el session_type
-    if sessionInfo.SessionName != "Race" || sessionInfo.SessionType != "Race" {
-        return prodes.ResponseProdeCarreraDTO{}, e.NewBadRequestApiError("La sesión asociada no es una carrera válida (Race), no se puede crear un ProdeCarrera")
-    }
+    if !isRaceSession(sessionInfo.SessionName, sessionInfo.SessionType) {
+		return prodes.ResponseProdeCarreraDTO{}, e.NewBadRequestApiError("La sesión asociada no es una carrera válida (Race), no se puede crear un ProdeCarrera")
+	}
 
     // Convertir DTO a modelo
     prode := model.ProdeCarrera{
         UserID:     request.UserID,
-        EventID:    request.EventID,
+        SessionID:  request.SessionID,
         P1:         request.P1,
         P2:         request.P2,
         P3:         request.P3,
@@ -71,7 +71,7 @@ func (s *prodeService) CreateProdeCarrera(ctx context.Context, request prodes.Cr
     response := prodes.ResponseProdeCarreraDTO{
         ID:         prode.ID,
         UserID:     prode.UserID,
-        EventID:    prode.EventID,
+        SessionID:  prode.SessionID,
         P1:         prode.P1,
         P2:         prode.P2,
         P3:         prode.P3,
@@ -88,7 +88,7 @@ func (s *prodeService) CreateProdeCarrera(ctx context.Context, request prodes.Cr
 
 func (s *prodeService) CreateProdeSession(ctx context.Context, request prodes.CreateProdeSessionDTO) (prodes.ResponseProdeSessionDTO, e.ApiError) {
     // Hacer la llamada HTTP al microservicio de sessions para obtener el nombre y tipo de sesión
-    endpoint := fmt.Sprintf("/sessions/%d/name-type", request.EventID)
+    endpoint := fmt.Sprintf("/sessions/%d/name-type", request.SessionID)
     responseData, err := s.httpClient.Get(endpoint)
     if err != nil {
         return prodes.ResponseProdeSessionDTO{}, e.NewInternalServerApiError("Error en la solicitud HTTP a sessions", err)
@@ -102,14 +102,14 @@ func (s *prodeService) CreateProdeSession(ctx context.Context, request prodes.Cr
     }
 
     // Verificar si la sesión es de tipo "Race"
-    if sessionInfo.SessionType == "Race" {
-        return prodes.ResponseProdeSessionDTO{}, e.NewBadRequestApiError("La sesión asociada es una carrera, no se puede crear un ProdeSession")
-    }
+    if isRaceSession(sessionInfo.SessionName, sessionInfo.SessionType) {
+		return prodes.ResponseProdeSessionDTO{}, e.NewBadRequestApiError("La sesión asociada no es una carrera válida (Race), no se puede crear un ProdeCarrera")
+	}
 
     // Convertir DTO a modelo
     prode := model.ProdeSession{
         UserID:  request.UserID,
-        EventID: request.EventID,
+        SessionID: request.SessionID,
         P1:      request.P1,
         P2:      request.P2,
         P3:      request.P3,
@@ -125,7 +125,7 @@ func (s *prodeService) CreateProdeSession(ctx context.Context, request prodes.Cr
     response := prodes.ResponseProdeSessionDTO{
         ID:      prode.ID,
         UserID:  prode.UserID,
-        EventID: prode.EventID,
+        SessionID: prode.SessionID,
         P1:      prode.P1,
         P2:      prode.P2,
         P3:      prode.P3,
@@ -138,7 +138,7 @@ func (s *prodeService) UpdateProdeCarrera(ctx context.Context, request prodes.Up
 	prode := model.ProdeCarrera{
 		ID:         request.ProdeID,
 		UserID:     request.UserID,
-		EventID:    request.EventID,
+		SessionID:  request.SessionID,
 		P1:         request.P1,
 		P2:         request.P2,
 		P3:         request.P3,
@@ -156,7 +156,7 @@ func (s *prodeService) UpdateProdeCarrera(ctx context.Context, request prodes.Up
 	response := prodes.ResponseProdeCarreraDTO{
 		ID:         prode.ID,
 		UserID:     prode.UserID,
-		EventID:    prode.EventID,
+		SessionID:  prode.SessionID,
 		P1:         prode.P1,
 		P2:         prode.P2,
 		P3:         prode.P3,
@@ -174,7 +174,7 @@ func (s *prodeService) UpdateProdeSession(ctx context.Context, request prodes.Up
 	prode := model.ProdeSession{
 		ID:      request.ProdeID,
 		UserID:  request.UserID,
-		EventID: request.EventID,
+		SessionID: request.SessionID,
 		P1:      request.P1,
 		P2:      request.P2,
 		P3:      request.P3,
@@ -186,7 +186,7 @@ func (s *prodeService) UpdateProdeSession(ctx context.Context, request prodes.Up
 	response := prodes.ResponseProdeSessionDTO{
 		ID:      prode.ID,
 		UserID:  prode.UserID,
-		EventID: prode.EventID,
+		SessionID: prode.SessionID,
 		P1:      prode.P1,
 		P2:      prode.P2,
 		P3:      prode.P3,
@@ -225,32 +225,24 @@ func (s *prodeService) DeleteProdeSession(ctx context.Context, prodeID int) e.Ap
 }
 
 func (s *prodeService) DeleteProdeById(ctx context.Context, prodeID int) e.ApiError {
-    // Hacer la llamada HTTP al microservicio de sessions para obtener el nombre y tipo de sesión
-    endpoint := fmt.Sprintf("/sessions/%d/name-type", prodeID)
-    responseData, err := s.httpClient.Get(endpoint)
+    // Usar el cliente HTTP para obtener el nombre y tipo de sesión
+    sessionInfo, err := s.httpClient.GetSessionNameAndType(prodeID)
     if err != nil {
-        return e.NewInternalServerApiError("Error en la solicitud HTTP a sessions", err)
+        return e.NewInternalServerApiError("Error fetching session name and type from sessions service", err)
     }
 
-    // Parsear la respuesta JSON del microservicio de sessions
-    var sessionInfo prodes.SessionNameAndTypeDTO
-    err = json.Unmarshal(responseData, &sessionInfo)
-    if err != nil {
-        return e.NewInternalServerApiError("Error parseando respuesta de sessions", err)
-    }
-
-    // Verificar si la sesión es de tipo "Race"
-    if sessionInfo.SessionName == "Race" {
-        // Es una carrera, eliminar el prode de carrera
-        if err := s.DeleteProdeCarrera(ctx, prodeID); err != nil {
-            return err
-        }
-    } else {
-        // Es una sesión, eliminar el prode de sesión
-        if err := s.DeleteProdeSession(ctx, prodeID); err != nil {
-            return err
-        }
-    }
+    // Verificar si la sesión es de tipo "Race" tanto en session_name como en session_type
+    if isRaceSession(sessionInfo.SessionName, sessionInfo.SessionType) {
+		//Es carrera, entonces elimina el prode en race_prode
+		if err := s.DeleteProdeCarrera(ctx, prodeID); err != nil {
+			return err
+		}
+	} else {
+		//No es carrera, elimina en session_prode
+		if err := s.DeleteProdeSession(ctx, prodeID); err != nil {
+			return err
+		}
+	}
 
     return nil
 }
@@ -266,7 +258,7 @@ func (s *prodeService) GetProdesByUserId(ctx context.Context, userID int) ([]pro
 		carreraResponses = append(carreraResponses, prodes.ResponseProdeCarreraDTO{
 			ID:         prode.ID,
 			UserID:     prode.UserID,
-			EventID:    prode.EventID,
+			SessionID:  prode.SessionID,
 			P1:         prode.P1,
 			P2:         prode.P2,
 			P3:         prode.P3,
@@ -284,7 +276,7 @@ func (s *prodeService) GetProdesByUserId(ctx context.Context, userID int) ([]pro
 		sessionResponses = append(sessionResponses, prodes.ResponseProdeSessionDTO{
 			ID:      prode.ID,
 			UserID:  prode.UserID,
-			EventID: prode.EventID,
+			SessionID: prode.SessionID,
 			P1:      prode.P1,
 			P2:      prode.P2,
 			P3:      prode.P3,
@@ -292,4 +284,9 @@ func (s *prodeService) GetProdesByUserId(ctx context.Context, userID int) ([]pro
 	}
 
 	return carreraResponses, sessionResponses, nil
+}
+
+//Función auxiliar para mayor modularidad y me devuelve el bool de si es session name y type = race. 
+func isRaceSession(sessionName string, sessionType string) bool {
+    return sessionName == "Race" && sessionType == "Race"
 }

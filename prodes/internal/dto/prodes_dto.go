@@ -3,7 +3,7 @@ package prodes
 // DTO para crear un pronóstico de carrera
 type CreateProdeCarreraDTO struct {
     UserID     int `json:"user_id"`
-    EventID    int `json:"event_id"`
+    SessionID  int `json:"session_id"` // Vinculado a la sesión
     P1         int `json:"p1"` // driver_id
     P2         int `json:"p2"` // driver_id
     P3         int `json:"p3"` // driver_id
@@ -15,13 +15,13 @@ type CreateProdeCarreraDTO struct {
     DNF        int  `json:"dnf"`
 }
 
-// DTO para crear un pronóstico de sesión que no sea carrera normal
+// DTO para crear un pronóstico de sesión que no sea carrera
 type CreateProdeSessionDTO struct {
-    UserID  int `json:"user_id"`
-    EventID int `json:"event_id"`
-    P1      int `json:"p1"` // driver_id
-    P2      int `json:"p2"` // driver_id
-    P3      int `json:"p3"` // driver_id
+    UserID    int `json:"user_id"`
+    SessionID int `json:"session_id"` // Vinculado a la sesión
+    P1        int `json:"p1"` // driver_id
+    P2        int `json:"p2"` // driver_id
+    P3        int `json:"p3"` // driver_id
 }
 
 // DTO para eliminar un pronóstico
@@ -40,7 +40,7 @@ type GetProdesDTO struct {
 type ResponseProdeCarreraDTO struct {
     ID         int  `json:"id"`
     UserID     int  `json:"user_id"`
-    EventID    int  `json:"event_id"`
+    SessionID  int  `json:"session_id"` // Cambiado a session_id
     P1         int  `json:"p1"` // driver_id
     P2         int  `json:"p2"` // driver_id
     P3         int  `json:"p3"` // driver_id
@@ -54,19 +54,19 @@ type ResponseProdeCarreraDTO struct {
 
 // DTO de respuesta para un pronóstico de sesión
 type ResponseProdeSessionDTO struct {
-    ID         int `json:"id"`
-    UserID     int `json:"user_id"`
-    EventID    int `json:"event_id"`
-    P1         int `json:"p1"` // driver_id
-    P2         int `json:"p2"` // driver_id
-    P3         int `json:"p3"` // driver_id
+    ID        int `json:"id"`
+    UserID    int `json:"user_id"`
+    SessionID int `json:"session_id"` // Cambiado a session_id
+    P1        int `json:"p1"` // driver_id
+    P2        int `json:"p2"` // driver_id
+    P3        int `json:"p3"` // driver_id
 }
 
 // DTO para actualizar un pronóstico de carrera
 type UpdateProdeCarreraDTO struct {
     ProdeID    int `json:"prode_id"`
     UserID     int `json:"user_id"`
-    EventID    int `json:"event_id"`
+    SessionID  int `json:"session_id"` // Cambiado a session_id
     P1         int `json:"p1"` // driver_id
     P2         int `json:"p2"` // driver_id
     P3         int `json:"p3"` // driver_id
@@ -82,7 +82,7 @@ type UpdateProdeCarreraDTO struct {
 type UpdateProdeSessionDTO struct {
     ProdeID    int `json:"prode_id"`
     UserID     int `json:"user_id"`
-    EventID    int `json:"event_id"`
+    SessionID  int `json:"session_id"` // Cambiado a session_id
     P1         int `json:"p1"` // driver_id
     P2         int `json:"p2"` // driver_id
     P3         int `json:"p3"` // driver_id
@@ -101,3 +101,13 @@ Uso de DTOs equivalentes: El cliente HTTP en prodes hace una solicitud a session
 recibe una respuesta en formato JSON, y usamos el DTO definido en prodes para deserializar esa respuesta. 
 Esto asegura que los dos servicios sigan siendo independientes.
 */
+
+// SessionDetailsDTO define los atributos que queremos obtener de la sesión
+type SessionDetailsDTO struct {
+    CircuitShortName string `json:"circuit_short_name"`
+    CountryCode      string `json:"country_code"`
+    CountryName      string `json:"country_name"`
+    DateStart        string `json:"date_start"`
+    DateEnd          string `json:"date_end"`
+    Location         string `json:"location"`
+}

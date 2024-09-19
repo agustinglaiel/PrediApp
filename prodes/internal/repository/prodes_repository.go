@@ -21,8 +21,8 @@ type ProdeRepository interface {
 	UpdateProdeSession(ctx context.Context, prode *prodes.ProdeSession) e.ApiError
 	DeleteProdeCarreraByID(ctx context.Context, prodeID int, userID int) e.ApiError
     DeleteProdeSessionByID(ctx context.Context, prodeID int, userID int) e.ApiError
-	GetProdesByUserIDAndEventID(ctx context.Context, userID, eventID int) ([]*prodes.ProdeCarrera, []*prodes.ProdeSession, e.ApiError)
-	GetAllProdesByEventID(ctx context.Context, eventID int) ([]*prodes.ProdeCarrera, []*prodes.ProdeSession, e.ApiError)
+	GetProdesByUserIDAndSessionID(ctx context.Context, userID, sessionId int) ([]*prodes.ProdeCarrera, []*prodes.ProdeSession, e.ApiError)
+	GetAllProdesBySessionID(ctx context.Context, sessionId int) ([]*prodes.ProdeCarrera, []*prodes.ProdeSession, e.ApiError)
 	GetProdesByUserID(ctx context.Context, userID int) ([]*prodes.ProdeCarrera, []*prodes.ProdeSession, e.ApiError)
 }
 
@@ -82,6 +82,11 @@ func (r *prodeRepository) UpdateProdeSession(ctx context.Context, prode *prodes.
 
 // DeleteProdeByID elimina un pronóstico de carrera por su ID y verifica el userID
 func (r *prodeRepository) DeleteProdeCarreraByID(ctx context.Context, prodeID int, userID int) e.ApiError {
+	// Validar si el userID es válido (no nulo o mayor a 0)
+	if userID <= 0 {
+		return e.NewBadRequestApiError("Invalid userID")	
+	}	
+
     if err := r.db.WithContext(ctx).Where("id = ? AND user_id = ?", prodeID, userID).Delete(&prodes.ProdeCarrera{}).Error; err != nil {
         return e.NewInternalServerApiError("error deleting prode by ID", err)
     }
@@ -89,36 +94,41 @@ func (r *prodeRepository) DeleteProdeCarreraByID(ctx context.Context, prodeID in
 }
 
 func (r *prodeRepository) DeleteProdeSessionByID(ctx context.Context, prodeID int, userID int) e.ApiError {
+	// Validar si el userID es válido (no nulo o mayor a 0)
+	if userID <= 0 {
+		return e.NewBadRequestApiError("Invalid userID")	
+	}	
+
     if err := r.db.WithContext(ctx).Where("id = ? AND user_id = ?", prodeID, userID).Delete(&prodes.ProdeSession{}).Error; err != nil {
         return e.NewInternalServerApiError("error deleting prode session by ID", err)
     }
     return nil
 }
 
-func (r *prodeRepository) GetProdesByUserIDAndEventID(ctx context.Context, userID, eventID int) ([]*prodes.ProdeCarrera, []*prodes.ProdeSession, e.ApiError) {
+func (r *prodeRepository) GetProdesByUserIDAndSessionID(ctx context.Context, userID, sessionId int) ([]*prodes.ProdeCarrera, []*prodes.ProdeSession, e.ApiError) {
 	var prodesCarrera []*prodes.ProdeCarrera
 	var prodesSession []*prodes.ProdeSession
 
-	if err := r.db.WithContext(ctx).Where("user_id = ? AND event_id = ?", userID, eventID).Find(&prodesCarrera).Error; err != nil {
+	if err := r.db.WithContext(ctx).Where("user_id = ? AND event_id = ?", userID, sessionId).Find(&prodesCarrera).Error; err != nil {
 		return nil, nil, e.NewInternalServerApiError("error finding prodes carrera", err)
 	}
 
-	if err := r.db.WithContext(ctx).Where("user_id = ? AND event_id = ?", userID, eventID).Find(&prodesSession).Error; err != nil {
+	if err := r.db.WithContext(ctx).Where("user_id = ? AND event_id = ?", userID, sessionId).Find(&prodesSession).Error; err != nil {
 		return nil, nil, e.NewInternalServerApiError("error finding prodes session", err)
 	}
 
 	return prodesCarrera, prodesSession, nil
 }
 
-func (r *prodeRepository) GetAllProdesByEventID(ctx context.Context, eventID int) ([]*prodes.ProdeCarrera, []*prodes.ProdeSession, e.ApiError) {
+func (r *prodeRepository) GetAllProdesBySessionID(ctx context.Context, sessionId int) ([]*prodes.ProdeCarrera, []*prodes.ProdeSession, e.ApiError) {
 	var prodesCarrera []*prodes.ProdeCarrera
 	var prodesSession []*prodes.ProdeSession
 
-	if err := r.db.WithContext(ctx).Where("event_id = ?", eventID).Find(&prodesCarrera).Error; err != nil {
+	if err := r.db.WithContext(ctx).Where("event_id = ?", sessionId).Find(&prodesCarrera).Error; err != nil {
 		return nil, nil, e.NewInternalServerApiError("error finding prodes carrera", err)
 	}
 
-	if err := r.db.WithContext(ctx).Where("event_id = ?", eventID).Find(&prodesSession).Error; err != nil {
+	if err := r.db.WithContext(ctx).Where("event_id = ?", sessionId).Find(&prodesSession).Error; err != nil {
 		return nil, nil, e.NewInternalServerApiError("error finding prodes session", err)
 	}
 
@@ -143,20 +153,3 @@ func (r *prodeRepository) GetProdesByUserID(ctx context.Context, userID int) ([]
     return prodesCarrera, prodesSession, nil
 }
 
-/*
-// GetSessionByEventId obtiene la información de la sesión usando el event_id
-func (r *prodeRepository) GetSessionByEventId(ctx context.Context, eventId uint) (*model.Session, e.ApiError) {
-    var session model.Session
-    err := r.db.WithContext(ctx).Joins("JOIN events ON events.session_id = sessions.id").
-        Where("events.id = ?", eventId).First(&session).Error
-
-    if err != nil {
-        if err == gorm.ErrRecordNotFound {
-            return nil, e.NewNotFoundApiError("session not found for the given event id")
-        }
-        return nil, e.NewInternalServerApiError("error finding session by event id", err)
-    }
-
-    return &session, nil
-}
-*/
