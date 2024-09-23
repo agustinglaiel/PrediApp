@@ -38,7 +38,6 @@ func (r *driverRepository) CreateDriver(ctx context.Context, driver *model.Drive
     return nil
 }
 
-
 func (r *driverRepository) GetDriverByID(ctx context.Context, driverID uint) (*model.Driver, e.ApiError) {
 	var driver model.Driver
 	if err := r.db.WithContext(ctx).First(&driver, driverID).Error; err != nil {
