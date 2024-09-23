@@ -47,3 +47,14 @@ type ResponseDriverDTO struct {
 	NameAcronym string `json:"name_acronym"`
 	TeamName    string `json:"team_name"`
 }
+
+type Position struct {
+	DriverNumber int       `json:"driver_number"`
+	Position     int       `json:"position"`
+	Date         time.Time `json:"date"`
+}
+
+type Lap struct {
+	LapNumber   int     `json:"lap_number"`
+	LapDuration float64 `json:"lap_duration"`
+}

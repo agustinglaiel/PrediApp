@@ -351,3 +351,19 @@ func (sc *SessionController) UpdateSessionKey(c *gin.Context) {
     // Responder con un estado 200 (OK) si la actualización fue exitosa
     c.Status(http.StatusOK)
 }
+
+func (sc *SessionController) GetSessionKeyBySessionID(c *gin.Context) {
+    sessionID, err := ParseUintParam(c.Param("id"))
+    if err != nil {
+        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de sesión inválido"))
+        return
+    }
+
+    sessionKey, apiErr := sc.sessionService.GetSessionKeyBySessionID(c.Request.Context(), sessionID)
+    if apiErr != nil {
+        c.JSON(apiErr.Status(), apiErr)
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"session_key": sessionKey})
+}

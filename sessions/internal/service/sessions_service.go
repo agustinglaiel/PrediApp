@@ -34,6 +34,7 @@ type SessionServiceInterface interface{
 	//CalculateDNF(ctx context.Context, sessionID uint) e.ApiError
 	UpdateDNFBySessionID(ctx context.Context, sessionID uint, dnf int) e.ApiError
 	UpdateSessionKey(ctx context.Context, sessionID uint, location, sessionName, sessionType string, year int) e.ApiError
+    GetSessionKeyBySessionID(ctx context.Context, sessionID uint) (int, e.ApiError)
 }
 
 func NewSessionService(sessionsRepo repository.SessionRepository, client *client.HttpClient) SessionServiceInterface{
@@ -728,3 +729,16 @@ func (s *sessionService) CalculateDNF(ctx context.Context, sessionID uint) e.Api
     return nil
 }
 */
+
+func (s *sessionService) GetSessionKeyBySessionID(ctx context.Context, sessionID uint) (int, e.ApiError) {
+    session, err := s.sessionsRepo.GetSessionById(ctx, sessionID)
+    if err != nil {
+        return 0, err
+    }
+
+    if session.SessionKey == nil {
+        return 0, e.NewNotFoundApiError("Session key no encontrado para esta sesión")
+    }
+
+    return *session.SessionKey, nil
+}
