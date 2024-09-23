@@ -2,14 +2,16 @@ package service
 
 import (
 	"context"
-	dto "drivers/internal/dto/drivers"
+	"drivers/internal/client"
+	dto "drivers/internal/dto"
 	model "drivers/internal/model"
-	repository "drivers/internal/repository/drivers"
+	repository "drivers/internal/repository"
 	e "drivers/pkg/utils"
 )
 
 type driverService struct {
 	driverRepo repository.DriverRepository
+	client       *client.HttpClient
 }
 
 type DriverService interface {
@@ -22,11 +24,13 @@ type DriverService interface {
 	ListDriversByCountry(ctx context.Context, countryCode string) ([]dto.ResponseDriverDTO, e.ApiError)
 	ListDriversByFullName(ctx context.Context, fullName string) ([]dto.ResponseDriverDTO, e.ApiError)
 	ListDriversByAcronym(ctx context.Context, acronym string) ([]dto.ResponseDriverDTO, e.ApiError)
+	FetchAllDriversFromExternalAPI(ctx context.Context) ([]dto.ResponseDriverDTO, e.ApiError)
 }
 
-func NewDriverService(driverRepo repository.DriverRepository) DriverService {
+func NewDriverService(driverRepo repository.DriverRepository, client *client.HttpClient) DriverService {
 	return &driverService{
 		driverRepo: driverRepo,
+		client:       client,  // Pasar el cliente HTTP
 	}
 }
 
@@ -283,4 +287,81 @@ func (s *driverService) ListDriversByAcronym(ctx context.Context, acronym string
 	}
 
 	return response, nil
+}
+
+func (s *driverService) FetchAllDriversFromExternalAPI(ctx context.Context) ([]dto.ResponseDriverDTO, e.ApiError) {
+    // 1. Obtener los pilotos desde la API externa
+    drivers, err := s.client.GetAllDriversFromExternalAPI()
+    if err != nil {
+        return nil, e.NewInternalServerApiError("Error fetching drivers from external API", err)
+    }
+
+    // 2. Eliminar duplicados por 'NameAcronym'
+    uniqueDrivers := uniqueDrivers(drivers)
+
+    // 3. Obtener todos los pilotos existentes en la base de datos (usando NameAcronym para comparar)
+    existingDrivers, err := s.driverRepo.ListDrivers(ctx)
+    if err != nil {
+        return nil, e.NewInternalServerApiError("Error fetching drivers from database", err)
+    }
+
+    // 4. Crear un mapa para los pilotos existentes (para verificar más rápido)
+    existingDriverMap := make(map[string]bool)
+    for _, driver := range existingDrivers {
+        existingDriverMap[driver.NameAcronym] = true
+    }
+
+    // 5. Insertar solo los pilotos que no están en la base de datos
+    var insertedDrivers []dto.ResponseDriverDTO
+    for _, driver := range uniqueDrivers {
+        if _, exists := existingDriverMap[driver.NameAcronym]; !exists {
+            // Convertir DTO a modelo
+            newDriver := &model.Driver{
+                BroadcastName:  driver.BroadcastName,
+                CountryCode:    driver.CountryCode,
+                DriverNumber:   driver.DriverNumber,
+                FirstName:      driver.FirstName,
+                LastName:       driver.LastName,
+                FullName:       driver.FullName,
+                NameAcronym:    driver.NameAcronym,
+                TeamName:       driver.TeamName,
+            }
+
+            // Insertar el piloto en la base de datos
+            if err := s.driverRepo.CreateDriver(ctx, newDriver); err != nil {
+                return nil, e.NewInternalServerApiError("Error inserting driver into database", err)
+            }
+
+            // Añadir a la lista de pilotos insertados para la respuesta
+            insertedDrivers = append(insertedDrivers, dto.ResponseDriverDTO{
+                BroadcastName:  newDriver.BroadcastName,
+                CountryCode:    newDriver.CountryCode,
+                DriverNumber:   newDriver.DriverNumber,
+                FirstName:      newDriver.FirstName,
+                LastName:       newDriver.LastName,
+                FullName:       newDriver.FullName,
+                NameAcronym:    newDriver.NameAcronym,
+                TeamName:       newDriver.TeamName,
+            })
+        }
+    }
+
+    // 6. Retornar los pilotos que se insertaron para el frontend
+    return insertedDrivers, nil
+}
+
+// Función auxiliar para eliminar pilotos duplicados basados en 'NameAcronym'
+func uniqueDrivers(drivers []dto.ResponseDriverDTO) []dto.ResponseDriverDTO {
+    seen := make(map[string]bool) // Mapa para rastrear los pilotos que ya hemos visto
+    unique := []dto.ResponseDriverDTO{}   // Slice para almacenar los pilotos únicos
+
+    for _, driver := range drivers {
+        // Si el piloto con el mismo 'NameAcronym' no ha sido visto antes
+        if _, ok := seen[driver.NameAcronym]; !ok {
+            seen[driver.NameAcronym] = true // Marcar como visto
+            unique = append(unique, driver) // Agregar a la lista de únicos
+        }
+    }
+
+    return unique
 }

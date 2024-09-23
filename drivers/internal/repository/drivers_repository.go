@@ -24,6 +24,7 @@ type DriverRepository interface {
 	GetDriversByCountry(ctx context.Context, countryCode string) ([]*model.Driver, e.ApiError)
 	GetDriversByFullName(ctx context.Context, fullName string) ([]*model.Driver, e.ApiError)
 	GetDriversByAcronym(ctx context.Context, acronym string) ([]*model.Driver, e.ApiError)
+	BulkInsertDrivers(ctx context.Context, drivers []*model.Driver) e.ApiError
 }
 
 func NewDriverRepository(db *gorm.DB) DriverRepository {
@@ -31,11 +32,12 @@ func NewDriverRepository(db *gorm.DB) DriverRepository {
 }
 
 func (r *driverRepository) CreateDriver(ctx context.Context, driver *model.Driver) e.ApiError {
-	if err := r.db.WithContext(ctx).Create(driver).Error; err != nil {
-		return e.NewInternalServerApiError("Error creando el piloto", err)
-	}
-	return nil
+    if err := r.db.WithContext(ctx).Create(driver).Error; err != nil {
+        return e.NewInternalServerApiError("Error creando el piloto", err)
+    }
+    return nil
 }
+
 
 func (r *driverRepository) GetDriverByID(ctx context.Context, driverID uint) (*model.Driver, e.ApiError) {
 	var driver model.Driver
@@ -123,3 +125,12 @@ func (r *driverRepository) GetDriversByAcronym(ctx context.Context, acronym stri
 	}
 	return model, nil
 }
+
+func (r *driverRepository) BulkInsertDrivers(ctx context.Context, drivers []*model.Driver) e.ApiError {
+	// Utilizamos un bulk insert para insertar múltiples pilotos a la vez
+	if err := r.db.WithContext(ctx).Create(&drivers).Error; err != nil {
+		return e.NewInternalServerApiError("Error inserting drivers in bulk", err)
+	}
+	return nil
+}
+

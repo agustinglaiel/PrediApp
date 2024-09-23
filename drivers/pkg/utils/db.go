@@ -1,7 +1,7 @@
 package utils
 
 import (
-	modelD "drivers/internal/model/drivers"
+	modelD "drivers/internal/model"
 	"drivers/pkg/config"
 	"fmt"
 
@@ -39,7 +39,7 @@ func DisconnectDB() {
 func StartDbEngine() {
 	err := DB.AutoMigrate(
 		&modelD.Driver{},        // Migrar el modelo Driver
-		&modelD.DriverEvent{},   // Migrar el modelo DriverEvent (asegúrate de tenerlo definido)
+		//&modelD.DriverEvent{},   // Migrar el modelo DriverEvent (asegúrate de tenerlo definido)
 	)
 	if err != nil {
 		fmt.Printf("Error migrating database tables: %v\n", err)

@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"drivers/internal/dto"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -125,4 +126,53 @@ func (c *HttpClient) Delete(endpoint string) error {
 	}
 
 	return nil
+}
+
+// GetAllDriversFromExternalAPI realiza una solicitud GET para obtener todos los pilotos desde la API externa
+func (c *HttpClient) GetAllDriversFromExternalAPI() ([]dto.ResponseDriverDTO, error) {
+    // Definir el endpoint para obtener los drivers
+    endpoint := "drivers"
+
+    // Hacer la solicitud GET utilizando el cliente HTTP
+    body, err := c.Get(endpoint)
+    if err != nil {
+        return nil, fmt.Errorf("error fetching all drivers: %w", err)
+    }
+
+	// Verificar el cuerpo recibido
+	//fmt.Println("Response Body: ", string(body))
+
+    // Deserializar la respuesta JSON en una lista de ResponseDriverDTO
+    var allDrivers []struct {
+        BroadcastName  string `json:"broadcast_name"`
+        CountryCode    string `json:"country_code"`
+        DriverNumber   int    `json:"driver_number"`
+        FirstName      string `json:"first_name"`
+        LastName       string `json:"last_name"`
+        FullName       string `json:"full_name"`
+        NameAcronym    string `json:"name_acronym"`
+        TeamName       string `json:"team_name"`
+        // Otros atributos que no usaremos: team_colour, meeting_key, session_key
+    }
+
+    if err := json.Unmarshal(body, &allDrivers); err != nil {
+        return nil, fmt.Errorf("error decoding drivers response: %w", err)
+    }
+
+    // Convertir a DTO específico eliminando los atributos no deseados
+    var filteredDrivers []dto.ResponseDriverDTO
+    for _, driver := range allDrivers {
+        filteredDrivers = append(filteredDrivers, dto.ResponseDriverDTO{
+            BroadcastName:  driver.BroadcastName,
+            CountryCode:    driver.CountryCode,
+            DriverNumber:   driver.DriverNumber,
+            FirstName:      driver.FirstName,
+            LastName:       driver.LastName,
+            FullName:       driver.FullName,
+            NameAcronym:    driver.NameAcronym,
+            TeamName:       driver.TeamName,
+        })
+    }
+
+    return filteredDrivers, nil
 }

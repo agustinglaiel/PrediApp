@@ -1,13 +1,13 @@
 package router
 
 import (
-	drivers "drivers/internal/api/drivers"
+	drivers "drivers/internal/api"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
-func MapUrls(engine *gin.Engine, driverController *drivers.DriverController, driverEventController *drivers.DriverEventController) {
+func MapUrls(engine *gin.Engine, driverController *drivers.DriverController) {
 	// Use CORS middleware
 	engine.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:3000"},
@@ -23,16 +23,12 @@ func MapUrls(engine *gin.Engine, driverController *drivers.DriverController, dri
 	engine.PUT("/drivers/:id", driverController.UpdateDriver)
 	engine.DELETE("/drivers/:id", driverController.DeleteDriver)
 	engine.GET("/drivers", driverController.ListDrivers)
-	engine.GET("/drivers/team/:teamName", driverController.ListDriversByTeam)
-	engine.GET("/drivers/country/:countryCode", driverController.ListDriversByCountry)
-	engine.GET("/drivers/fullname/:fullName", driverController.ListDriversByFullName)
-	engine.GET("/drivers/acronym/:acronym", driverController.ListDriversByAcronym)
+	engine.GET("/drivers/team", driverController.ListDriversByTeam)
+	engine.GET("/drivers/country", driverController.ListDriversByCountry)
+	engine.GET("/drivers/fullname", driverController.ListDriversByFullName)
+	engine.GET("/drivers/acronym", driverController.ListDriversByAcronym)
+	engine.GET("/drivers/external", driverController.FetchAllDriversFromExternalAPI)
 
-	// Rutas relacionadas con drivers_event
-	engine.POST("/drivers-event", driverEventController.AddDriverToEvent)
-	engine.DELETE("/drivers-event/:id", driverEventController.RemoveDriverFromEvent)
-	engine.GET("/drivers-event/event/:event_id", driverEventController.ListDriversByEvent)
-	engine.GET("/drivers-event/driver/:driver_id", driverEventController.ListEventsByDriver)
 
 	// Debugging purpose
 	engine.GET("/ping", func(c *gin.Context) {

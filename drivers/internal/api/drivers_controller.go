@@ -1,8 +1,8 @@
 package api
 
 import (
-	dto "drivers/internal/dto/drivers"
-	service "drivers/internal/service/drivers"
+	dto "drivers/internal/dto"
+	service "drivers/internal/service"
 	e "drivers/pkg/utils"
 	"net/http"
 	"strconv"
@@ -101,49 +101,59 @@ func (c *DriverController) ListDrivers(ctx *gin.Context) {
 }
 
 func (c *DriverController) ListDriversByTeam(ctx *gin.Context) {
-	teamName := ctx.Param("teamName")
+    teamName := ctx.Query("team")
 
-	response, apiErr := c.driversService.ListDriversByTeam(ctx.Request.Context(), teamName)
-	if apiErr != nil {
-		ctx.JSON(apiErr.Status(), apiErr)
-		return
-	}
+    response, apiErr := c.driversService.ListDriversByTeam(ctx.Request.Context(), teamName)
+    if apiErr != nil {
+        ctx.JSON(apiErr.Status(), apiErr)
+        return
+    }
 
-	ctx.JSON(http.StatusOK, response)
+    ctx.JSON(http.StatusOK, response)
 }
 
 func (c *DriverController) ListDriversByCountry(ctx *gin.Context) {
-	countryCode := ctx.Param("countryCode")
+    countryCode := ctx.Query("country_code")
 
-	response, apiErr := c.driversService.ListDriversByCountry(ctx.Request.Context(), countryCode)
-	if apiErr != nil {
-		ctx.JSON(apiErr.Status(), apiErr)
-		return
-	}
+    response, apiErr := c.driversService.ListDriversByCountry(ctx.Request.Context(), countryCode)
+    if apiErr != nil {
+        ctx.JSON(apiErr.Status(), apiErr)
+        return
+    }
 
-	ctx.JSON(http.StatusOK, response)
+    ctx.JSON(http.StatusOK, response)
 }
 
 func (c *DriverController) ListDriversByFullName(ctx *gin.Context) {
-	fullName := ctx.Param("fullName")
+    fullName := ctx.Query("full_name")
 
-	response, apiErr := c.driversService.ListDriversByFullName(ctx.Request.Context(), fullName)
-	if apiErr != nil {
-		ctx.JSON(apiErr.Status(), apiErr)
-		return
-	}
+    response, apiErr := c.driversService.ListDriversByFullName(ctx.Request.Context(), fullName)
+    if apiErr != nil {
+        ctx.JSON(apiErr.Status(), apiErr)
+        return
+    }
 
-	ctx.JSON(http.StatusOK, response)
+    ctx.JSON(http.StatusOK, response)
 }
 
 func (c *DriverController) ListDriversByAcronym(ctx *gin.Context) {
-	acronym := ctx.Param("acronym")
+    acronym := ctx.Query("acronym")
 
-	response, apiErr := c.driversService.ListDriversByAcronym(ctx.Request.Context(), acronym)
-	if apiErr != nil {
-		ctx.JSON(apiErr.Status(), apiErr)
-		return
-	}
+    response, apiErr := c.driversService.ListDriversByAcronym(ctx.Request.Context(), acronym)
+    if apiErr != nil {
+        ctx.JSON(apiErr.Status(), apiErr)
+        return
+    }
 
-	ctx.JSON(http.StatusOK, response)
+    ctx.JSON(http.StatusOK, response)
+}
+
+func (c *DriverController) FetchAllDriversFromExternalAPI(ctx *gin.Context) {
+    response, apiErr := c.driversService.FetchAllDriversFromExternalAPI(ctx.Request.Context())
+    if apiErr != nil {
+        ctx.JSON(apiErr.Status(), apiErr)
+        return
+    }
+
+    ctx.JSON(http.StatusOK, response)
 }
