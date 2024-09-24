@@ -20,10 +20,10 @@ type ResultRepository interface {
 	GetResultsBySessionID(ctx context.Context, sessionID uint) ([]*model.Result, e.ApiError)
 	GetResultsByDriverID(ctx context.Context, driverID uint) ([]*model.Result, e.ApiError)
 	GetAllResults(ctx context.Context) ([]*model.Result, e.ApiError)
-	//GetResultByDriverAndSession(ctx context.Context, driverID uint, sessionID uint) (*model.Result, e.ApiError)
 	GetFastestLapInSession(ctx context.Context, sessionID uint) (*model.Result, e.ApiError)
 	GetDriverPositionInSession(ctx context.Context, driverID uint, sessionID uint) (int, e.ApiError)
 	GetResultsOrderedByPosition(ctx context.Context, sessionID uint) ([]*model.Result, e.ApiError)
+	ExistsSessionInResults(ctx context.Context, sessionID uint) (bool, e.ApiError)
 }
 
 func NewResultRepository(db *gorm.DB) ResultRepository {
@@ -93,20 +93,6 @@ func (r *resultRepository) GetAllResults(ctx context.Context) ([]*model.Result, 
 	return results, nil
 }
 
-/* Esta es redundante ya que esta la funcion GetDriverPositionInSession
-// GetResultByDriverAndSession obtiene el resultado de un piloto específico en una sesión específica
-func (r *resultRepository) GetResultByDriverAndSession(ctx context.Context, driverID uint, sessionID uint) (*model.Result, e.ApiError) {
-	var result model.Result
-	if err := r.db.WithContext(ctx).Preload("Driver").Preload("Session").Where("driver_id = ? AND session_id = ?", driverID, sessionID).First(&result).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, e.NewNotFoundApiError("Result not found for the given driver and session")
-		}
-		return nil, e.NewInternalServerApiError("Error finding result by driver and session", err)
-	}
-	return &result, nil
-}
-*/
-
 // GetFastestLapInSession obtiene el piloto con el tiempo de vuelta más rápido en una sesión específica
 func (r *resultRepository) GetFastestLapInSession(ctx context.Context, sessionID uint) (*model.Result, e.ApiError) {
     var result model.Result
@@ -143,4 +129,14 @@ func (r *resultRepository) GetResultsOrderedByPosition(ctx context.Context, sess
         return nil, e.NewInternalServerApiError("Error fetching ordered results for session", err)
     }
     return results, nil
+}
+
+// ExistsSessionInResults verifica si existen resultados para un sessionID dado
+func (r *resultRepository) ExistsSessionInResults(ctx context.Context, sessionID uint) (bool, e.ApiError) {
+	var count int64
+	if err := r.db.WithContext(ctx).Model(&model.Result{}).Where("session_id = ?", sessionID).Count(&count).Error; err != nil {
+		return false, e.NewInternalServerApiError("Error checking session in results", err)
+	}
+
+	return count > 0, nil
 }

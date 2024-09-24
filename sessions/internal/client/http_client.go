@@ -176,7 +176,8 @@ func (c *HttpClient) GetLapsData(sessionKey int) ([]dto.LapData, e.ApiError) {
 func (c *HttpClient) GetSessionKey(location string, sessionName string, sessionType string, year int) (*int, utils.ApiError) {
 	// Definir el endpoint con los parámetros
 	endpoint := fmt.Sprintf("/sessions?location=%s&session_name=%s&session_type=%s&year=%d", location, sessionName, sessionType, year)
-
+	fmt.Println(endpoint)
+	
 	// Hacer la solicitud GET
 	body, err := c.Get(endpoint)
 	if err != nil {

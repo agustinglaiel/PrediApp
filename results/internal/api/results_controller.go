@@ -47,10 +47,9 @@ func (rc *ResultController) FetchResultsFromExternalAPI(c *gin.Context) {
 	c.JSON(http.StatusOK, results)
 }
 
-
 // GetResultByID obtiene un resultado por su ID
 func (rc *ResultController) GetResultByID(c *gin.Context) {
-	resultID, err := ParseUintParam(c.Param("resultID"))
+	resultID, err := ParseUintParam(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de resultado inválido"))
 		return
@@ -107,7 +106,7 @@ func (rc *ResultController) UpdateResult(c *gin.Context) {
 
 // DeleteResult elimina un resultado por su ID
 func (rc *ResultController) DeleteResult(c *gin.Context) {
-	resultID, err := ParseUintParam(c.Param("resultID"))
+	resultID, err := ParseUintParam(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de resultado inválido"))
 		return
@@ -182,6 +181,120 @@ func (rc *ResultController) GetResultsForDriverAcrossSessions(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, results)
+}
+
+// GetBestPositionForDriver obtiene la mejor posición de un piloto en cualquier sesión
+func (rc *ResultController) GetBestPositionForDriver(c *gin.Context) {
+	driverID, err := ParseUintParam(c.Param("driverID"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de piloto inválido"))
+		return
+	}
+
+	bestPosition, apiErr := rc.resultService.GetBestPositionForDriver(c.Request.Context(), driverID)
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	c.JSON(http.StatusOK, bestPosition)
+}
+
+// GetTopNDriversInSession obtiene los mejores N pilotos en una sesión
+func (rc *ResultController) GetTopNDriversInSession(c *gin.Context) {
+	sessionID, err := ParseUintParam(c.Param("sessionID"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de sesión inválido"))
+		return
+	}
+
+	n, err := strconv.Atoi(c.Param("n"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Número de pilotos inválido"))
+		return
+	}
+
+	topDrivers, apiErr := rc.resultService.GetTopNDriversInSession(c.Request.Context(), sessionID, n)
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	c.JSON(http.StatusOK, topDrivers)
+}
+
+// DeleteAllResultsForSession elimina todos los resultados de una sesión específica
+func (rc *ResultController) DeleteAllResultsForSession(c *gin.Context) {
+	sessionID, err := ParseUintParam(c.Param("sessionID"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de sesión inválido"))
+		return
+	}
+
+	apiErr := rc.resultService.DeleteAllResultsForSession(c.Request.Context(), sessionID)
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+// GetResultsForSessionByDriverName obtiene los resultados de una sesión filtrados por el nombre del piloto
+func (rc *ResultController) GetResultsForSessionByDriverName(c *gin.Context) {
+	sessionID, err := ParseUintParam(c.Param("sessionID"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de sesión inválido"))
+		return
+	}
+
+	driverName := c.Param("driverName")
+	if driverName == "" {
+		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Nombre del piloto inválido"))
+		return
+	}
+
+	results, apiErr := rc.resultService.GetResultsForSessionByDriverName(c.Request.Context(), sessionID, driverName)
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	c.JSON(http.StatusOK, results)
+}
+
+// GetTotalFastestLapsForDriver obtiene el total de vueltas rápidas de un piloto
+func (rc *ResultController) GetTotalFastestLapsForDriver(c *gin.Context) {
+	driverID, err := ParseUintParam(c.Param("driverID"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de piloto inválido"))
+		return
+	}
+
+	totalFastestLaps, apiErr := rc.resultService.GetTotalFastestLapsForDriver(c.Request.Context(), driverID)
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"total_fastest_laps": totalFastestLaps})
+}
+
+// GetLastResultForDriver obtiene el último resultado registrado de un piloto
+func (rc *ResultController) GetLastResultForDriver(c *gin.Context) {
+	driverID, err := ParseUintParam(c.Param("driverID"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de piloto inválido"))
+		return
+	}
+
+	lastResult, apiErr := rc.resultService.GetLastResultForDriver(c.Request.Context(), driverID)
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	c.JSON(http.StatusOK, lastResult)
 }
 
 // ParseUintParam obtiene un parámetro de la URL y lo convierte a uint
