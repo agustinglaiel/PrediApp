@@ -28,7 +28,7 @@ func MapUrls(engine *gin.Engine, driverController *drivers.DriverController) {
 	engine.GET("/drivers/fullname", driverController.ListDriversByFullName)
 	engine.GET("/drivers/acronym", driverController.ListDriversByAcronym)
 	engine.GET("/drivers/external", driverController.FetchAllDriversFromExternalAPI)
-
+	engine.GET("/drivers/number/:driver_number", driverController.GetDriverByNumber)
 
 	// Debugging purpose
 	engine.GET("/ping", func(c *gin.Context) {

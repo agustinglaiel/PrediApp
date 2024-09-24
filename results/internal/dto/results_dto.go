@@ -40,12 +40,15 @@ type ResponseSessionDTO struct {
 
 // DTO para los detalles del piloto asociados al resultado
 type ResponseDriverDTO struct {
-	ID          uint   `json:"id"`
-	FirstName   string `json:"first_name"`
-	LastName    string `json:"last_name"`
-	FullName    string `json:"full_name"`
-	NameAcronym string `json:"name_acronym"`
-	TeamName    string `json:"team_name"`
+    ID             uint   `json:"driver_id"`
+    BroadcastName  string `json:"broadcast_name"`
+    CountryCode    string `json:"country_code"`
+    DriverNumber   int    `json:"driver_number"`
+    FirstName      string `json:"first_name"`
+    LastName       string `json:"last_name"`
+    FullName       string `json:"full_name"`
+    NameAcronym    string `json:"name_acronym"`
+    TeamName       string `json:"team_name"`
 }
 
 type Position struct {

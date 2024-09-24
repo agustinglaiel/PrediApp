@@ -27,8 +27,7 @@ func NewHttpClient(baseURL string) *HttpClient {
 
 // Get realiza una solicitud GET a la API de destino
 func (c *HttpClient) Get(endpoint string) ([]byte, error) {
-	url := fmt.Sprintf("%s%s", c.BaseURL, endpoint)
-	resp, err := c.HTTPClient.Get(url)
+	resp, err := c.HTTPClient.Get(endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("error making GET request: %w", err)
 	}
@@ -130,8 +129,11 @@ func (c *HttpClient) Delete(endpoint string) error {
 
 // GetPositions obtiene las posiciones de los pilotos desde la API externa para una sesión específica
 func (c *HttpClient) GetPositions(sessionKey int) ([]dto.Position, error) {
+    // Construir la URL completa para la solicitud de posiciones
     endpoint := fmt.Sprintf("position?session_key=%d", sessionKey)
-    body, err := c.Get(endpoint)
+    fullURL := fmt.Sprintf("%s%s", c.BaseURL, endpoint) // BaseURL ya tiene el esquema y dominio
+
+    body, err := c.Get(fullURL)
     if err != nil {
         return nil, fmt.Errorf("error fetching positions: %w", err)
     }
@@ -146,8 +148,11 @@ func (c *HttpClient) GetPositions(sessionKey int) ([]dto.Position, error) {
 
 // GetLaps obtiene las vueltas rápidas de un piloto específico desde la API externa
 func (c *HttpClient) GetLaps(sessionKey int, driverNumber int) ([]dto.Lap, error) {
+    // Construir la URL completa para la solicitud de laps
     endpoint := fmt.Sprintf("laps?session_key=%d&driver_number=%d", sessionKey, driverNumber)
-    body, err := c.Get(endpoint)
+    fullURL := fmt.Sprintf("%s%s", c.BaseURL, endpoint) // BaseURL ya tiene el esquema y dominio
+
+    body, err := c.Get(fullURL)
     if err != nil {
         return nil, fmt.Errorf("error fetching laps: %w", err)
     }
@@ -162,7 +167,7 @@ func (c *HttpClient) GetLaps(sessionKey int, driverNumber int) ([]dto.Lap, error
 
 // Función para obtener sessionKey utilizando sessionId
 func (c *HttpClient) GetSessionKeyBySessionID(sessionID uint) (int, error) {
-	// Definir el endpoint para obtener la sessionKey desde el sessionID
+	// Usar la URL correcta del microservicio de sessions
 	endpoint := fmt.Sprintf("http://localhost:8060/sessions/%d/get-session-key", sessionID)
 
 	// Hacer la solicitud GET utilizando el cliente HTTP
@@ -171,7 +176,7 @@ func (c *HttpClient) GetSessionKeyBySessionID(sessionID uint) (int, error) {
 		return 0, fmt.Errorf("error fetching sessionKey: %w", err)
 	}
 
-	// Deserializar la respuesta para obtener el sessionKey (esto depende de la estructura de la respuesta)
+	// Deserializar la respuesta para obtener el sessionKey
 	var response struct {
 		SessionKey int `json:"session_key"`
 	}
@@ -180,4 +185,29 @@ func (c *HttpClient) GetSessionKeyBySessionID(sessionID uint) (int, error) {
 	}
 
 	return response.SessionKey, nil
+}
+
+// GetDriverByNumber obtiene la información de un piloto basado en su driver_number
+func (c *HttpClient) GetDriverByNumber(driverNumber int) (dto.ResponseDriverDTO, error) {
+	// Definir el endpoint para obtener la información del piloto desde el driver_number
+	endpoint := fmt.Sprintf("http://localhost:8070/drivers/number/%d", driverNumber)
+
+	// Hacer la solicitud GET utilizando el cliente HTTP
+	body, err := c.Get(endpoint)
+	if err != nil {
+		return dto.ResponseDriverDTO{}, fmt.Errorf("error fetching driver info: %w", err)
+	}
+
+	// Declarar la variable para deserializar la respuesta
+	var driver dto.ResponseDriverDTO
+
+	// Deserializar la respuesta para obtener la información del piloto
+	if err := json.Unmarshal(body, &driver); err != nil {
+		return dto.ResponseDriverDTO{}, fmt.Errorf("error decoding driver response: %w", err)
+	}
+
+	// Imprimir el driver_number y el driver_id que se está manejando
+	fmt.Printf("Obtenido driver_number: %d, driver_id: %d desde el microservicio drivers\n", driverNumber, driver.ID)
+
+	return driver, nil
 }

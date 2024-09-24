@@ -42,25 +42,36 @@ func NewResultService(resultRepo repository.ResultRepository, client *client.Htt
 
 // FetchResultsFromExternalAPI obtiene los resultados de una API externa y los inserta o actualiza en la base de datos
 func (s *resultService) FetchResultsFromExternalAPI(ctx context.Context, sessionID uint) ([]dto.ResponseResultDTO, e.ApiError) {
+	fmt.Println("Service: Iniciando FetchResultsFromExternalAPI")
+	
 	// Llamar al microservicio de sessions para obtener el sessionKey
-    sessionKey, err := s.client.GetSessionKeyBySessionID(sessionID)
-    if err != nil {
-        return nil, e.NewInternalServerApiError("Error obteniendo session key", err)
-    }
-
-	// 2. Usar la sessionKey para hacer la solicitud a la API externa
-	//sessionKey := session.SessionKey AHORA ESTO NO HACE FALTA
-	positions, err := s.client.GetPositions(int(sessionKey)) // Asumimos que la sessionKey es un número entero
+	sessionKey, err := s.client.GetSessionKeyBySessionID(sessionID)
 	if err != nil {
+		fmt.Println("Service: Error obteniendo sessionKey SERVICE", err)
+		return nil, e.NewInternalServerApiError("Error obteniendo session key", err)
+	}
+
+	fmt.Println("Service: sessionKey obtenido:", sessionKey)
+
+	// 2. Usar la sessionKey para hacer la solicitud a la API externa y obtener las posiciones
+	positions, err := s.client.GetPositions(sessionKey)
+	if err != nil {
+		fmt.Println("Service: Error obteniendo posiciones de la API externa", err)
 		return nil, e.NewInternalServerApiError("Error fetching positions from external API", err)
 	}
 
 	// 3. Crear un slice para almacenar los DTOs de respuesta
 	var responseResults []dto.ResponseResultDTO
 
-	// 4. Recorrer las posiciones y obtener las vueltas más rápidas para cada piloto
+	// 4. Crear un mapa para eliminar duplicados y quedarnos con la última posición registrada para cada piloto
+	finalPositions := make(map[int]dto.Position)
 	for _, pos := range positions {
-		// Obtener las vueltas del piloto
+		finalPositions[pos.DriverNumber] = pos
+	}
+
+	// 5. Obtener las vueltas más rápidas de los pilotos y guardarlas en la base de datos
+	for _, pos := range finalPositions {
+		// Obtener las vueltas del piloto usando sessionKey y driver_number
 		laps, err := s.client.GetLaps(int(sessionKey), pos.DriverNumber)
 		if err != nil {
 			fmt.Printf("Error obteniendo vueltas para el piloto %d: %v\n", pos.DriverNumber, err)
@@ -75,14 +86,22 @@ func (s *resultService) FetchResultsFromExternalAPI(ctx context.Context, session
 			}
 		}
 
-		// Verificar si el resultado ya existe
-		existingPosition, _ := s.resultRepo.GetDriverPositionInSession(ctx, uint(pos.DriverNumber), sessionID)
+		// Llamar al microservicio de drivers para obtener la información completa del piloto
+		driverInfo, err := s.client.GetDriverByNumber(pos.DriverNumber)
+		if err != nil {
+			fmt.Printf("Error obteniendo piloto para el driver_number %d: %v\n", pos.DriverNumber, err)
+			continue
+		}
 
+		// Verificar si el resultado ya existe
+		existingPosition, _ := s.resultRepo.GetDriverPositionInSession(ctx, driverInfo.ID, sessionID)
+
+		// Crear el nuevo resultado o actualizar si ya existe
 		newResult := &model.Result{
-			SessionID:      sessionID, // Usar el sessionID local
-			DriverID:       uint(pos.DriverNumber),
-			Position:       pos.Position,
-			FastestLapTime: fastestLap,
+			SessionID:      sessionID, 
+			DriverID:       uint(driverInfo.ID),  // Aquí debes usar el driver_id en lugar del driver_number
+			Position:       pos.Position,         // Guardar la posición final del piloto
+			FastestLapTime: fastestLap,           // Guardar la vuelta más rápida del piloto
 		}
 
 		if existingPosition == 0 {
@@ -105,12 +124,12 @@ func (s *resultService) FetchResultsFromExternalAPI(ctx context.Context, session
 			Position:       newResult.Position,
 			FastestLapTime: newResult.FastestLapTime,
 			Driver: dto.ResponseDriverDTO{
-				ID:          newResult.DriverID,
-				FirstName:   newResult.Driver.FirstName,
-				LastName:    newResult.Driver.LastName,
-				FullName:    newResult.Driver.FullName,
-				NameAcronym: newResult.Driver.NameAcronym,
-				TeamName:    newResult.Driver.TeamName,
+				ID:          driverInfo.ID,  // Usar la información del microservicio de drivers
+				FirstName:   driverInfo.FirstName,
+				LastName:    driverInfo.LastName,
+				FullName:    driverInfo.FullName,
+				NameAcronym: driverInfo.NameAcronym,
+				TeamName:    driverInfo.TeamName,
 			},
 			Session: dto.ResponseSessionDTO{
 				ID:               newResult.SessionID,

@@ -157,3 +157,19 @@ func (c *DriverController) FetchAllDriversFromExternalAPI(ctx *gin.Context) {
 
     ctx.JSON(http.StatusOK, response)
 }
+
+func (c *DriverController) GetDriverByNumber(ctx *gin.Context) {
+	driverNumber, err := strconv.Atoi(ctx.Param("driver_number"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Invalid driver number"))
+		return
+	}
+
+	response, apiErr := c.driversService.GetDriverByNumber(ctx.Request.Context(), driverNumber)
+	if apiErr != nil {
+		ctx.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, response)
+}

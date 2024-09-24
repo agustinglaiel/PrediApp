@@ -25,6 +25,7 @@ type DriverService interface {
 	ListDriversByFullName(ctx context.Context, fullName string) ([]dto.ResponseDriverDTO, e.ApiError)
 	ListDriversByAcronym(ctx context.Context, acronym string) ([]dto.ResponseDriverDTO, e.ApiError)
 	FetchAllDriversFromExternalAPI(ctx context.Context) ([]dto.ResponseDriverDTO, e.ApiError)
+	GetDriverByNumber(ctx context.Context, driverNumber int) (dto.ResponseDriverDTO, e.ApiError)
 }
 
 func NewDriverService(driverRepo repository.DriverRepository, client *client.HttpClient) DriverService {
@@ -364,4 +365,26 @@ func uniqueDrivers(drivers []dto.ResponseDriverDTO) []dto.ResponseDriverDTO {
     }
 
     return unique
+}
+
+func (s *driverService) GetDriverByNumber(ctx context.Context, driverNumber int) (dto.ResponseDriverDTO, e.ApiError) {
+	driver, err := s.driverRepo.GetDriverByNumber(ctx, driverNumber)
+	if err != nil {
+		return dto.ResponseDriverDTO{}, err
+	}
+
+	// Convert Model to Response DTO
+	response := dto.ResponseDriverDTO{
+		ID:             driver.ID,
+		BroadcastName:  driver.BroadcastName,
+		CountryCode:    driver.CountryCode,
+		DriverNumber:   driver.DriverNumber,
+		FirstName:      driver.FirstName,
+		LastName:       driver.LastName,
+		FullName:       driver.FullName,
+		NameAcronym:    driver.NameAcronym,
+		TeamName:       driver.TeamName,
+	}
+
+	return response, nil
 }
