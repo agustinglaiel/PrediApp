@@ -162,7 +162,15 @@ func (c *HttpClient) GetLaps(sessionKey int, driverNumber int) ([]dto.Lap, error
         return nil, fmt.Errorf("error decoding laps response: %w", err)
     }
 
-    return laps, nil
+    // Filtrar las vueltas con lap_duration nulo o igual a 0
+    validLaps := make([]dto.Lap, 0)
+    for _, lap := range laps {
+        if lap.LapDuration > 0 {
+            validLaps = append(validLaps, lap)
+        }
+    }
+
+    return validLaps, nil
 }
 
 // Función para obtener sessionKey utilizando sessionId
@@ -210,4 +218,24 @@ func (c *HttpClient) GetDriverByNumber(driverNumber int) (dto.ResponseDriverDTO,
 	fmt.Printf("Obtenido driver_number: %d, driver_id: %d desde el microservicio drivers\n", driverNumber, driver.ID)
 
 	return driver, nil
+}
+
+// Función para obtener la información de una sesión completa utilizando sessionId
+func (c *HttpClient) GetSessionByID(sessionID uint) (dto.ResponseSessionDTO, error) {
+    // Usar la URL correcta del microservicio de sessions
+    endpoint := fmt.Sprintf("http://localhost:8060/sessions/%d", sessionID)
+
+    // Hacer la solicitud GET utilizando el cliente HTTP
+    body, err := c.Get(endpoint)
+    if err != nil {
+        return dto.ResponseSessionDTO{}, fmt.Errorf("error fetching session by ID: %w", err)
+    }
+
+    // Deserializar la respuesta para obtener la sesión
+    var session dto.ResponseSessionDTO
+    if err := json.Unmarshal(body, &session); err != nil {
+        return dto.ResponseSessionDTO{}, fmt.Errorf("error decoding session response: %w", err)
+    }
+
+    return session, nil
 }

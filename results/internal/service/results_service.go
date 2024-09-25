@@ -46,113 +46,127 @@ func NewResultService(resultRepo repository.ResultRepository, client *client.Htt
 
 // FetchResultsFromExternalAPI obtiene los resultados de una API externa y los inserta o actualiza en la base de datos
 func (s *resultService) FetchResultsFromExternalAPI(ctx context.Context, sessionID uint) ([]dto.ResponseResultDTO, e.ApiError) {
-	fmt.Println("Service: Iniciando FetchResultsFromExternalAPI")
-	
-	// Llamar al microservicio de sessions para obtener el sessionKey
-	sessionKey, err := s.client.GetSessionKeyBySessionID(sessionID)
-	if err != nil {
-		fmt.Println("Service: Error obteniendo sessionKey SERVICE", err)
-		return nil, e.NewInternalServerApiError("Error obteniendo session key", err)
-	}
+    fmt.Println("Service: Iniciando FetchResultsFromExternalAPI")
+    
+    // Llamar al microservicio de sessions para obtener el sessionKey
+    sessionKey, err := s.client.GetSessionKeyBySessionID(sessionID)
+    if err != nil {
+        fmt.Println("Service: Error obteniendo sessionKey SERVICE", err)
+        return nil, e.NewInternalServerApiError("Error obteniendo session key", err)
+    }
 
-	fmt.Println("Service: sessionKey obtenido:", sessionKey)
+    fmt.Println("Service: sessionKey obtenido:", sessionKey)
 
-	// 2. Usar la sessionKey para hacer la solicitud a la API externa y obtener las posiciones
-	positions, err := s.client.GetPositions(sessionKey)
-	if err != nil {
-		fmt.Println("Service: Error obteniendo posiciones de la API externa", err)
-		return nil, e.NewInternalServerApiError("Error fetching positions from external API", err)
-	}
+    // 2. Usar la sessionKey para hacer la solicitud a la API externa y obtener las posiciones
+    positions, err := s.client.GetPositions(sessionKey)
+    if err != nil {
+        fmt.Println("Service: Error obteniendo posiciones de la API externa", err)
+        return nil, e.NewInternalServerApiError("Error fetching positions from external API", err)
+    }
 
-	// 3. Crear un slice para almacenar los DTOs de respuesta
-	var responseResults []dto.ResponseResultDTO
+    // 3. Crear un slice para almacenar los DTOs de respuesta
+    var responseResults []dto.ResponseResultDTO
 
-	// 4. Crear un mapa para eliminar duplicados y quedarnos con la última posición registrada para cada piloto
-	finalPositions := make(map[int]dto.Position)
-	for _, pos := range positions {
-		finalPositions[pos.DriverNumber] = pos
-	}
+    // 4. Crear un mapa para eliminar duplicados y quedarnos con la última posición registrada para cada piloto
+    finalPositions := make(map[int]dto.Position)
+    for _, pos := range positions {
+        finalPositions[pos.DriverNumber] = pos
+    }
 
-	// 5. Obtener las vueltas más rápidas de los pilotos y guardarlas en la base de datos
-	for _, pos := range finalPositions {
-		// Obtener las vueltas del piloto usando sessionKey y driver_number
-		laps, err := s.client.GetLaps(int(sessionKey), pos.DriverNumber)
-		if err != nil {
-			fmt.Printf("Error obteniendo vueltas para el piloto %d: %v\n", pos.DriverNumber, err)
-			continue
-		}
+    // 5. Obtener las vueltas más rápidas de los pilotos y guardarlas en la base de datos
+    for _, pos := range finalPositions {
+        // Obtener las vueltas del piloto usando sessionKey y driver_number
+        laps, err := s.client.GetLaps(int(sessionKey), pos.DriverNumber)
+        if err != nil {
+            fmt.Printf("Error obteniendo vueltas para el piloto %d: %v\n", pos.DriverNumber, err)
+            continue
+        }
 
-		// Encontrar la vuelta más rápida del piloto
-		var fastestLap float64
-		for _, lap := range laps {
-			if fastestLap == 0 || lap.LapDuration < fastestLap {
-				fastestLap = lap.LapDuration
-			}
-		}
+        // Si no hay vueltas válidas, saltar al siguiente piloto
+        if len(laps) == 0 {
+            fmt.Printf("No valid laps found for driver %d\n", pos.DriverNumber)
+            continue
+        }
 
-		// Llamar al microservicio de drivers para obtener la información completa del piloto
-		driverInfo, err := s.client.GetDriverByNumber(pos.DriverNumber)
-		if err != nil {
-			fmt.Printf("Error obteniendo piloto para el driver_number %d: %v\n", pos.DriverNumber, err)
-			continue
-		}
+        // Encontrar la vuelta más rápida del piloto
+        var fastestLap float64
+        for _, lap := range laps {
+            if fastestLap == 0 || lap.LapDuration < fastestLap {
+                fastestLap = lap.LapDuration
+            }
+        }
 
-		// Verificar si el resultado ya existe
-		existingPosition, _ := s.resultRepo.GetDriverPositionInSession(ctx, driverInfo.ID, sessionID)
+        // Llamar al microservicio de drivers para obtener la información completa del piloto
+        driverInfo, err := s.client.GetDriverByNumber(pos.DriverNumber)
+        if err != nil {
+            fmt.Printf("Error obteniendo piloto para el driver_number %d: %v\n", pos.DriverNumber, err)
+            continue
+        }
 
-		// Crear el nuevo resultado o actualizar si ya existe
-		newResult := &model.Result{
-			SessionID:      sessionID, 
-			DriverID:       uint(driverInfo.ID),  // Aquí debes usar el driver_id en lugar del driver_number
-			Position:       pos.Position,         // Guardar la posición final del piloto
-			FastestLapTime: fastestLap,           // Guardar la vuelta más rápida del piloto
-		}
+        // Verificar si el resultado ya existe
+        existingPosition, _ := s.resultRepo.GetDriverPositionInSession(ctx, driverInfo.ID, sessionID)
 
-		if existingPosition == 0 {
-			// Si no existe, insertarlo en la base de datos
-			if err := s.resultRepo.CreateResult(ctx, newResult); err != nil {
-				return nil, e.NewInternalServerApiError("Error inserting result into database", err)
-			}
-		} else {
-			// Actualizar el resultado si ya existe
-			newResult.Position = pos.Position
-			newResult.FastestLapTime = fastestLap
-			if err := s.resultRepo.UpdateResult(ctx, newResult); err != nil {
-				return nil, e.NewInternalServerApiError("Error updating existing result", err)
-			}
-		}
+        // Crear el nuevo resultado o actualizar si ya existe
+        newResult := &model.Result{
+            SessionID:      sessionID, 
+            DriverID:       uint(driverInfo.ID),
+            Position:       pos.Position,
+            FastestLapTime: fastestLap,
+        }
 
-		// Convertir el modelo a DTO y agregarlo a la respuesta
-		responseResult := dto.ResponseResultDTO{
-			ID:             newResult.ID,
-			Position:       newResult.Position,
-			FastestLapTime: newResult.FastestLapTime,
-			Driver: dto.ResponseDriverDTO{
-				ID:          driverInfo.ID,  // Usar la información del microservicio de drivers
-				FirstName:   driverInfo.FirstName,
-				LastName:    driverInfo.LastName,
-				FullName:    driverInfo.FullName,
-				NameAcronym: driverInfo.NameAcronym,
-				TeamName:    driverInfo.TeamName,
-			},
-			Session: dto.ResponseSessionDTO{
-				ID:               newResult.SessionID,
-				CircuitShortName: newResult.Session.CircuitShortName,
-				CountryName:      newResult.Session.CountryName,
-				Location:         newResult.Session.Location,
-				SessionName:      newResult.Session.SessionName,
-				SessionType:      newResult.Session.SessionType,
-				DateStart:        newResult.Session.DateStart,
-			},
-			CreatedAt: newResult.CreatedAt,
-			UpdatedAt: newResult.UpdatedAt,
-		}
-		responseResults = append(responseResults, responseResult)
-	}
+        if existingPosition == 0 {
+            // Si no existe, insertarlo en la base de datos
+            if err := s.resultRepo.CreateResult(ctx, newResult); err != nil {
+                return nil, e.NewInternalServerApiError("Error inserting result into database", err)
+            }
+        } else {
+            // Actualizar el resultado si ya existe
+            newResult.Position = pos.Position
+            newResult.FastestLapTime = fastestLap
+            if err := s.resultRepo.UpdateResult(ctx, newResult); err != nil {
+                return nil, e.NewInternalServerApiError("Error updating existing result", err)
+            }
+        }
 
-	// 6. Retornar los resultados procesados
-	return responseResults, nil
+        // Volver a obtener la sesión para completar los datos
+        session, err := s.client.GetSessionByID(newResult.SessionID)
+        if err != nil {
+            return nil, e.NewInternalServerApiError("Error fetching session data", err)
+        }
+
+        // Convertir el modelo a DTO y agregarlo a la respuesta
+        responseResult := dto.ResponseResultDTO{
+            ID:             newResult.ID,
+            Position:       newResult.Position,
+            FastestLapTime: newResult.FastestLapTime,
+            Driver: dto.ResponseDriverDTO{
+                ID:          driverInfo.ID,
+                FirstName:   driverInfo.FirstName,
+                LastName:    driverInfo.LastName,
+                FullName:    driverInfo.FullName,
+                NameAcronym: driverInfo.NameAcronym,
+                TeamName:    driverInfo.TeamName,
+            },
+            Session: dto.ResponseSessionDTO{
+                ID:               session.ID,
+                CircuitShortName: session.CircuitShortName,
+                CountryName:      session.CountryName,
+                Location:         session.Location,
+                SessionName:      session.SessionName,
+                SessionType:      session.SessionType,
+                DateStart:        session.DateStart,
+            },
+            CreatedAt: newResult.CreatedAt,
+            UpdatedAt: newResult.UpdatedAt,
+        }
+        responseResults = append(responseResults, responseResult)
+    }
+
+    // 6. Retornar los resultados procesados
+    return responseResults, nil
 }
+
+
 
 // CreateResult crea un nuevo resultado
 func (s *resultService) CreateResult(ctx context.Context, request dto.CreateResultDTO) (dto.ResponseResultDTO, e.ApiError) {
@@ -323,51 +337,62 @@ func (s *resultService) GetResultsOrderedByPosition(ctx context.Context, session
 
 // GetFastestLapInSession obtiene el piloto con la vuelta más rápida en una sesión específica
 func (s *resultService) GetFastestLapInSession(ctx context.Context, sessionID uint) (dto.ResponseResultDTO, e.ApiError) {
-	// Verificar si existe el sessionID en la tabla de resultados
-	exists, err := s.resultRepo.ExistsSessionInResults(ctx, sessionID)
-	if err != nil {
-		return dto.ResponseResultDTO{}, e.NewInternalServerApiError("Error verifying session existence in results", err)
-	}
-	if !exists {
-		return dto.ResponseResultDTO{}, e.NewNotFoundApiError("No results found for the given session ID")
-	}
-	
-	// Obtener la vuelta más rápida de la sesión
-	result, err := s.resultRepo.GetFastestLapInSession(ctx, sessionID)
-	if err != nil {
-		if err == e.NewNotFoundApiError("No fastest lap found for the session") {
-			return dto.ResponseResultDTO{}, e.NewNotFoundApiError("No fastest lap found for the given session ID")
-		}
-		return dto.ResponseResultDTO{}, e.NewInternalServerApiError("Error al obtener la vuelta más rápida de la sesión", err)
-	}
+    // Verificar si existe el sessionID en la tabla de resultados
+    exists, err := s.resultRepo.ExistsSessionInResults(ctx, sessionID)
+    if err != nil {
+        return dto.ResponseResultDTO{}, e.NewInternalServerApiError("Error verifying session existence in results", err)
+    }
+    if !exists {
+        return dto.ResponseResultDTO{}, e.NewNotFoundApiError("No results found for the given session ID")
+    }
 
-	// Convertir el resultado más rápido a DTO
-	response := dto.ResponseResultDTO{
-		ID:             result.ID,
-		Position:       result.Position,
-		FastestLapTime: result.FastestLapTime,
-		Driver: dto.ResponseDriverDTO{
-			ID:          result.Driver.ID,
-			FirstName:   result.Driver.FirstName,
-			LastName:    result.Driver.LastName,
-			FullName:    result.Driver.FullName,
-			NameAcronym: result.Driver.NameAcronym,
-			TeamName:    result.Driver.TeamName,
-		},
-		Session: dto.ResponseSessionDTO{
-			ID:               result.Session.ID,
-			CircuitShortName: result.Session.CircuitShortName,
-			CountryName:      result.Session.CountryName,
-			Location:         result.Session.Location,
-			SessionName:      result.Session.SessionName,
-			SessionType:      result.Session.SessionType,
-			DateStart:        result.Session.DateStart,
-		},
-		CreatedAt: result.CreatedAt,
-		UpdatedAt: result.UpdatedAt,
-	}
+    // Obtener la vuelta más rápida de la sesión
+    results, err := s.resultRepo.GetResultsBySessionID(ctx, sessionID)  // Obtenemos todos los resultados
+    if err != nil {
+        return dto.ResponseResultDTO{}, e.NewInternalServerApiError("Error fetching session results", err)
+    }
 
-	return response, nil
+    var fastestResult *model.Result
+    for _, result := range results {
+        // Ignorar tiempos nulos o 0
+        if result.FastestLapTime > 0 {
+            if fastestResult == nil || result.FastestLapTime < fastestResult.FastestLapTime {
+                fastestResult = result
+            }
+        }
+    }
+
+    if fastestResult == nil {
+        return dto.ResponseResultDTO{}, e.NewNotFoundApiError("No valid lap times found for the given session")
+    }
+
+    // Convertir el resultado más rápido a DTO
+    response := dto.ResponseResultDTO{
+        ID:             fastestResult.ID,
+        Position:       fastestResult.Position,
+        FastestLapTime: fastestResult.FastestLapTime,
+        Driver: dto.ResponseDriverDTO{
+            ID:          fastestResult.Driver.ID,
+            FirstName:   fastestResult.Driver.FirstName,
+            LastName:    fastestResult.Driver.LastName,
+            FullName:    fastestResult.Driver.FullName,
+            NameAcronym: fastestResult.Driver.NameAcronym,
+            TeamName:    fastestResult.Driver.TeamName,
+        },
+        Session: dto.ResponseSessionDTO{
+            ID:               fastestResult.Session.ID,
+            CircuitShortName: fastestResult.Session.CircuitShortName,
+            CountryName:      fastestResult.Session.CountryName,
+            Location:         fastestResult.Session.Location,
+            SessionName:      fastestResult.Session.SessionName,
+            SessionType:      fastestResult.Session.SessionType,
+            DateStart:        fastestResult.Session.DateStart,
+        },
+        CreatedAt: fastestResult.CreatedAt,
+        UpdatedAt: fastestResult.UpdatedAt,
+    }
+
+    return response, nil
 }
 
 // GetResultByID obtiene un resultado específico por su ID

@@ -105,19 +105,19 @@ func (r *resultRepository) GetFastestLapInSession(ctx context.Context, sessionID
     return &result, nil
 }
 
-// GetDriverPositionInSession obtiene la posición final de un piloto en una sesión específica
+// GetDriverPositionInSession obtiene la posición de un piloto en una sesión, cargando las relaciones de la sesión
 func (r *resultRepository) GetDriverPositionInSession(ctx context.Context, driverID uint, sessionID uint) (int, e.ApiError) {
     var result model.Result
-    // Buscar el resultado del piloto en la sesión específica
-    if err := r.db.WithContext(ctx).Where("driver_id = ? AND session_id = ?", driverID, sessionID).Select("position").First(&result).Error; err != nil {
+    // Asegurarnos de cargar la relación con la sesión
+    if err := r.db.WithContext(ctx).Preload("Session").Where("driver_id = ? AND session_id = ?", driverID, sessionID).First(&result).Error; err != nil {
         if err == gorm.ErrRecordNotFound {
             return 0, e.NewNotFoundApiError("No position found for the given driver in the session")
         }
         return 0, e.NewInternalServerApiError("Error fetching driver position in session", err)
     }
-    // Devolver únicamente la posición
     return result.Position, nil
 }
+
 
 // GetResultsOrderedByPosition obtiene los resultados de una sesión ordenados por posición
 /*
