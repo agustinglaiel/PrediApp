@@ -32,9 +32,10 @@ type SessionServiceInterface interface{
 	GetRaceResultsById(ctx context.Context, sessionID uint) (dto.RaceResultsDTO, e.ApiError)
 	UpdateResultSCAndVSC(ctx context.Context, sessionID uint) e.ApiError 
 	UpdateDNFBySessionID(ctx context.Context, sessionID uint, dnf int) e.ApiError
-	UpdateSessionKey(ctx context.Context, sessionID uint, location, sessionName, sessionType string, year int) e.ApiError
+	UpdateSessionData(ctx context.Context, sessionID uint, location string, sessionName string, sessionType string, year int) e.ApiError
     GetSessionKeyBySessionID(ctx context.Context, sessionID uint) (int, e.ApiError)
 	UpdateSessionKeyAdmin(ctx context.Context, sessionID uint, sessionKey int) e.ApiError
+	UpdateDFastLap(ctx context.Context, sessionID uint) e.ApiError
 }
 
 func NewSessionService(sessionsRepo repository.SessionRepository, client *client.HttpClient) SessionServiceInterface{
@@ -664,29 +665,32 @@ func (s *sessionService) UpdateDNFBySessionID(ctx context.Context, sessionID uin
     return nil
 }
 
-func (s *sessionService) UpdateSessionKey(ctx context.Context, sessionID uint, location, sessionName, sessionType string, year int) e.ApiError {
-	// Obtener el session_key desde la API externa usando el cliente HTTP
-	sessionKey, err := s.client.GetSessionKey(location, sessionName, sessionType, year)
-	if err != nil {
-		return e.NewInternalServerApiError("Error fetching session key", err)
-	}
+func (s *sessionService) UpdateSessionData(ctx context.Context, sessionID uint, location string, sessionName string, sessionType string, year int) e.ApiError {
+    // Obtener el session_data desde la API externa usando el cliente HTTP
+    sessionData, err := s.client.GetSessionData(location, sessionName, sessionType, year)
+    if err != nil {
+        return e.NewInternalServerApiError("Error fetching session data", err)
+    }
 
-	// Si se encontró un session_key, actualizar la sesión en la base de datos
-	if sessionKey != nil {
-		// Obtener la sesión actual
-		session, apiErr := s.sessionsRepo.GetSessionById(ctx, sessionID)
-		if apiErr != nil {
-			return apiErr
-		}
+    // Si se encontró un session_key, date_start, y date_end, actualizar la sesión en la base de datos
+    if sessionData != nil {
+        // Obtener la sesión actual
+        session, apiErr := s.sessionsRepo.GetSessionById(ctx, sessionID)
+        if apiErr != nil {
+            return apiErr
+        }
 
-		// Actualizar el session_key de la sesión
-		session.SessionKey = sessionKey
-		if apiErr := s.sessionsRepo.UpdateSessionKey(ctx, session); apiErr != nil {
-			return apiErr
-		}
-	}
+        // Actualizar los campos session_key, date_start y date_end de la sesión
+        session.SessionKey = sessionData.SessionKey
+        session.DateStart = *sessionData.DateStart
+        session.DateEnd = *sessionData.DateEnd
+        
+        if apiErr := s.sessionsRepo.UpdateSessionById(ctx, session); apiErr != nil {
+            return apiErr
+        }
+    }
 
-	return nil
+    return nil
 }
 
 func (s *sessionService) GetSessionKeyBySessionID(ctx context.Context, sessionID uint) (int, e.ApiError) {
@@ -713,6 +717,24 @@ func (s *sessionService) UpdateSessionKeyAdmin(ctx context.Context, sessionID ui
     session.SessionKey = &sessionKey
     if err := s.sessionsRepo.UpdateSessionKey(ctx, session); err != nil {
         return err
+    }
+
+    return nil
+}
+
+func (s *sessionService) UpdateDFastLap(ctx context.Context, sessionID uint) e.ApiError {
+    // Llamar al microservicio de results para obtener el piloto con la vuelta más rápida
+    fastestLapResult, err := s.client.GetFastestLapBySessionID(sessionID)
+    if err != nil {
+        return e.NewInternalServerApiError("Error obteniendo el piloto con la vuelta más rápida", err)
+    }
+
+    // Extraer el driver_id del piloto que hizo la vuelta más rápida
+    driverID := fastestLapResult.Driver.ID
+
+    // Actualizar el campo DFastLap en la sesión
+    if err := s.sessionsRepo.UpdateDFastLap(ctx, sessionID, driverID); err != nil {
+        return e.NewInternalServerApiError("Error actualizando DFastLap en la sesión", err)
     }
 
     return nil

@@ -1,4 +1,4 @@
-package sessions
+package dto
 
 import "time"
 
@@ -102,9 +102,11 @@ type UpdateDNFDTO struct {
     DNF int `json:"dnf" binding:"required"`
 }
 
-// SessionKeyResponseDTO representa la respuesta que incluye el session_key
+// SessionKeyResponseDTO representa la respuesta que incluye el session_key, date_start, y date_end
 type SessionKeyResponseDTO struct {
-	SessionKey *int `json:"session_key"`
+	SessionKey *int       `json:"session_key"`
+	DateStart  *time.Time `json:"date_start"`
+	DateEnd    *time.Time `json:"date_end"`
 }
 
 type UpdateSessionKeyDTO struct {
@@ -112,4 +114,25 @@ type UpdateSessionKeyDTO struct {
     SessionName string `json:"session_name" binding:"required"`
     SessionType string `json:"session_type" binding:"required"`
     Year        int    `json:"year" binding:"required"`
+}
+
+type UpdateSessionDataDTO struct {
+    Location     string `json:"location" binding:"required"`
+    SessionName  string `json:"session_name" binding:"required"`
+    SessionType  string `json:"session_type" binding:"required"`
+    Year         int    `json:"year" binding:"required"`
+}
+
+// FastestLapDTO representa el piloto con la vuelta más rápida de una sesión
+type FastestLapDTO struct {
+    Driver ResponseDriverDTO `json:"driver"`  // Información del piloto
+}
+
+// ResponseDriverDTO representa la información del piloto
+type ResponseDriverDTO struct {
+    ID          int    `json:"id"`           // ID del piloto
+    FirstName   string `json:"first_name"`   // Nombre del piloto
+    LastName    string `json:"last_name"`    // Apellido del piloto
+    FullName    string `json:"full_name"`    // Nombre completo del piloto
+    TeamName    string `json:"team_name"`    // Nombre del equipo del piloto
 }

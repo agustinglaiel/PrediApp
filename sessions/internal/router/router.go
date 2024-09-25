@@ -33,9 +33,11 @@ func MapUrls(engine *gin.Engine, sessionController *api.SessionController) {
 	engine.PUT("/sessions/:id/scvsc", sessionController.UpdateResultSCAndVSC)
 	//engine.PUT("/sessions/:id/dnf", sessionController.CalculateDNF)
 	engine.PUT("/sessions/:id/dnf", sessionController.UpdateDNF)
-	engine.PUT("/sessions/:id/session-key", sessionController.UpdateSessionKey)
+	engine.PUT("/sessions/:id/session-data", sessionController.UpdateSessionData)
 	engine.GET("/sessions/:id/get-session-key", sessionController.GetSessionKeyBySessionID)
 	engine.PUT("/sessions/:id/admin-session-key", sessionController.UpdateSessionKeyAdmin)
+	engine.PUT("/sessions/:id/dfastlap", sessionController.UpdateDFastLap)
+
 
 	// Debugging purpose
 	engine.GET("/ping", func(c *gin.Context) {

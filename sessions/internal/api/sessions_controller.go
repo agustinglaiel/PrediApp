@@ -305,23 +305,23 @@ func (sc *SessionController) UpdateDNF(c *gin.Context) {
     c.Status(http.StatusOK)
 }
 
-func (sc *SessionController) UpdateSessionKey(c *gin.Context) {
+func (sc *SessionController) UpdateSessionData(c *gin.Context) {
     // Obtener el ID de la sesión desde los parámetros de la URL
     sessionID, err := ParseUintParam(c.Param("id"))
     if err != nil {
-        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID inválido"))
+        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de sesión inválido"))
         return
     }
 
-    // Bindear los datos del cuerpo de la solicitud a un DTO
-    var request dto.UpdateSessionKeyDTO
+    // Vincular la carga útil JSON al DTO (si es necesario agregar más campos)
+    var request dto.UpdateSessionDataDTO
     if err := c.ShouldBindJSON(&request); err != nil {
         c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Datos inválidos"))
         return
     }
 
-    // Llamar al servicio para actualizar el session_key
-    apiErr := sc.sessionService.UpdateSessionKey(c.Request.Context(), sessionID, request.Location, request.SessionName, request.SessionType, request.Year)
+    // Llamar al servicio para actualizar el session_key, date_start, y date_end
+    apiErr := sc.sessionService.UpdateSessionData(c.Request.Context(), sessionID, request.Location, request.SessionName, request.SessionType, request.Year)
     if apiErr != nil {
         c.JSON(apiErr.Status(), apiErr)
         return
@@ -372,5 +372,24 @@ func (sc *SessionController) UpdateSessionKeyAdmin(c *gin.Context) {
     }
 
     // Responder con un estado 200 si la actualización fue exitosa
+    c.Status(http.StatusOK)
+}
+
+func (sc *SessionController) UpdateDFastLap(c *gin.Context) {
+    // Obtener el ID de la sesión desde los parámetros de la URL
+    sessionID, err := ParseUintParam(c.Param("id"))
+    if err != nil {
+        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de sesión inválido"))
+        return
+    }
+
+    // Llamar al servicio para actualizar el DFastLap
+    apiErr := sc.sessionService.UpdateDFastLap(c.Request.Context(), sessionID)
+    if apiErr != nil {
+        c.JSON(apiErr.Status(), apiErr)
+        return
+    }
+
+    // Responder con un estado 200 (OK) si la actualización fue exitosa
     c.Status(http.StatusOK)
 }

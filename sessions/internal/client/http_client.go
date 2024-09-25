@@ -173,28 +173,66 @@ func (c *HttpClient) GetLapsData(sessionKey int) ([]dto.LapData, e.ApiError) {
 
 //Esta función la usamos para obtener el session_key de una session para luego poder hacer el update de sc y vsc
 // GetSessionKey obtiene el session_key basado en location, session_name, session_type, y year
-func (c *HttpClient) GetSessionKey(location string, sessionName string, sessionType string, year int) (*int, utils.ApiError) {
-	// Definir el endpoint con los parámetros
-	endpoint := fmt.Sprintf("/sessions?location=%s&session_name=%s&session_type=%s&year=%d", location, sessionName, sessionType, year)
-	fmt.Println(endpoint)
-	
-	// Hacer la solicitud GET
-	body, err := c.Get(endpoint)
-	if err != nil {
-		return nil, utils.NewInternalServerApiError("Error fetching session data", err)
-	}
+// GetSessionData obtiene session_key, date_start y date_end basado en location, session_name, session_type y year
+func (c *HttpClient) GetSessionData(location string, sessionName string, sessionType string, year int) (*dto.SessionKeyResponseDTO, utils.ApiError) {
+    // Definir el endpoint con los parámetros
+    endpoint := fmt.Sprintf("/sessions?location=%s&session_name=%s&session_type=%s&year=%d", location, sessionName, sessionType, year)
+    
+    // Print del endpoint que estamos consultando
+    fmt.Printf("Consultando endpoint: %s\n", endpoint)
+    
+    // Hacer la solicitud GET
+    body, err := c.Get(endpoint)
+    if err != nil {
+        fmt.Printf("Error en la solicitud GET: %v\n", err)
+        return nil, utils.NewInternalServerApiError("Error fetching session data", err)
+    }
+    
+    // Print del body de la respuesta (para ver qué devuelve la API)
+    fmt.Printf("Respuesta del body: %s\n", string(body))
 
-	// Deserializar la respuesta JSON como un array de SessionKeyResponseDTO
-	var response []dto.SessionKeyResponseDTO
-	if err := json.Unmarshal(body, &response); err != nil {
-		return nil, utils.NewInternalServerApiError("Error decoding session key response", err)
-	}
+    // Deserializar la respuesta JSON como un array de SessionKeyResponseDTO
+    var response []dto.SessionKeyResponseDTO
+    if err := json.Unmarshal(body, &response); err != nil {
+        fmt.Printf("Error deserializando la respuesta JSON: %v\n", err)
+        return nil, utils.NewInternalServerApiError("Error decoding session data response", err)
+    }
 
-	// Verificar si el array tiene al menos un resultado y si el session_key está presente
-	if len(response) == 0 || response[0].SessionKey == nil {
-		return nil, utils.NewNotFoundApiError("Session key not found for the given parameters")
-	}
+    // Print de la respuesta deserializada para ver qué contiene el objeto `response`
+    fmt.Printf("Respuesta deserializada: %+v\n", response)
 
-	// Retornar el session_key del primer resultado (suponiendo que el primer resultado es el correcto)
-	return response[0].SessionKey, nil
+    // Verificar si el array tiene al menos un resultado y si el session_key está presente
+    if len(response) == 0 || response[0].SessionKey == nil {
+        fmt.Println("No se encontraron datos de session_key para los parámetros proporcionados.")
+        return nil, utils.NewNotFoundApiError("Session data not found for the given parameters")
+    }
+
+    // Print de los datos que estamos retornando
+    fmt.Printf("Datos retornados: SessionKey: %d, DateStart: %v, DateEnd: %v\n", *response[0].SessionKey, response[0].DateStart, response[0].DateEnd)
+
+    // Retornar el objeto con session_key, date_start y date_end del primer resultado
+    return &response[0], nil
+}
+
+// GetFastestLapBySessionID obtiene el piloto con la vuelta más rápida de una sesión específica
+func (c *HttpClient) GetFastestLapBySessionID(sessionID uint) (*dto.FastestLapDTO, error) {
+    endpoint := fmt.Sprintf("http://localhost:8071/results/session/%d/fastest-lap", sessionID)
+    fmt.Println("Requesting:", endpoint)  // Log de la solicitud
+
+    body, err := c.Get(endpoint)
+    if err != nil {
+        return nil, fmt.Errorf("error fetching fastest lap: %w", err)
+    }
+
+    if len(body) == 0 {
+        return nil, fmt.Errorf("error fetching fastest lap: empty response")
+    }
+
+    // Deserializar la respuesta
+    var fastestLap dto.FastestLapDTO
+    if err := json.Unmarshal(body, &fastestLap); err != nil {
+        return nil, fmt.Errorf("error decoding fastest lap response: %w", err)
+    }
+
+    return &fastestLap, nil
 }
