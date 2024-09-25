@@ -166,8 +166,6 @@ func (s *resultService) FetchResultsFromExternalAPI(ctx context.Context, session
     return responseResults, nil
 }
 
-
-
 // CreateResult crea un nuevo resultado
 func (s *resultService) CreateResult(ctx context.Context, request dto.CreateResultDTO) (dto.ResponseResultDTO, e.ApiError) {
 	// Validar posición (debe ser entre 1 y 20)

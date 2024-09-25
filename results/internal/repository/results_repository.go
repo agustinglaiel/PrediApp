@@ -118,7 +118,6 @@ func (r *resultRepository) GetDriverPositionInSession(ctx context.Context, drive
     return result.Position, nil
 }
 
-
 // GetResultsOrderedByPosition obtiene los resultados de una sesión ordenados por posición
 /*
 obtiene todos los resultados de una sesión específica (incluyendo detalles de piloto y sesión) y los ordena por posición.
