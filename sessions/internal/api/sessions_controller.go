@@ -279,27 +279,6 @@ func (sc *SessionController) UpdateResultSCAndVSC(c *gin.Context) {
     c.Status(http.StatusOK)
 }
 
-/*
-func (sc *SessionController) CalculateDNF(c *gin.Context) {
-    // Obtener el ID de la sesión desde los parámetros de la URL
-    sessionID, err := ParseUintParam(c.Param("id"))
-    if err != nil {
-        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID inválido"))
-        return
-    }
-
-    // Llamar al servicio para calcular los DNF
-    apiErr := sc.sessionService.CalculateDNF(c.Request.Context(), sessionID)
-    if apiErr != nil {
-        c.JSON(apiErr.Status(), apiErr)
-        return
-    }
-
-    // Responder con un estado 200 si la actualización fue exitosa
-    c.Status(http.StatusOK)
-}
-*/
-
 func (sc *SessionController) UpdateDNF(c *gin.Context) {
     // Obtener el ID de la sesión desde los parámetros de la URL
     sessionID, err := ParseUintParam(c.Param("id"))
@@ -366,4 +345,32 @@ func (sc *SessionController) GetSessionKeyBySessionID(c *gin.Context) {
     }
 
     c.JSON(http.StatusOK, gin.H{"session_key": sessionKey})
+}
+
+func (sc *SessionController) UpdateSessionKeyAdmin(c *gin.Context) {
+    // Obtener el ID de la sesión desde los parámetros de la URL
+    sessionID, err := ParseUintParam(c.Param("id"))
+    if err != nil {
+        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID inválido"))
+        return
+    }
+
+    // Bindear el sessionKey del cuerpo de la solicitud
+    var request struct {
+        SessionKey int `json:"session_key"`
+    }
+    if err := c.ShouldBindJSON(&request); err != nil {
+        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Datos inválidos"))
+        return
+    }
+
+    // Llamar al servicio para actualizar manualmente el session_key
+    apiErr := sc.sessionService.UpdateSessionKeyAdmin(c.Request.Context(), sessionID, request.SessionKey)
+    if apiErr != nil {
+        c.JSON(apiErr.Status(), apiErr)
+        return
+    }
+
+    // Responder con un estado 200 si la actualización fue exitosa
+    c.Status(http.StatusOK)
 }

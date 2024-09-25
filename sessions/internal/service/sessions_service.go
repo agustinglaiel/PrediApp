@@ -34,6 +34,7 @@ type SessionServiceInterface interface{
 	UpdateDNFBySessionID(ctx context.Context, sessionID uint, dnf int) e.ApiError
 	UpdateSessionKey(ctx context.Context, sessionID uint, location, sessionName, sessionType string, year int) e.ApiError
     GetSessionKeyBySessionID(ctx context.Context, sessionID uint) (int, e.ApiError)
+	UpdateSessionKeyAdmin(ctx context.Context, sessionID uint, sessionKey int) e.ApiError
 }
 
 func NewSessionService(sessionsRepo repository.SessionRepository, client *client.HttpClient) SessionServiceInterface{
@@ -699,4 +700,20 @@ func (s *sessionService) GetSessionKeyBySessionID(ctx context.Context, sessionID
     }
 
     return *session.SessionKey, nil
+}
+
+func (s *sessionService) UpdateSessionKeyAdmin(ctx context.Context, sessionID uint, sessionKey int) e.ApiError {
+    // Obtener la sesión actual por ID
+    session, apiErr := s.sessionsRepo.GetSessionById(ctx, sessionID)
+    if apiErr != nil {
+        return apiErr
+    }
+
+    // Actualizar solo el campo session_key con el valor proporcionado manualmente
+    session.SessionKey = &sessionKey
+    if err := s.sessionsRepo.UpdateSessionKey(ctx, session); err != nil {
+        return err
+    }
+
+    return nil
 }
