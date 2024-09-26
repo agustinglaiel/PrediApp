@@ -28,8 +28,7 @@ func NewHttpClient(baseURL string) *HttpClient {
 
 // Get realiza una solicitud GET a la API de destino
 func (c *HttpClient) Get(endpoint string) ([]byte, error) {
-	url := fmt.Sprintf("%s%s", c.BaseURL, endpoint)
-	resp, err := c.HTTPClient.Get(url)
+	resp, err := c.HTTPClient.Get(endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("error making GET request: %w", err)
 	}
@@ -216,13 +215,14 @@ func (c *HttpClient) GetSessionData(location string, sessionName string, session
 
 // GetFastestLapBySessionID obtiene el piloto con la vuelta más rápida de una sesión específica
 func (c *HttpClient) GetFastestLapBySessionID(sessionID uint) (*dto.FastestLapDTO, error) {
-    endpoint := fmt.Sprintf("/results/session/%d/fastest-lap", sessionID)
+    endpoint := fmt.Sprintf("http://localhost:8071/results/session/%d/fastest-lap", sessionID)
     fmt.Println("Requesting:", endpoint)  // Log de la solicitud
 
     body, err := c.Get(endpoint)
     if err != nil {
-        return nil, fmt.Errorf("error fetching fastest lap: %w", err)
-    }
+		fmt.Printf("Error en la solicitud GET: %v\n", err)
+		return nil, fmt.Errorf("error fetching fastest lap: %w", err)
+	}
 
     if len(body) == 0 {
         fmt.Println("Error: Respuesta vacía de la API externa")

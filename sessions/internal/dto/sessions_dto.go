@@ -125,14 +125,23 @@ type UpdateSessionDataDTO struct {
 
 // FastestLapDTO representa el piloto con la vuelta más rápida de una sesión
 type FastestLapDTO struct {
-    Driver ResponseDriverDTO `json:"driver"`  // Información del piloto
+    ID             uint                 `json:"id"`
+    Position       int                  `json:"position"`
+    FastestLapTime float64              `json:"fastest_lap_time"`
+    Session        ResponseSessionDTO   `json:"session"`  // Información de la sesión
+    Driver         ResponseDriverDTO    `json:"driver"`   // Información del piloto
+    CreatedAt      time.Time            `json:"created_at"`
+    UpdatedAt      time.Time            `json:"updated_at"`
 }
+
+//ACA MISMO PUDE USAR ResponseSessionDTO DEFINIDO ARRIBA
 
 // ResponseDriverDTO representa la información del piloto
 type ResponseDriverDTO struct {
-    ID          int    `json:"id"`           // ID del piloto
-    FirstName   string `json:"first_name"`   // Nombre del piloto
-    LastName    string `json:"last_name"`    // Apellido del piloto
-    FullName    string `json:"full_name"`    // Nombre completo del piloto
-    TeamName    string `json:"team_name"`    // Nombre del equipo del piloto
+    ID          int   `json:"driver_id"`       // ID del piloto
+    FirstName   string `json:"first_name"`      // Nombre del piloto
+    LastName    string `json:"last_name"`       // Apellido del piloto
+    FullName    string `json:"full_name"`       // Nombre completo del piloto
+    NameAcronym string `json:"name_acronym"`    // Acrónimo del nombre del piloto
+    TeamName    string `json:"team_name"`       // Nombre del equipo del piloto
 }
