@@ -38,7 +38,6 @@ func MapUrls(engine *gin.Engine, sessionController *api.SessionController) {
 	engine.PUT("/sessions/:id/admin-session-key", sessionController.UpdateSessionKeyAdmin)
 	engine.PUT("/sessions/:id/dfastlap", sessionController.UpdateDFastLap)
 
-
 	// Debugging purpose
 	engine.GET("/ping", func(c *gin.Context) {
 		c.String(200, "pong")

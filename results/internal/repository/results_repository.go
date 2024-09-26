@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"results/internal/model"
 	e "results/pkg/utils"
 
@@ -96,12 +97,14 @@ func (r *resultRepository) GetAllResults(ctx context.Context) ([]*model.Result, 
 // GetFastestLapInSession obtiene el piloto con el tiempo de vuelta más rápido en una sesión específica
 func (r *resultRepository) GetFastestLapInSession(ctx context.Context, sessionID uint) (*model.Result, e.ApiError) {
     var result model.Result
+	fmt.Println("Fetching fastest lap for session ID:", sessionID)
     if err := r.db.WithContext(ctx).Preload("Driver").Preload("Session").Where("session_id = ?", sessionID).Order("fastest_lap_time ASC").First(&result).Error; err != nil {
         if err == gorm.ErrRecordNotFound {
             return nil, e.NewNotFoundApiError("No fastest lap found for the session")
         }
         return nil, e.NewInternalServerApiError("Error fetching fastest lap for session", err)
     }
+	fmt.Printf("Fastest lap result: %+v\n", result)
     return &result, nil
 }
 

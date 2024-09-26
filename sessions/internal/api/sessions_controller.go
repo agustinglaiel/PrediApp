@@ -376,20 +376,17 @@ func (sc *SessionController) UpdateSessionKeyAdmin(c *gin.Context) {
 }
 
 func (sc *SessionController) UpdateDFastLap(c *gin.Context) {
-    // Obtener el ID de la sesión desde los parámetros de la URL
     sessionID, err := ParseUintParam(c.Param("id"))
     if err != nil {
         c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de sesión inválido"))
         return
     }
 
-    // Llamar al servicio para actualizar el DFastLap
     apiErr := sc.sessionService.UpdateDFastLap(c.Request.Context(), sessionID)
     if apiErr != nil {
         c.JSON(apiErr.Status(), apiErr)
         return
     }
 
-    // Responder con un estado 200 (OK) si la actualización fue exitosa
-    c.Status(http.StatusOK)
+    c.JSON(http.StatusOK, gin.H{"message": "Vuelta más rápida actualizada correctamente"})
 }

@@ -723,19 +723,34 @@ func (s *sessionService) UpdateSessionKeyAdmin(ctx context.Context, sessionID ui
 }
 
 func (s *sessionService) UpdateDFastLap(ctx context.Context, sessionID uint) e.ApiError {
-    // Llamar al microservicio de results para obtener el piloto con la vuelta más rápida
+    // Obtener la vuelta más rápida desde el microservicio de results
     fastestLapResult, err := s.client.GetFastestLapBySessionID(sessionID)
     if err != nil {
+        fmt.Printf("Error obteniendo el piloto con la vuelta más rápida: %v\n", err)
         return e.NewInternalServerApiError("Error obteniendo el piloto con la vuelta más rápida", err)
     }
 
-    // Extraer el driver_id del piloto que hizo la vuelta más rápida
-    driverID := fastestLapResult.Driver.ID
-
-    // Actualizar el campo DFastLap en la sesión
-    if err := s.sessionsRepo.UpdateDFastLap(ctx, sessionID, driverID); err != nil {
-        return e.NewInternalServerApiError("Error actualizando DFastLap en la sesión", err)
+    // Verificar que el resultado de la vuelta rápida no esté vacío
+    if fastestLapResult == nil {
+        fmt.Println("No se encontró una vuelta rápida válida")
+        return e.NewNotFoundApiError("No se encontró una vuelta rápida válida para la sesión")
     }
 
+    // Obtener la sesión actual por su ID
+    session, apiErr := s.sessionsRepo.GetSessionById(ctx, sessionID)
+    if apiErr != nil {
+        return apiErr
+    }
+
+    // Asignar el ID del piloto que hizo la vuelta más rápida
+    session.DFastLap = &fastestLapResult.Driver.ID
+
+    // Actualizar la sesión utilizando la función UpdateSessionById
+    apiErr = s.sessionsRepo.UpdateSessionById(ctx, session)
+    if apiErr != nil {
+        return apiErr
+    }
+
+    fmt.Printf("Vuelta más rápida actualizada correctamente para la sesión %d: Piloto %d\n", sessionID, fastestLapResult.Driver.ID)
     return nil
 }

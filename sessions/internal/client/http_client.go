@@ -216,7 +216,7 @@ func (c *HttpClient) GetSessionData(location string, sessionName string, session
 
 // GetFastestLapBySessionID obtiene el piloto con la vuelta más rápida de una sesión específica
 func (c *HttpClient) GetFastestLapBySessionID(sessionID uint) (*dto.FastestLapDTO, error) {
-    endpoint := fmt.Sprintf("http://localhost:8071/results/session/%d/fastest-lap", sessionID)
+    endpoint := fmt.Sprintf("/results/session/%d/fastest-lap", sessionID)
     fmt.Println("Requesting:", endpoint)  // Log de la solicitud
 
     body, err := c.Get(endpoint)
@@ -225,13 +225,22 @@ func (c *HttpClient) GetFastestLapBySessionID(sessionID uint) (*dto.FastestLapDT
     }
 
     if len(body) == 0 {
+        fmt.Println("Error: Respuesta vacía de la API externa")
         return nil, fmt.Errorf("error fetching fastest lap: empty response")
     }
 
-    // Deserializar la respuesta
+    // Deserializar la respuesta en el DTO de FastestLap
     var fastestLap dto.FastestLapDTO
-    if err := json.Unmarshal(body, &fastestLap); err != nil {
+    err = json.Unmarshal(body, &fastestLap)
+    if err != nil {
+        fmt.Printf("Error deserializando la respuesta: %s\n", string(body))
         return nil, fmt.Errorf("error decoding fastest lap response: %w", err)
+    }
+
+    // Verificar si el objeto FastestLapDTO contiene datos válidos
+    if fastestLap.Driver.ID == 0 {
+        fmt.Println("Error: La respuesta no contiene un piloto válido")
+        return nil, fmt.Errorf("error: no valid driver in fastest lap response")
     }
 
     return &fastestLap, nil
