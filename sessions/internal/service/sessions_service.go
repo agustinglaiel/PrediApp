@@ -167,6 +167,14 @@ func (s *sessionService) GetSessionById(ctx context.Context, sessionID uint) (dt
 		Year:             session.Year,
 	}
 
+	// Si es una "Race", agregar los datos adicionales
+	if session.SessionType == "Race" && session.SessionName == "Race" {
+		response.DFastLap = session.DFastLap
+		response.VSC = session.VSC
+		response.SF = session.SF
+		response.DNF = session.DNF
+	}
+
 	return response, nil
 }
 
