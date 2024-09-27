@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 	"users/internal/api"
 	"users/internal/repository"
 	"users/internal/router"
@@ -13,31 +14,38 @@ import (
 )
 
 func main() {
-    // Initialize database
-    db, err := utils.InitDB()
-    if err != nil {
-        fmt.Println("Error al conectar con la Base de Datos")
-        panic(err)
-    }
-    defer utils.DisconnectDB()
+	// Obtener el puerto de la variable de entorno PORT
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8061" // Valor por defecto en caso de que no esté configurado
+	}
 
-    // Start the database engine to migrate tables
-    utils.StartDbEngine()
+	// Inicializar la base de datos
+	db, err := utils.InitDB()
+	if err != nil {
+		fmt.Println("Error al conectar con la Base de Datos")
+		panic(err)
+	}
+	defer utils.DisconnectDB()
 
-    // Initialize repository and service
-    userRepo := repository.NewUserRepository(db)
-    userService := service.NewUserService(userRepo)
-    // Initialize controller
-    userController := api.NewUserController(userService)
+	// Iniciar el motor de la base de datos y migrar tablas
+	utils.StartDbEngine()
 
-    // Set up router
-    ginRouter := gin.Default()
+	// Inicializar repositorio y servicio
+	userRepo := repository.NewUserRepository(db)
+	userService := service.NewUserService(userRepo)
 
-    // Map URLs
-    router.MapUrls(ginRouter, userController)
+	// Inicializar controlador
+	userController := api.NewUserController(userService)
 
-    // Start server
-    if err := ginRouter.Run(":8080"); err != nil {
-        log.Fatalf("Failed to run server: %v", err)
-    }
+	// Configurar router
+	ginRouter := gin.Default()
+
+	// Mapear URLs
+	router.MapUrls(ginRouter, userController)
+
+	// Iniciar servidor usando el puerto obtenido de la variable de entorno
+	if err := ginRouter.Run(":" + port); err != nil {
+		log.Fatalf("Failed to run server on port %s: %v", port, err)
+	}
 }

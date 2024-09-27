@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"os"
 	"prodes/internal/api"
 	client "prodes/internal/client"
 	"prodes/internal/repository"
@@ -13,35 +15,39 @@ import (
 )
 
 func main() {
-	// Initialize database
-    db, err := utils.InitDB()
-    if err != nil {
-        fmt.Println("Error al conectar con la Base de Datos")
-        panic(err)
-    }
-    defer utils.DisconnectDB()
+	// Obtener el puerto de la variable de entorno PORT
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8081" // Valor por defecto en caso de que no esté configurado
+	}
 
-    // Start the database engine to migrate tables
-    utils.StartDbEngine()
+	// Inicializar la base de datos
+	db, err := utils.InitDB()
+	if err != nil {
+		fmt.Println("Error al conectar con la Base de Datos")
+		panic(err)
+	}
+	defer utils.DisconnectDB()
+
+	// Iniciar el motor de la base de datos y migrar tablas
+	utils.StartDbEngine()
 
 	// Inicializar el cliente HTTP para comunicarte con el microservicio de sessions
-	httpClient := client.NewHttpClient("http://localhost:8060/sessions")
+	httpClient := client.NewHttpClient("http://localhost:")
 
-	// Inicializar repositorios y servicios
+	// Inicializar repositorios, servicios y controlador
 	prodeRepo := repository.NewProdeRepository(db)
 	prodeService := service.NewPrediService(prodeRepo, httpClient)
-
-	// Inicializar el controlador
 	prodeController := api.NewProdeController(prodeService)
 
 	// Configurar el router
-	r := gin.Default()
+	ginRouter := gin.Default()
 
 	// Llamar a MapUrls para configurar las rutas
-	router.MapUrls(r, prodeController)  // Llama a la función de enrutamiento
+	router.MapUrls(ginRouter, prodeController)
 
-	// Iniciar el servidor
-	if err := r.Run(":8081"); err != nil {
-		panic(err)
+	// Iniciar el servidor usando el puerto obtenido de la variable de entorno
+	if err := ginRouter.Run(":" + port); err != nil {
+		log.Fatalf("Failed to run server on port %s: %v", port, err)
 	}
 }

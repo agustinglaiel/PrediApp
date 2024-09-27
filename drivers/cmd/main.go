@@ -9,21 +9,28 @@ import (
 	"drivers/pkg/utils"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	// Initialize database
-    db, err := utils.InitDB()
-    if err != nil {
-        fmt.Println("Error al conectar con la Base de Datos")
-        panic(err)
-    }
-    defer utils.DisconnectDB()
+	// Obtener el puerto de la variable de entorno PORT
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8070" // Valor por defecto en caso de que no esté configurado
+	}
 
-    // Start the database engine to migrate tables
-    utils.StartDbEngine()
+	// Inicializar la base de datos
+	db, err := utils.InitDB()
+	if err != nil {
+		fmt.Println("Error al conectar con la Base de Datos")
+		panic(err)
+	}
+	defer utils.DisconnectDB()
+
+	// Iniciar el motor de la base de datos y migrar tablas
+	utils.StartDbEngine()
 
 	// Crear el cliente HTTP para interactuar con la API externa
 	externalAPIClient := client.NewHttpClient("https://api.openf1.org/v1/")
@@ -33,14 +40,14 @@ func main() {
 	driverService := service.NewDriverService(driverRepo, externalAPIClient)
 	driverController := api.NewDriverController(driverService)
 
-	// Set up router
-    ginRouter := gin.Default()
+	// Configurar el router
+	ginRouter := gin.Default()
 
-    // Map URLs
-    router.MapUrls(ginRouter, driverController)
+	// Mapear URLs
+	router.MapUrls(ginRouter, driverController)
 
-	// Start server
-    if err := ginRouter.Run(":8070"); err != nil {
-        log.Fatalf("Failed to run server: %v", err)
-    }
+	// Iniciar el servidor usando el puerto obtenido de la variable de entorno
+	if err := ginRouter.Run(":" + port); err != nil {
+		log.Fatalf("Failed to run server on port %s: %v", port, err)
+	}
 }

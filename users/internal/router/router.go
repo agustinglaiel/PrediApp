@@ -19,8 +19,8 @@ func MapUrls(engine *gin.Engine, userController *api.UserController) {
     }))
 
     // Rutas relacionadas con usuarios
-    engine.POST("/signup", userController.SignUp)
-    engine.POST("/login", userController.Login)
+    engine.POST("/users/signup", userController.SignUp)
+    engine.POST("/users/login", userController.Login)
     engine.POST("/oauth/signin", userController.OAuthSignIn)
 
     // Nuevas rutas para administración de usuarios

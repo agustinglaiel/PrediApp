@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 	"results/internal/api"
 	"results/internal/client"
 	"results/internal/repository"
@@ -14,33 +15,39 @@ import (
 )
 
 func main() {
-	// Initialize database
-    db, err := utils.InitDB()
-    if err != nil {
-        fmt.Println("Error al conectar con la Base de Datos")
-        panic(err)
-    }
-    defer utils.DisconnectDB()
+	// Obtener el puerto de la variable de entorno PORT
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8071" // Valor por defecto en caso de que no esté configurado
+	}
 
-    // Start the database engine to migrate tables
-    utils.StartDbEngine()
+	// Inicializar la base de datos
+	db, err := utils.InitDB()
+	if err != nil {
+		fmt.Println("Error al conectar con la Base de Datos")
+		panic(err)
+	}
+	defer utils.DisconnectDB()
+
+	// Iniciar el motor de la base de datos y migrar tablas
+	utils.StartDbEngine()
 
 	// Crear el cliente HTTP para interactuar con la API externa
 	externalAPIClient := client.NewHttpClient("https://api.openf1.org/v1/")
 
-	// Initialize repositories and services
-	sessionRepo := repository.NewResultRepository(db)
-	sessionService := service.NewResultService(sessionRepo, externalAPIClient)
-	sessionController := api.NewResultController(sessionService)
+	// Inicializar repositorio y servicio
+	resultRepo := repository.NewResultRepository(db)
+	resultService := service.NewResultService(resultRepo, externalAPIClient)
+	resultController := api.NewResultController(resultService)
 
-	// Set up router
-    ginRouter := gin.Default()
+	// Configurar router
+	ginRouter := gin.Default()
 
-    // Map URLs
-    router.MapUrls(ginRouter, sessionController)
+	// Mapear URLs
+	router.MapUrls(ginRouter, resultController)
 
-	// Start server
-    if err := ginRouter.Run(":8071"); err != nil {
-        log.Fatalf("Failed to run server: %v", err)
-    }
+	// Iniciar servidor usando el puerto obtenido de la variable de entorno
+	if err := ginRouter.Run(":" + port); err != nil {
+		log.Fatalf("Failed to run server on port %s: %v", port, err)
+	}
 }
