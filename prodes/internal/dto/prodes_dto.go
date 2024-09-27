@@ -1,5 +1,7 @@
 package prodes
 
+import "time"
+
 // DTO para crear un pronóstico de carrera
 type CreateProdeCarreraDTO struct {
     UserID     int `json:"user_id"`
@@ -107,7 +109,21 @@ type SessionDetailsDTO struct {
     CircuitShortName string `json:"circuit_short_name"`
     CountryCode      string `json:"country_code"`
     CountryName      string `json:"country_name"`
-    DateStart        string `json:"date_start"`
-    DateEnd          string `json:"date_end"`
+    DateStart        time.Time `json:"date_start"`
+    DateEnd          time.Time `json:"date_end"`
     Location         string `json:"location"`
+    SessionName      string `json:"session_name"`
+    SessionType      string `json:"session_type"`
 }
+
+type DriverDTO struct {
+    ID             int    `json:"id"`              // Identificador único del piloto
+    CountryCode    string `json:"country_code"`    // Código de país del piloto
+    DriverNumber   int    `json:"driver_number"`   // Número del piloto
+    FirstName      string `json:"first_name"`      // Nombre del piloto
+    LastName       string `json:"last_name"`       // Apellido del piloto
+    FullName       string `json:"full_name"`       // Nombre completo del piloto
+    NameAcronym    string `json:"name_acronym"`    // Acrónimo del nombre
+    TeamName       string `json:"team_name"`       // Nombre del equipo
+}
+

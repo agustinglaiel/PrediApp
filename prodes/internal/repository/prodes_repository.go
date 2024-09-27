@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"prodes/internal/model"
 	prodes "prodes/internal/model"
 	e "prodes/pkg/utils"
 
@@ -21,9 +22,13 @@ type ProdeRepository interface {
 	UpdateProdeSession(ctx context.Context, prode *prodes.ProdeSession) e.ApiError
 	DeleteProdeCarreraByID(ctx context.Context, prodeID int, userID int) e.ApiError
     DeleteProdeSessionByID(ctx context.Context, prodeID int, userID int) e.ApiError
-	GetProdesByUserIDAndSessionID(ctx context.Context, userID, sessionId int) ([]*prodes.ProdeCarrera, []*prodes.ProdeSession, e.ApiError)
+	GetProdesByUserIDAndSessionID(ctx context.Context, userID int, sessionId int) ([]*prodes.ProdeCarrera, []*prodes.ProdeSession, e.ApiError)
 	GetAllProdesBySessionID(ctx context.Context, sessionId int) ([]*prodes.ProdeCarrera, []*prodes.ProdeSession, e.ApiError)
 	GetProdesByUserID(ctx context.Context, userID int) ([]*prodes.ProdeCarrera, []*prodes.ProdeSession, e.ApiError)
+	GetProdeCarreraByUserAndSession(ctx context.Context, userID, sessionID int) (*model.ProdeCarrera, e.ApiError)
+	GetProdeSessionByUserAndSession(ctx context.Context, userID, sessionID int) (*model.ProdeSession, e.ApiError)
+	GetRaceProdesBySession(ctx context.Context, sessionID int) ([]*model.ProdeCarrera, e.ApiError)
+	GetSessionProdesBySession(ctx context.Context, sessionID int) ([]*model.ProdeSession, e.ApiError)
 }
 
 func NewProdeRepository(db *gorm.DB) ProdeRepository {
@@ -111,7 +116,7 @@ func (r *prodeRepository) DeleteProdeSessionByID(ctx context.Context, prodeID in
     return nil
 }
 
-func (r *prodeRepository) GetProdesByUserIDAndSessionID(ctx context.Context, userID, sessionId int) ([]*prodes.ProdeCarrera, []*prodes.ProdeSession, e.ApiError) {
+func (r *prodeRepository) GetProdesByUserIDAndSessionID(ctx context.Context, userID int, sessionId int) ([]*prodes.ProdeCarrera, []*prodes.ProdeSession, e.ApiError) {
 	var prodesCarrera []*prodes.ProdeCarrera
 	var prodesSession []*prodes.ProdeSession
 
@@ -158,4 +163,60 @@ func (r *prodeRepository) GetProdesByUserID(ctx context.Context, userID int) ([]
 	}
 
 	return prodesCarrera, prodesSession, nil
+}
+
+func (r *prodeRepository) GetProdeCarreraByUserAndSession(ctx context.Context, userID, sessionID int) (*model.ProdeCarrera, e.ApiError) {
+    var prode model.ProdeCarrera
+
+    // Buscar un único prode para el usuario y la sesión dados
+    if err := r.db.WithContext(ctx).Where("user_id = ? AND session_id = ?", userID, sessionID).First(&prode).Error; err != nil {
+        if err == gorm.ErrRecordNotFound {
+            return nil, e.NewNotFoundApiError("prode carrera not found")
+        }
+        return nil, e.NewInternalServerApiError("error finding prode carrera", err)
+    }
+
+    return &prode, nil
+}
+
+func (r *prodeRepository) GetProdeSessionByUserAndSession(ctx context.Context, userID, sessionID int) (*model.ProdeSession, e.ApiError) {
+    var prode model.ProdeSession
+
+    // Buscar un único prode de sesión para el usuario y la sesión dados
+    if err := r.db.WithContext(ctx).Where("user_id = ? AND session_id = ?", userID, sessionID).First(&prode).Error; err != nil {
+        if err == gorm.ErrRecordNotFound {
+            return nil, e.NewNotFoundApiError("prode session not found")
+        }
+        return nil, e.NewInternalServerApiError("error finding prode session", err)
+    }
+
+    return &prode, nil
+}
+
+func (r *prodeRepository) GetRaceProdesBySession(ctx context.Context, sessionID int) ([]*model.ProdeCarrera, e.ApiError) {
+    var raceProdes []*model.ProdeCarrera
+
+    // Usar Preload para cargar la información de la sesión relacionada
+    if err := r.db.WithContext(ctx).Preload("Session").Where("session_id = ?", sessionID).Find(&raceProdes).Error; err != nil {
+        if err == gorm.ErrRecordNotFound {
+            return nil, e.NewNotFoundApiError("No se encontraron pronósticos de carrera para la sesión")
+        }
+        return nil, e.NewInternalServerApiError("Error fetching race prodes for session", err)
+    }
+
+    return raceProdes, nil
+}
+
+func (r *prodeRepository) GetSessionProdesBySession(ctx context.Context, sessionID int) ([]*model.ProdeSession, e.ApiError) {
+    var prodesSession []*model.ProdeSession
+
+    // Usar Preload para cargar la información de la sesión relacionada
+    if err := r.db.WithContext(ctx).Preload("Session").Where("session_id = ?", sessionID).Find(&prodesSession).Error; err != nil {
+        if err == gorm.ErrRecordNotFound {
+            return nil, e.NewNotFoundApiError("No se encontraron pronósticos de sesión para la sesión")
+        }
+        return nil, e.NewInternalServerApiError("Error fetching session prodes for session", err)
+    }
+
+    return prodesSession, nil
 }

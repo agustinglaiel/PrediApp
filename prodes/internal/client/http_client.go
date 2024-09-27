@@ -131,7 +131,7 @@ func (c *HttpClient) Delete(endpoint string) error {
 // GetSessionNameAndType realiza una solicitud GET para obtener el nombre y tipo de una sesión desde el microservicio de sessions
 func (c *HttpClient) GetSessionNameAndType(eventID int) (dto.SessionNameAndTypeDTO, error) {
     // Definir el endpoint para la solicitud GET
-    endpoint := fmt.Sprintf("/sessions/%d/name-type", eventID)
+    endpoint := fmt.Sprintf("/%d/name-type", eventID)
 
     // Hacer la solicitud GET utilizando el cliente HTTP
     body, err := c.Get(endpoint)
@@ -151,7 +151,7 @@ func (c *HttpClient) GetSessionNameAndType(eventID int) (dto.SessionNameAndTypeD
 // GetSessionByID realiza una solicitud GET para obtener los detalles completos de una sesión desde el microservicio de sessions
 func (c *HttpClient) GetSessionByID(sessionID int) (dto.SessionDetailsDTO, error) {
     // Definir el endpoint para la solicitud GET
-    endpoint := fmt.Sprintf("/sessions/%d", sessionID)
+    endpoint := fmt.Sprintf("/%d", sessionID)
 
     // Hacer la solicitud GET utilizando el cliente HTTP
     body, err := c.Get(endpoint)
@@ -166,4 +166,71 @@ func (c *HttpClient) GetSessionByID(sessionID int) (dto.SessionDetailsDTO, error
     }
 
     return session, nil
+}
+
+func (c *HttpClient) GetUserByID(userID int) (bool, error) {
+    endpoint := fmt.Sprintf("/users/%d", userID)
+	fmt.Println("Realizando consulta al endpoint: ", endpoint)
+
+    body, err := c.Get(endpoint)
+    if err != nil {
+        return false, fmt.Errorf("error fetching user by ID: %w", err)
+    }
+
+    // Suponemos que la respuesta es un código 200 si el usuario existe, y un 404 si no
+    if len(body) == 0 {
+        return false, nil
+    }
+
+    return true, nil
+}
+
+func (c *HttpClient) GetDriverByID(driverID int) (dto.DriverDTO, error) {
+    endpoint := fmt.Sprintf("/drivers/%d", driverID)
+    body, err := c.Get(endpoint)
+    if err != nil {
+        return dto.DriverDTO{}, fmt.Errorf("error fetching driver by ID: %w", err)
+    }
+
+    var driverDetails dto.DriverDTO
+    if err := json.Unmarshal(body, &driverDetails); err != nil {
+        return dto.DriverDTO{}, fmt.Errorf("error decoding driver details: %w", err)
+    }
+
+    return driverDetails, nil
+}
+
+func (c *HttpClient) GetAllDrivers() ([]dto.DriverDTO, error) {
+    endpoint := "/drivers"
+    body, err := c.Get(endpoint)
+    if err != nil {
+        return nil, fmt.Errorf("error fetching all drivers: %w", err)
+    }
+
+    var drivers []dto.DriverDTO
+    if err := json.Unmarshal(body, &drivers); err != nil {
+        return nil, fmt.Errorf("error decoding drivers list: %w", err)
+    }
+
+    return drivers, nil
+}
+
+// GetTopDriversBySession realiza una solicitud GET al microservicio de results para obtener los mejores N pilotos de una sesión
+func (c *HttpClient) GetTopDriversBySession(sessionID int, n int) ([]dto.DriverDTO, error) {
+    // Definir el endpoint para la solicitud GET
+    endpoint := fmt.Sprintf("/results/session/%d/top/%d", sessionID, n)
+
+    // Hacer la solicitud GET utilizando el cliente HTTP
+    body, err := c.Get(endpoint)
+    if err != nil {
+        return nil, fmt.Errorf("error fetching top drivers: %w", err)
+    }
+
+    // Deserializar la respuesta JSON en una lista de pilotos
+    var topDrivers []dto.DriverDTO
+    if err := json.Unmarshal(body, &topDrivers); err != nil {
+        return nil, fmt.Errorf("error decoding top drivers response: %w", err)
+    }
+
+    return topDrivers, nil
 }

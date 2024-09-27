@@ -9,6 +9,9 @@ import (
 	model "prodes/internal/model"
 	repository "prodes/internal/repository"
 	e "prodes/pkg/utils"
+	"time"
+
+	"gorm.io/gorm"
 )
 
 type prodeService struct {
@@ -23,6 +26,15 @@ type ProdeServiceInterface interface {
 	UpdateProdeSession(ctx context.Context, request prodes.UpdateProdeSessionDTO) (prodes.ResponseProdeSessionDTO, e.ApiError)
 	DeleteProdeById(ctx context.Context, prodeID int) e.ApiError 
 	GetProdesByUserId(ctx context.Context, userID int) ([]prodes.ResponseProdeCarreraDTO, []prodes.ResponseProdeSessionDTO, e.ApiError)
+	GetRaceProdeByUserAndSession(ctx context.Context, userID, sessionID int) (prodes.ResponseProdeCarreraDTO, e.ApiError)
+	GetSessionProdeByUserAndSession(ctx context.Context, userID, sessionID int) (prodes.ResponseProdeSessionDTO, e.ApiError)
+	GetRaceProdesBySession(ctx context.Context, sessionID int) ([]prodes.ResponseProdeCarreraDTO, e.ApiError)
+	UpdateRaceProdeForUserBySessionId(ctx context.Context, userID int, sessionID int, updatedProde prodes.UpdateProdeCarreraDTO) (prodes.ResponseProdeCarreraDTO, e.ApiError)
+	GetSessionProdeBySession(ctx context.Context, sessionID int) ([]prodes.ResponseProdeSessionDTO, e.ApiError)
+	GetUserProdes(ctx context.Context, userID int) ([]prodes.ResponseProdeCarreraDTO, []prodes.ResponseProdeSessionDTO, e.ApiError)
+	GetDriverDetails(ctx context.Context, driverID int) (prodes.DriverDTO, e.ApiError)
+	GetAllDrivers(ctx context.Context) ([]prodes.DriverDTO, e.ApiError)
+	GetTopDriversBySessionId(ctx context.Context, sessionID, n int) ([]prodes.DriverDTO, e.ApiError)
 }
 
 // NewProdeService crea una nueva instancia de ProdeService con inyección de dependencias
@@ -289,4 +301,316 @@ func (s *prodeService) GetProdesByUserId(ctx context.Context, userID int) ([]pro
 //Función auxiliar para mayor modularidad y me devuelve el bool de si es session name y type = race. 
 func isRaceSession(sessionName string, sessionType string) bool {
     return sessionName == "Race" && sessionType == "Race"
+}
+
+func (s *prodeService) GetRaceProdeByUserAndSession(ctx context.Context, userID, sessionID int) (prodes.ResponseProdeCarreraDTO, e.ApiError) {
+    // Llamar al cliente HTTP para obtener el nombre y tipo de sesión
+    sessionInfo, err := s.httpClient.GetSessionNameAndType(sessionID)
+    if err != nil {
+        return prodes.ResponseProdeCarreraDTO{}, e.NewInternalServerApiError("Error fetching session name and type from sessions service", err)
+    }
+
+    // Verificar que la sesión es de tipo Race
+    if !isRaceSession(sessionInfo.SessionName, sessionInfo.SessionType) {
+        return prodes.ResponseProdeCarreraDTO{}, e.NewBadRequestApiError("La sesión no es una carrera (Race)")
+    }
+
+    // Obtener el prode de carrera para este usuario y esta sesión
+    prode, err := s.prodeRepo.GetProdeCarreraByUserAndSession(ctx, userID, sessionID)
+    if err != nil {
+        if err == gorm.ErrRecordNotFound {
+            return prodes.ResponseProdeCarreraDTO{}, e.NewNotFoundApiError("No se encontró un prode de carrera para el usuario en esta sesión")
+        }
+        return prodes.ResponseProdeCarreraDTO{}, e.NewInternalServerApiError("Error fetching race prode", err)
+    }
+
+    // Convertir el prode a DTO de respuesta
+    response := prodes.ResponseProdeCarreraDTO{
+        ID:         prode.ID,
+        UserID:     prode.UserID,
+        SessionID:  prode.SessionID,
+        P1:         prode.P1,
+        P2:         prode.P2,
+        P3:         prode.P3,
+        P4:         prode.P4,
+        P5:         prode.P5,
+        FastestLap: prode.FastestLap,
+        VSC:        prode.VSC,
+        SC:         prode.SC,
+        DNF:        prode.DNF,
+    }
+
+    // Devolver el DTO con los datos del prode
+    return response, nil
+}
+
+func (s *prodeService) GetSessionProdeByUserAndSession(ctx context.Context, userID, sessionID int) (prodes.ResponseProdeSessionDTO, e.ApiError) {
+    // Llamar al cliente HTTP para obtener el nombre y tipo de sesión
+    sessionInfo, err := s.httpClient.GetSessionNameAndType(sessionID)
+    if err != nil {
+        return prodes.ResponseProdeSessionDTO{}, e.NewInternalServerApiError("Error fetching session name and type from sessions service", err)
+    }
+
+    // Verificar que la sesión **no** es de tipo Race
+    if isRaceSession(sessionInfo.SessionName, sessionInfo.SessionType) {
+        return prodes.ResponseProdeSessionDTO{}, e.NewBadRequestApiError("La sesión no es válida, es una carrera (Race), no se puede buscar un ProdeSession")
+    }
+
+    // Obtener el prode de sesión para este usuario y esta sesión
+    prode, err := s.prodeRepo.GetProdeSessionByUserAndSession(ctx, userID, sessionID)
+    if err != nil {
+        if err == gorm.ErrRecordNotFound {
+            return prodes.ResponseProdeSessionDTO{}, e.NewNotFoundApiError("No se encontró un prode de sesión para el usuario en esta sesión")
+        }
+        return prodes.ResponseProdeSessionDTO{}, e.NewInternalServerApiError("Error fetching session prode", err)
+    }
+
+    // Convertir el prode de sesión a DTO de respuesta
+    response := prodes.ResponseProdeSessionDTO{
+        ID:        prode.ID,
+        UserID:    prode.UserID,
+        SessionID: prode.SessionID,
+        P1:        prode.P1,
+        P2:        prode.P2,
+        P3:        prode.P3,
+    }
+
+    // Devolver el DTO con los datos del prode de sesión
+    return response, nil
+}
+
+func (s *prodeService) GetRaceProdesBySession(ctx context.Context, sessionID int) ([]prodes.ResponseProdeCarreraDTO, e.ApiError) {
+    // Llamar al cliente HTTP para obtener el nombre y tipo de la sesión
+    sessionInfo, err := s.httpClient.GetSessionNameAndType(sessionID)
+    if err != nil {
+        return nil, e.NewInternalServerApiError("Error fetching session name and type from sessions service", err)
+    }
+
+    // Verificar que la sesión sea de tipo "Race"
+    if !isRaceSession(sessionInfo.SessionName, sessionInfo.SessionType) {
+        return nil, e.NewBadRequestApiError("La sesión no es una carrera válida (Race), no se pueden buscar los ProdesCarrera")
+    }
+
+    // Obtener todos los pronósticos de carrera para la sesión específica
+    raceProdes, err := s.prodeRepo.GetRaceProdesBySession(ctx, sessionID)
+    if err != nil {
+        return nil, e.NewInternalServerApiError("Error fetching race prodes for the session", err)
+    }
+
+    // Convertir los modelos a DTOs de respuesta
+    var raceProdeResponses []prodes.ResponseProdeCarreraDTO
+    for _, prode := range raceProdes {
+        raceProdeResponses = append(raceProdeResponses, prodes.ResponseProdeCarreraDTO{
+            ID:         prode.ID,
+            UserID:     prode.UserID,
+            SessionID:  prode.SessionID,
+            P1:         prode.P1,
+            P2:         prode.P2,
+            P3:         prode.P3,
+            P4:         prode.P4,
+            P5:         prode.P5,
+            FastestLap: prode.FastestLap,
+            VSC:        prode.VSC,
+            SC:         prode.SC,
+            DNF:        prode.DNF,
+        })
+    }
+
+    // Retornar la lista de pronósticos de carrera
+    return raceProdeResponses, nil
+}
+
+func (s *prodeService) UpdateRaceProdeForUserBySessionId(ctx context.Context, userID int, sessionID int, updatedProde prodes.UpdateProdeCarreraDTO) (prodes.ResponseProdeCarreraDTO, e.ApiError) {
+    // Obtener detalles de la sesión para verificar la fecha de inicio
+    sessionDetails, err := s.httpClient.GetSessionByID(sessionID)
+    if err != nil {
+        return prodes.ResponseProdeCarreraDTO{}, e.NewInternalServerApiError("Error fetching session details", err)
+    }
+
+    // Validar si la sesión es una carrera (Race)
+    if !isRaceSession(sessionDetails.SessionName, sessionDetails.SessionType) {
+        return prodes.ResponseProdeCarreraDTO{}, e.NewBadRequestApiError("La sesión no es de tipo 'Race'. No se puede actualizar un ProdeCarrera.")
+    }
+
+    // Validar si la carrera ya ha comenzado comparando la fecha de inicio
+    if time.Now().After(sessionDetails.DateStart) {
+        return prodes.ResponseProdeCarreraDTO{}, e.NewForbiddenApiError("No se puede actualizar el pronóstico, la carrera ya ha comenzado.")
+    }
+
+    // Convertir el DTO de actualización en un modelo de ProdeCarrera
+    prode := model.ProdeCarrera{
+        ID:         updatedProde.ProdeID,
+        UserID:     userID,
+        SessionID:  sessionID,
+        P1:         updatedProde.P1,
+        P2:         updatedProde.P2,
+        P3:         updatedProde.P3,
+        P4:         updatedProde.P4,
+        P5:         updatedProde.P5,
+        FastestLap: updatedProde.FastestLap,
+        VSC:        updatedProde.VSC,
+        SC:         updatedProde.SC,
+        DNF:        updatedProde.DNF,
+    }
+
+    // Llamar al repositorio para actualizar el ProdeCarrera
+    err = s.prodeRepo.UpdateProdeCarrera(ctx, &prode)
+    if err != nil {
+        return prodes.ResponseProdeCarreraDTO{}, e.NewInternalServerApiError("Error actualizando el pronóstico de carrera", err)
+    }
+
+    // Convertir el modelo actualizado en un DTO de respuesta
+    response := prodes.ResponseProdeCarreraDTO{
+        ID:         prode.ID,
+        UserID:     prode.UserID,
+        SessionID:  prode.SessionID,
+        P1:         prode.P1,
+        P2:         prode.P2,
+        P3:         prode.P3,
+        P4:         prode.P4,
+        P5:         prode.P5,
+        FastestLap: prode.FastestLap,
+        VSC:        prode.VSC,
+        SC:         prode.SC,
+        DNF:        prode.DNF,
+    }
+
+    return response, nil
+}
+
+func (s *prodeService) GetSessionProdeBySession(ctx context.Context, sessionID int) ([]prodes.ResponseProdeSessionDTO, e.ApiError) {
+    // Llamar al cliente HTTP para obtener el nombre y tipo de la sesión
+    sessionInfo, err := s.httpClient.GetSessionNameAndType(sessionID)
+    if err != nil {
+        return nil, e.NewInternalServerApiError("Error fetching session name and type from sessions service", err)
+    }
+
+    // Verificar que la sesión NO sea de tipo "Race"
+    if isRaceSession(sessionInfo.SessionName, sessionInfo.SessionType) {
+        return nil, e.NewBadRequestApiError("La sesión es una carrera (Race), no se pueden buscar los ProdesSession")
+    }
+
+    // Obtener todos los pronósticos de sesión para la sesión específica
+    sessionProdes, err := s.prodeRepo.GetSessionProdesBySession(ctx, sessionID)
+    if err != nil {
+        return nil, e.NewInternalServerApiError("Error fetching session prodes for the session", err)
+    }
+
+    // Convertir los modelos a DTOs de respuesta
+    var sessionProdeResponses []prodes.ResponseProdeSessionDTO
+    for _, prode := range sessionProdes {
+        sessionProdeResponses = append(sessionProdeResponses, prodes.ResponseProdeSessionDTO{
+            ID:        prode.ID,
+            UserID:    prode.UserID,
+            SessionID: prode.SessionID,
+            P1:        prode.P1,
+            P2:        prode.P2,
+            P3:        prode.P3,
+        })
+    }
+
+    // Retornar la lista de pronósticos de sesión
+    return sessionProdeResponses, nil
+}
+
+func (s *prodeService) GetUserProdes(ctx context.Context, userID int) ([]prodes.ResponseProdeCarreraDTO, []prodes.ResponseProdeSessionDTO, e.ApiError) {
+    // Llamar al cliente HTTP para verificar si el usuario existe en el microservicio de users
+    userExists, err := s.httpClient.GetUserByID(userID)
+    if err != nil || !userExists {
+        return nil, nil, e.NewNotFoundApiError("User not found")
+    }
+
+    // Obtener todos los prodes (carrera y sesión) para el usuario
+    carreraProdes, sessionProdes, err := s.prodeRepo.GetProdesByUserID(ctx, userID)
+    if err != nil {
+        return nil, nil, e.NewInternalServerApiError("Error fetching user prodes", err)
+    }
+
+    // Convertir los prodes de carrera a DTOs de respuesta
+    var carreraResponses []prodes.ResponseProdeCarreraDTO
+    for _, prode := range carreraProdes {
+        carreraResponses = append(carreraResponses, prodes.ResponseProdeCarreraDTO{
+            ID:         prode.ID,
+            UserID:     prode.UserID,
+            SessionID:  prode.SessionID,
+            P1:         prode.P1,
+            P2:         prode.P2,
+            P3:         prode.P3,
+            P4:         prode.P4,
+            P5:         prode.P5,
+            FastestLap: prode.FastestLap,
+            VSC:        prode.VSC,
+            SC:         prode.SC,
+            DNF:        prode.DNF,
+        })
+    }
+
+    // Convertir los prodes de sesión a DTOs de respuesta
+    var sessionResponses []prodes.ResponseProdeSessionDTO
+    for _, prode := range sessionProdes {
+        sessionResponses = append(sessionResponses, prodes.ResponseProdeSessionDTO{
+            ID:        prode.ID,
+            UserID:    prode.UserID,
+            SessionID: prode.SessionID,
+            P1:        prode.P1,
+            P2:        prode.P2,
+            P3:        prode.P3,
+        })
+    }
+
+    return carreraResponses, sessionResponses, nil
+}
+
+func (s *prodeService) GetDriverDetails(ctx context.Context, driverID int) (prodes.DriverDTO, e.ApiError) {
+    // Llamar al microservicio de drivers para obtener los detalles del piloto
+    driverDetails, err := s.httpClient.GetDriverByID(driverID)
+    if err != nil {
+        return prodes.DriverDTO{}, e.NewInternalServerApiError("Error fetching driver details from drivers service", err)
+    }
+
+    // Convertir los detalles del piloto a DTO de respuesta
+    response := prodes.DriverDTO{
+        ID:          driverDetails.ID,
+        FirstName:   driverDetails.FirstName,
+        LastName:    driverDetails.LastName,
+        FullName:    driverDetails.FullName,
+        NameAcronym: driverDetails.NameAcronym,
+        TeamName:    driverDetails.TeamName,
+    }
+
+    return response, nil
+}
+
+func (s *prodeService) GetAllDrivers(ctx context.Context) ([]prodes.DriverDTO, e.ApiError) {
+    // Llamar al microservicio de drivers para obtener todos los pilotos
+    drivers, err := s.httpClient.GetAllDrivers()
+    if err != nil {
+        return nil, e.NewInternalServerApiError("Error fetching all drivers from drivers service", err)
+    }
+
+    // Convertir los detalles de los pilotos a DTOs de respuesta
+    var driverResponses []prodes.DriverDTO
+    for _, driver := range drivers {
+        driverResponses = append(driverResponses, prodes.DriverDTO{
+            ID:          driver.ID,
+            FirstName:   driver.FirstName,
+            LastName:    driver.LastName,
+            FullName:    driver.FullName,
+            NameAcronym: driver.NameAcronym,
+            TeamName:    driver.TeamName,
+        })
+    }
+
+    return driverResponses, nil
+}
+
+func (s *prodeService) GetTopDriversBySessionId(ctx context.Context, sessionID, n int) ([]prodes.DriverDTO, e.ApiError) {
+    // Llamar al cliente HTTP para obtener los mejores pilotos de la sesión
+    topDrivers, err := s.httpClient.GetTopDriversBySession(sessionID, n)
+    if err != nil {
+        return nil, e.NewInternalServerApiError("Error fetching top drivers from results service", err)
+    }
+
+    // Retornar los pilotos obtenidos
+    return topDrivers, nil
 }
