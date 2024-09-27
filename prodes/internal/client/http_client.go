@@ -7,39 +7,96 @@ import (
 	"io/ioutil"
 	"net/http"
 	dto "prodes/internal/dto"
+	"sync"
 	"time"
 )
 
+type CircuitBreakerState string
+
+const (
+	Closed     CircuitBreakerState = "CLOSED"
+	Open       CircuitBreakerState = "OPEN"
+	HalfOpen   CircuitBreakerState = "HALF_OPEN"
+	FailLimit                     = 5         // Número máximo de fallos antes de abrir el circuito
+	ResetTimeout                  = 10 * time.Second // Tiempo de espera antes de probar si el servicio se ha recuperado
+)
+
 type HttpClient struct {
-	BaseURL    string
-	HTTPClient *http.Client
+	BaseURL        string
+	HTTPClient     *http.Client
+	failCount      int
+	state          CircuitBreakerState
+	mu             sync.Mutex
+	lastFailure    time.Time
 }
 
 // NewHttpClient crea una nueva instancia de HttpClient con una base URL
 func NewHttpClient(baseURL string) *HttpClient {
 	return &HttpClient{
-		BaseURL: baseURL,
-		HTTPClient: &http.Client{
-			Timeout: time.Second * 10,
-		},
+		BaseURL:    baseURL,
+		HTTPClient: &http.Client{Timeout: 10 * time.Second},
+		state:      Closed,
 	}
 }
 
-// Get realiza una solicitud GET a la API de destino
+// checkCircuitState revisa si debe cambiar el estado del circuito
+func (c *HttpClient) checkCircuitState() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.state == Open && time.Since(c.lastFailure) > ResetTimeout {
+		c.state = HalfOpen // Intentaremos realizar una solicitud para ver si el servicio se ha recuperado
+	}
+}
+
+func (c *HttpClient) shouldBlockRequest() bool {
+	c.checkCircuitState()
+	return c.state == Open
+}
+
+func (c *HttpClient) recordFailure() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.failCount++
+	if c.failCount >= FailLimit {
+		c.state = Open
+		c.lastFailure = time.Now()
+	}
+}
+
+func (c *HttpClient) resetFailures() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.failCount = 0
+	c.state = Closed
+}
+
+// Get realiza una solicitud GET a la API de destino con Circuit Breaker
 func (c *HttpClient) Get(endpoint string) ([]byte, error) {
+	if c.shouldBlockRequest() {
+		return nil, fmt.Errorf("circuit breaker is open, blocking request")
+	}
+
 	url := fmt.Sprintf("%s%s", c.BaseURL, endpoint)
 	resp, err := c.HTTPClient.Get(url)
 	if err != nil {
+		c.recordFailure()
 		return nil, fmt.Errorf("error making GET request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		c.recordFailure()
 		return nil, fmt.Errorf("received non-200 response code: %d", resp.StatusCode)
 	}
 
+	c.resetFailures() // La solicitud fue exitosa, reiniciamos los contadores de fallos
+
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
+		c.recordFailure()
 		return nil, fmt.Errorf("error reading response body: %w", err)
 	}
 
@@ -48,6 +105,10 @@ func (c *HttpClient) Get(endpoint string) ([]byte, error) {
 
 // Post realiza una solicitud POST a la API de destino
 func (c *HttpClient) Post(endpoint string, data interface{}) ([]byte, error) {
+	if c.shouldBlockRequest() {
+		return nil, fmt.Errorf("circuit breaker is open, blocking request")
+	}
+
 	url := fmt.Sprintf("%s%s", c.BaseURL, endpoint)
 
 	jsonData, err := json.Marshal(data)
@@ -57,16 +118,21 @@ func (c *HttpClient) Post(endpoint string, data interface{}) ([]byte, error) {
 
 	resp, err := c.HTTPClient.Post(url, "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
+		c.recordFailure()
 		return nil, fmt.Errorf("error making POST request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		c.recordFailure()
 		return nil, fmt.Errorf("received non-200/201 response code: %d", resp.StatusCode)
 	}
 
+	c.resetFailures()
+
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
+		c.recordFailure()
 		return nil, fmt.Errorf("error reading response body: %w", err)
 	}
 
@@ -75,6 +141,10 @@ func (c *HttpClient) Post(endpoint string, data interface{}) ([]byte, error) {
 
 // Put realiza una solicitud PUT a la API de destino
 func (c *HttpClient) Put(endpoint string, data interface{}) ([]byte, error) {
+	if c.shouldBlockRequest() {
+		return nil, fmt.Errorf("circuit breaker is open, blocking request")
+	}
+
 	url := fmt.Sprintf("%s%s", c.BaseURL, endpoint)
 
 	jsonData, err := json.Marshal(data)
@@ -90,16 +160,21 @@ func (c *HttpClient) Put(endpoint string, data interface{}) ([]byte, error) {
 
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
+		c.recordFailure() // Registrar fallo en el Circuit Breaker
 		return nil, fmt.Errorf("error making PUT request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		c.recordFailure() // Registrar fallo en el Circuit Breaker
 		return nil, fmt.Errorf("received non-200 response code: %d", resp.StatusCode)
 	}
 
+	c.resetFailures() // Restablecer contadores de fallo en el Circuit Breaker
+
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
+		c.recordFailure() // Registrar fallo en el Circuit Breaker
 		return nil, fmt.Errorf("error reading response body: %w", err)
 	}
 
@@ -108,6 +183,10 @@ func (c *HttpClient) Put(endpoint string, data interface{}) ([]byte, error) {
 
 // Delete realiza una solicitud DELETE a la API de destino
 func (c *HttpClient) Delete(endpoint string) error {
+	if c.shouldBlockRequest() {
+		return fmt.Errorf("circuit breaker is open, blocking request")
+	}
+
 	url := fmt.Sprintf("%s%s", c.BaseURL, endpoint)
 
 	req, err := http.NewRequest(http.MethodDelete, url, nil)
@@ -117,13 +196,17 @@ func (c *HttpClient) Delete(endpoint string) error {
 
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
+		c.recordFailure() // Registrar fallo en el Circuit Breaker
 		return fmt.Errorf("error making DELETE request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
+		c.recordFailure() // Registrar fallo en el Circuit Breaker
 		return fmt.Errorf("received non-200/204 response code: %d", resp.StatusCode)
 	}
+
+	c.resetFailures() // Restablecer contadores de fallo en el Circuit Breaker
 
 	return nil
 }
@@ -131,7 +214,7 @@ func (c *HttpClient) Delete(endpoint string) error {
 // GetSessionNameAndType realiza una solicitud GET para obtener el nombre y tipo de una sesión desde el microservicio de sessions
 func (c *HttpClient) GetSessionNameAndType(eventID int) (dto.SessionNameAndTypeDTO, error) {
     // Definir el endpoint para la solicitud GET
-    endpoint := fmt.Sprintf("8060/sessions/%d/name-type", eventID)
+    endpoint := fmt.Sprintf("8056/sessions/%d/name-type", eventID)
 
     // Hacer la solicitud GET utilizando el cliente HTTP
     body, err := c.Get(endpoint)
@@ -151,7 +234,7 @@ func (c *HttpClient) GetSessionNameAndType(eventID int) (dto.SessionNameAndTypeD
 // GetSessionByID realiza una solicitud GET para obtener los detalles completos de una sesión desde el microservicio de sessions
 func (c *HttpClient) GetSessionByID(sessionID int) (dto.SessionDetailsDTO, error) {
     // Definir el endpoint para la solicitud GET
-    endpoint := fmt.Sprintf("8060/sessions/%d", sessionID)
+    endpoint := fmt.Sprintf("8056/sessions/%d", sessionID)
 
     // Hacer la solicitud GET utilizando el cliente HTTP
     body, err := c.Get(endpoint)
@@ -169,7 +252,7 @@ func (c *HttpClient) GetSessionByID(sessionID int) (dto.SessionDetailsDTO, error
 }
 
 func (c *HttpClient) GetUserByID(userID int) (bool, error) {
-    endpoint := fmt.Sprintf("8080/users/%d", userID)
+    endpoint := fmt.Sprintf("8057/users/%d", userID)
 	fmt.Println("Realizando consulta al endpoint: ", endpoint)
 
     body, err := c.Get(endpoint)
@@ -186,7 +269,7 @@ func (c *HttpClient) GetUserByID(userID int) (bool, error) {
 }
 
 func (c *HttpClient) GetDriverByID(driverID int) (dto.DriverDTO, error) {
-    endpoint := fmt.Sprintf("8070/drivers/%d", driverID)
+    endpoint := fmt.Sprintf("8051/drivers/%d", driverID)
     body, err := c.Get(endpoint)
     if err != nil {
         return dto.DriverDTO{}, fmt.Errorf("error fetching driver by ID: %w", err)
@@ -201,7 +284,7 @@ func (c *HttpClient) GetDriverByID(driverID int) (dto.DriverDTO, error) {
 }
 
 func (c *HttpClient) GetAllDrivers() ([]dto.DriverDTO, error) {
-    endpoint := "8070/drivers"
+    endpoint := "8051/drivers"
     body, err := c.Get(endpoint)
     if err != nil {
         return nil, fmt.Errorf("error fetching all drivers: %w", err)

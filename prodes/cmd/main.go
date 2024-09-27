@@ -29,15 +29,16 @@ func main() {
 	}
 	defer utils.DisconnectDB()
 
-	// Iniciar el motor de la base de datos y migrar tablas
+	// Iniciar el motor de la base de datos y migrar tablas y la caché
 	utils.StartDbEngine()
+	cache := utils.NewCache()
 
 	// Inicializar el cliente HTTP para comunicarte con el microservicio de sessions
 	httpClient := client.NewHttpClient("http://localhost:")
 
 	// Inicializar repositorios, servicios y controlador
 	prodeRepo := repository.NewProdeRepository(db)
-	prodeService := service.NewPrediService(prodeRepo, httpClient)
+	prodeService := service.NewPrediService(prodeRepo, httpClient, cache)
 	prodeController := api.NewProdeController(prodeService)
 
 	// Configurar el router
