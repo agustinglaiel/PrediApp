@@ -406,11 +406,6 @@ func (s *prodeService) GetProdesByUserId(ctx context.Context, userID int) ([]pro
 	return carreraResponses, sessionResponses, nil
 }
 
-//Función auxiliar para mayor modularidad y me devuelve el bool de si es session name y type = race. 
-func isRaceSession(sessionName string, sessionType string) bool {
-    return sessionName == "Race" && sessionType == "Race"
-}
-
 func (s *prodeService) GetRaceProdeByUserAndSession(ctx context.Context, userID, sessionID int) (prodes.ResponseProdeCarreraDTO, e.ApiError) {
     cacheKey := fmt.Sprintf("session_info_%d", sessionID)
 
@@ -801,4 +796,9 @@ func (s *prodeService) GetTopDriversBySessionId(ctx context.Context, sessionID, 
 
     // Retornar los pilotos obtenidos
     return topDrivers, nil
+}
+
+//Función auxiliar para mayor modularidad y me devuelve el bool de si es session name y type = race. 
+func isRaceSession(sessionName string, sessionType string) bool {
+    return sessionName == "Race" && sessionType == "Race"
 }

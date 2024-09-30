@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"prodes/internal/model"
 	"prodes/pkg/config"
+	"time"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -19,6 +20,17 @@ func InitDB() (*gorm.DB, error) {
     if err != nil {
         return nil, fmt.Errorf("error connecting to the database: %v", err)
     }
+
+    // Obtener la conexión SQL subyacente
+    sqlDB, err := db.DB()
+    if err != nil {
+        return nil, fmt.Errorf("error getting sql.DB from gorm: %v", err)
+    }
+
+    // Configurar el pool de conexiones
+    sqlDB.SetMaxIdleConns(10)                    // Conexiones inactivas máximas
+    sqlDB.SetMaxOpenConns(100)                   // Conexiones máximas abiertas al mismo tiempo
+    sqlDB.SetConnMaxLifetime(10 * time.Minute)   // Tiempo máximo de vida de una conexión (10 Min)
 
     DB = db
 

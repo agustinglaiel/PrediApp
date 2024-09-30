@@ -8,8 +8,8 @@ import (
 
 type ProdeCarrera struct {
 	ID         int      	  `gorm:"primaryKey" json:"id"`
-	UserID     int      	  `json:"user_id"`
-	SessionID  int      	  `json:"session_id"` // foreign key to sessions
+	UserID     int      	  `gorm:"index" json:"user_id"`
+	SessionID  int      	  `gorm:"index" json:"session_id"` // foreign key to sessions
 	Session    Session  	  `gorm:"foreignKey:SessionID"` // Relación con la tabla Session
 	P1         int      	  `json:"p1"` // driver_id
 	P2         int      	  `json:"p2"` // driver_id
@@ -26,15 +26,15 @@ type ProdeCarrera struct {
 }
 
 type ProdeSession struct {
-	ID        int      `gorm:"primaryKey" json:"id"`
-	UserID    int      `json:"user_id"`
-	SessionID int      `json:"session_id"` // foreign key to sessions
-	Session   Session       `gorm:"foreignKey:SessionID"` // Relación con la tabla Session
-	P1        int      `json:"p1"` // driver_id
-	P2        int      `json:"p2"` // driver_id
-	P3        int      `json:"p3"` // driver_id
-	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
-	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"`
+	ID        int      		 `gorm:"primaryKey" json:"id"`
+	UserID    int      		 `gorm:"index" json:"user_id"`
+	SessionID int      		 `gorm:"index" json:"session_id"` // foreign key to sessions
+	Session   Session  		 `gorm:"foreignKey:SessionID"` // Relación con la tabla Session
+	P1        int      		 `json:"p1"` // driver_id
+	P2        int      		 `json:"p2"` // driver_id
+	P3        int      	 	 `json:"p3"` // driver_id
+	CreatedAt time.Time 	 `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt time.Time 	 `gorm:"autoUpdateTime" json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 }
 
