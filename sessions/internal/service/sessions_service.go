@@ -14,6 +14,7 @@ import (
 type sessionService struct {
     sessionsRepo repository.SessionRepository
     client       *client.HttpClient  // Agregar el cliente HTTP
+    cache        *e.Cache
 }
 
 type SessionServiceInterface interface{
@@ -38,10 +39,11 @@ type SessionServiceInterface interface{
 	UpdateDFastLap(ctx context.Context, sessionID uint) e.ApiError
 }
 
-func NewSessionService(sessionsRepo repository.SessionRepository, client *client.HttpClient) SessionServiceInterface{
+func NewSessionService(sessionsRepo repository.SessionRepository, client *client.HttpClient, cache *e.Cache) SessionServiceInterface{
 	return &sessionService{
 		sessionsRepo: sessionsRepo,
 		client:       client,  // Pasar el cliente HTTP
+        cache:        cache,
 	}
 }
 
@@ -146,10 +148,20 @@ func (s *sessionService) CreateSession(ctx context.Context, request dto.CreateSe
 }
 
 func (s *sessionService) GetSessionById(ctx context.Context, sessionID uint) (dto.ResponseSessionDTO, e.ApiError) {
-	session, err := s.sessionsRepo.GetSessionById(ctx, sessionID)
-	if err != nil {
-		return dto.ResponseSessionDTO{}, err
-	}
+	// Definir la clave de la caché
+    cacheKey := fmt.Sprintf("session_%d", sessionID)
+
+    // Verificar si la sesión está en caché
+    if cachedData, found := s.cache.Get(cacheKey); found {
+        return cachedData.(dto.ResponseSessionDTO), nil
+    }
+
+    // Si no está en caché, obtenerla del repositorio
+    session, err := s.sessionsRepo.GetSessionById(ctx, sessionID)
+    if err != nil {
+        return dto.ResponseSessionDTO{}, err
+    }
+
 
 	// Convert Model to Response DTO
 	response := dto.ResponseSessionDTO{
@@ -174,6 +186,9 @@ func (s *sessionService) GetSessionById(ctx context.Context, sessionID uint) (dt
 		response.SF = session.SF
 		response.DNF = session.DNF
 	}
+
+    // Guardar la sesión en caché por 30 minutos
+    s.cache.Set(cacheKey, response, 30*time.Minute)
 
 	return response, nil
 }
@@ -333,11 +348,19 @@ func (s *sessionService) DeleteSessionById(ctx context.Context, sessionID uint) 
 }
 
 func (s *sessionService) ListSessionsByYear(ctx context.Context, year int) ([]dto.ResponseSessionDTO, e.ApiError) {
-	// Llamar a la función del repository para obtener las sesiones por año
-	sessions, err := s.sessionsRepo.GetSessionByYear(ctx, year)
-	if err != nil {
-		return nil, err
-	}
+	// Definir la clave de la caché
+    cacheKey := fmt.Sprintf("sessions_by_year_%d", year)
+
+    // Verificar si las sesiones por año están en caché
+    if cachedData, found := s.cache.Get(cacheKey); found {
+        return cachedData.([]dto.ResponseSessionDTO), nil
+    }
+
+    // Llamar al repositorio para obtener las sesiones por año
+    sessions, err := s.sessionsRepo.GetSessionByYear(ctx, year)
+    if err != nil {
+        return nil, err
+    }
 
 	// Convertir el resultado de []*model.Session a []dto.ResponseSessionDTO
 	var response []dto.ResponseSessionDTO
@@ -363,31 +386,53 @@ func (s *sessionService) ListSessionsByYear(ctx context.Context, year int) ([]dt
 		})
 	}
 
+    // Guardar las sesiones en caché por 30 minutos
+    s.cache.Set(cacheKey, response, 30*time.Minute)
+
 	return response, nil
 }
 
 func (s *sessionService) GetSessionNameAndTypeById(ctx context.Context, sessionID uint) (dto.SessionNameAndTypeDTO, e.ApiError) {
-	// Llamar a la función del repository para obtener el nombre y tipo de la sesión
-	sessionName, sessionType, err := s.sessionsRepo.GetSessionNameAndTypeBySessionID(ctx, sessionID)
-	if err != nil {
-		return dto.SessionNameAndTypeDTO{}, err
-	}
+	// Definir la clave de la caché
+    cacheKey := fmt.Sprintf("session_name_type_%d", sessionID)
 
-	// Construir el DTO de respuesta
-	response := dto.SessionNameAndTypeDTO{
-		SessionName: sessionName,
-		SessionType: sessionType,
-	}
+    // Verificar si el nombre y tipo de la sesión ya están en caché
+    if cachedData, found := s.cache.Get(cacheKey); found {
+        return cachedData.(dto.SessionNameAndTypeDTO), nil
+    }
 
-	return response, nil
+    // Llamar al repositorio para obtener el nombre y tipo de la sesión
+    sessionName, sessionType, err := s.sessionsRepo.GetSessionNameAndTypeBySessionID(ctx, sessionID)
+    if err != nil {
+        return dto.SessionNameAndTypeDTO{}, err
+    }
+
+    // Construir el DTO de respuesta
+    response := dto.SessionNameAndTypeDTO{
+        SessionName: sessionName,
+        SessionType: sessionType,
+    }
+
+    // Guardar en caché el nombre y tipo de la sesión por 30 minutos
+    s.cache.Set(cacheKey, response, 30*time.Minute)
+
+    return response, nil
 }
 
 func (s *sessionService) ListSessionsByCircuitKey(ctx context.Context, circuitKey int) ([]dto.ResponseSessionDTO, e.ApiError) {
-	// Llamar a la función del repository para obtener las sesiones por CircuitKey
-	sessions, err := s.sessionsRepo.GetSessionsByCircuitKey(ctx, circuitKey)
-	if err != nil {
-		return nil, err
-	}
+	// Definir la clave de la caché
+    cacheKey := fmt.Sprintf("sessions_by_circuitKey_%d", circuitKey)
+
+    // Verificar si las sesiones por CircuitKey están en caché
+    if cachedData, found := s.cache.Get(cacheKey); found {
+        return cachedData.([]dto.ResponseSessionDTO), nil
+    }
+
+    // Llamar al repositorio para obtener las sesiones por CircuitKey
+    sessions, err := s.sessionsRepo.GetSessionsByCircuitKey(ctx, circuitKey)
+    if err != nil {
+        return nil, err
+    }
 
 	// Convertir el resultado de []*model.Session a []dto.ResponseSessionDTO
 	var response []dto.ResponseSessionDTO
@@ -407,71 +452,96 @@ func (s *sessionService) ListSessionsByCircuitKey(ctx context.Context, circuitKe
 			Year:             session.Year,
 		})
 	}
+
+    // Guardar las sesiones en caché por 30 minutos
+    s.cache.Set(cacheKey, response, 30*time.Minute)
 
 	return response, nil
 }
 
 func (s *sessionService) ListSessionsByCountryCode(ctx context.Context, countryCode string) ([]dto.ResponseSessionDTO, e.ApiError) {
-	// Llamar a la función del repository para obtener las sesiones por CountryCode
-	sessions, err := s.sessionsRepo.GetSessionsByCountryCode(ctx, countryCode)
-	if err != nil {
-		return nil, err
-	}
+    // Definir la clave de la caché
+    cacheKey := fmt.Sprintf("sessions_by_countryCode_%s", countryCode)
 
-	// Convertir el resultado de []*model.Session a []dto.ResponseSessionDTO
-	var response []dto.ResponseSessionDTO
-	for _, session := range sessions {
-		response = append(response, dto.ResponseSessionDTO{
-			ID:               session.ID,
-			CircuitKey:       session.CircuitKey,
-			CircuitShortName: session.CircuitShortName,
-			CountryCode:      session.CountryCode,
-			CountryName:      session.CountryName,
-			DateStart:        session.DateStart,
-			DateEnd:          session.DateEnd,
-			Location:         session.Location,
-			SessionKey:       session.SessionKey,
-			SessionName:      session.SessionName,
-			SessionType:      session.SessionType,
-			Year:             session.Year,
-		})
-	}
+    // Verificar si las sesiones por CountryCode están en caché
+    if cachedData, found := s.cache.Get(cacheKey); found {
+        return cachedData.([]dto.ResponseSessionDTO), nil
+    }
 
-	return response, nil
+    // Llamar al repositorio para obtener las sesiones por CountryCode
+    sessions, err := s.sessionsRepo.GetSessionsByCountryCode(ctx, countryCode)
+    if err != nil {
+        return nil, err
+    }
+
+    // Convertir el resultado de []*model.Session a []dto.ResponseSessionDTO
+    var response []dto.ResponseSessionDTO
+    for _, session := range sessions {
+        response = append(response, dto.ResponseSessionDTO{
+            ID:               session.ID,
+            CircuitKey:       session.CircuitKey,
+            CircuitShortName: session.CircuitShortName,
+            CountryCode:      session.CountryCode,
+            CountryName:      session.CountryName,
+            DateStart:        session.DateStart,
+            DateEnd:          session.DateEnd,
+            Location:         session.Location,
+            SessionKey:       session.SessionKey,
+            SessionName:      session.SessionName,
+            SessionType:      session.SessionType,
+            Year:             session.Year,
+        })
+    }
+
+    // Guardar las sesiones en caché por 30 minutos
+    s.cache.Set(cacheKey, response, 30*time.Minute)
+
+    return response, nil
 }
 
 func (s *sessionService) ListUpcomingSessions(ctx context.Context) ([]dto.ResponseSessionDTO, e.ApiError) {
-	// Llamar a la función del repository para obtener las próximas sesiones
-	sessions, err := s.sessionsRepo.GetUpcomingSessions(ctx)
-	if err != nil {
-		return nil, err
-	}
+    // Definir la clave de la caché
+    cacheKey := "upcoming_sessions"
 
-	// Convertir el resultado de []*model.Session a []dto.ResponseSessionDTO
-	var response []dto.ResponseSessionDTO
-	for _, session := range sessions {
-		response = append(response, dto.ResponseSessionDTO{
-			ID:               session.ID,
-			CircuitKey:       session.CircuitKey,
-			CircuitShortName: session.CircuitShortName,
-			CountryCode:      session.CountryCode,
-			CountryName:      session.CountryName,
-			DateStart:        session.DateStart,
-			DateEnd:          session.DateEnd,
-			Location:         session.Location,
-			SessionKey:       session.SessionKey,
-			SessionName:      session.SessionName,
-			SessionType:      session.SessionType,
-			Year:             session.Year,
-		})
-	}
+    // Verificar si las próximas sesiones están en caché
+    if cachedData, found := s.cache.Get(cacheKey); found {
+        return cachedData.([]dto.ResponseSessionDTO), nil
+    }
 
-	// Si no hay próximas sesiones, devolver lista vacía
-	if len(response) == 0 {
-		return []dto.ResponseSessionDTO{}, nil
-	}
+    // Llamar al repositorio para obtener las próximas sesiones
+    sessions, err := s.sessionsRepo.GetUpcomingSessions(ctx)
+    if err != nil {
+        return nil, err
+    }
 
-	return response, nil
+    // Convertir el resultado de []*model.Session a []dto.ResponseSessionDTO
+    var response []dto.ResponseSessionDTO
+    for _, session := range sessions {
+        response = append(response, dto.ResponseSessionDTO{
+            ID:               session.ID,
+            CircuitKey:       session.CircuitKey,
+            CircuitShortName: session.CircuitShortName,
+            CountryCode:      session.CountryCode,
+            CountryName:      session.CountryName,
+            DateStart:        session.DateStart,
+            DateEnd:          session.DateEnd,
+            Location:         session.Location,
+            SessionKey:       session.SessionKey,
+            SessionName:      session.SessionName,
+            SessionType:      session.SessionType,
+            Year:             session.Year,
+        })
+    }
+
+    // Guardar las próximas sesiones en caché por 15 minutos
+    s.cache.Set(cacheKey, response, 15*time.Minute)
+
+    // Si no hay próximas sesiones, devolver lista vacía
+    if len(response) == 0 {
+        return []dto.ResponseSessionDTO{}, nil
+    }
+
+    return response, nil
 }
 
 func (s *sessionService) ListSessionsBetweenDates(ctx context.Context, startDate time.Time, endDate time.Time) ([]dto.ResponseSessionDTO, e.ApiError) {
@@ -514,79 +584,109 @@ func (s *sessionService) ListSessionsBetweenDates(ctx context.Context, startDate
 }
 
 func (s *sessionService) FindSessionsByNameAndType(ctx context.Context, sessionName string, sessionType string) ([]dto.ResponseSessionDTO, e.ApiError) {
-	// Validar que sessionName y sessionType no estén vacíos
-	if sessionName == "" || sessionType == "" {
-		return nil, e.NewBadRequestApiError("El nombre y tipo de sesión son obligatorios")
-	}
+    // Validar que sessionName y sessionType no estén vacíos
+    if sessionName == "" || sessionType == "" {
+        return nil, e.NewBadRequestApiError("El nombre y tipo de sesión son obligatorios")
+    }
 
-	// Llamar a la función del repository para obtener las sesiones por nombre y tipo
-	sessions, err := s.sessionsRepo.GetSessionsByNameAndType(ctx, sessionName, sessionType)
-	if err != nil {
-		return nil, err
-	}
+    // Definir la clave de la caché basada en sessionName y sessionType
+    cacheKey := fmt.Sprintf("sessions_%s_%s", sessionName, sessionType)
 
-	// Convertir el resultado de []*model.Session a []dto.ResponseSessionDTO
-	var response []dto.ResponseSessionDTO
-	for _, session := range sessions {
-		response = append(response, dto.ResponseSessionDTO{
-			ID:               session.ID,
-			CircuitKey:       session.CircuitKey,
-			CircuitShortName: session.CircuitShortName,
-			CountryCode:      session.CountryCode,
-			CountryName:      session.CountryName,
-			DateStart:        session.DateStart,
-			DateEnd:          session.DateEnd,
-			Location:         session.Location,
-			SessionKey:       session.SessionKey,
-			SessionName:      session.SessionName,
-			SessionType:      session.SessionType,
-			Year:             session.Year,
-		})
-	}
+    // Verificar si las sesiones están en caché
+    if cachedData, found := s.cache.Get(cacheKey); found {
+        return cachedData.([]dto.ResponseSessionDTO), nil
+    }
 
-	// Si no se encuentran sesiones con el nombre y tipo especificado, devolver lista vacía
-	if len(response) == 0 {
-		return []dto.ResponseSessionDTO{}, nil
-	}
+    // Llamar a la función del repositorio para obtener las sesiones por nombre y tipo
+    sessions, err := s.sessionsRepo.GetSessionsByNameAndType(ctx, sessionName, sessionType)
+    if err != nil {
+        return nil, err
+    }
 
-	return response, nil
+    // Convertir el resultado de []*model.Session a []dto.ResponseSessionDTO
+    var response []dto.ResponseSessionDTO
+    for _, session := range sessions {
+        response = append(response, dto.ResponseSessionDTO{
+            ID:               session.ID,
+            CircuitKey:       session.CircuitKey,
+            CircuitShortName: session.CircuitShortName,
+            CountryCode:      session.CountryCode,
+            CountryName:      session.CountryName,
+            DateStart:        session.DateStart,
+            DateEnd:          session.DateEnd,
+            Location:         session.Location,
+            SessionKey:       session.SessionKey,
+            SessionName:      session.SessionName,
+            SessionType:      session.SessionType,
+            Year:             session.Year,
+        })
+    }
+
+    // Guardar en caché las sesiones por nombre y tipo
+    s.cache.Set(cacheKey, response, 1*time.Hour)
+
+    // Si no se encuentran sesiones con el nombre y tipo especificado, devolver lista vacía
+    if len(response) == 0 {
+        return []dto.ResponseSessionDTO{}, nil
+    }
+
+    return response, nil
 }
 
 func (s *sessionService) GetAllSessions(ctx context.Context) ([]dto.ResponseSessionDTO, e.ApiError) {
-	// Llamar a la función del repository para obtener todas las sesiones
-	sessions, err := s.sessionsRepo.GetAllSessions(ctx)
-	if err != nil {
-		return nil, err
-	}
+    // Definir la clave de la caché
+    cacheKey := "all_sessions"
 
-	// Convertir el resultado de []*model.Session a []dto.ResponseSessionDTO
-	var response []dto.ResponseSessionDTO
-	for _, session := range sessions {
-		response = append(response, dto.ResponseSessionDTO{
-			ID:               session.ID,
-			CircuitKey:       session.CircuitKey,
-			CircuitShortName: session.CircuitShortName,
-			CountryCode:      session.CountryCode,
-			CountryName:      session.CountryName,
-			DateStart:        session.DateStart,
-			DateEnd:          session.DateEnd,
-			Location:         session.Location,
-			SessionKey:       session.SessionKey,
-			SessionName:      session.SessionName,
-			SessionType:      session.SessionType,
-			Year:             session.Year,
-		})
-	}
+    // Verificar si todas las sesiones están en caché
+    if cachedData, found := s.cache.Get(cacheKey); found {
+        return cachedData.([]dto.ResponseSessionDTO), nil
+    }
 
-	// Si no se encuentran sesiones, devolver lista vacía
-	if len(response) == 0 {
-		return []dto.ResponseSessionDTO{}, nil
-	}
+    // Llamar a la función del repositorio para obtener todas las sesiones
+    sessions, err := s.sessionsRepo.GetAllSessions(ctx)
+    if err != nil {
+        return nil, err
+    }
 
-	return response, nil
+    // Convertir el resultado de []*model.Session a []dto.ResponseSessionDTO
+    var response []dto.ResponseSessionDTO
+    for _, session := range sessions {
+        response = append(response, dto.ResponseSessionDTO{
+            ID:               session.ID,
+            CircuitKey:       session.CircuitKey,
+            CircuitShortName: session.CircuitShortName,
+            CountryCode:      session.CountryCode,
+            CountryName:      session.CountryName,
+            DateStart:        session.DateStart,
+            DateEnd:          session.DateEnd,
+            Location:         session.Location,
+            SessionKey:       session.SessionKey,
+            SessionName:      session.SessionName,
+            SessionType:      session.SessionType,
+            Year:             session.Year,
+        })
+    }
+
+    // Guardar todas las sesiones en caché por 1 hora
+    s.cache.Set(cacheKey, response, 1*time.Hour)
+
+    // Si no se encuentran sesiones, devolver lista vacía
+    if len(response) == 0 {
+        return []dto.ResponseSessionDTO{}, nil
+    }
+
+    return response, nil
 }
 
 func (s *sessionService) GetRaceResultsById(ctx context.Context, sessionID uint) (dto.RaceResultsDTO, e.ApiError) {
+    // Definir la clave de la caché basada en sessionID
+    cacheKey := fmt.Sprintf("race_results_%d", sessionID)
+
+    // Verificar si los resultados de la carrera están en caché
+    if cachedData, found := s.cache.Get(cacheKey); found {
+        return cachedData.(dto.RaceResultsDTO), nil
+    }
+
     // Obtener la sesión por ID
     session, apiErr := s.sessionsRepo.GetSessionById(ctx, sessionID)
     if apiErr != nil {
@@ -605,6 +705,9 @@ func (s *sessionService) GetRaceResultsById(ctx context.Context, sessionID uint)
         SF:           session.SF,
         DFastLap:     session.DFastLap,
     }
+
+    // Guardar los resultados en caché
+    s.cache.Set(cacheKey, response, 1*time.Hour)
 
     return response, nil
 }
@@ -702,6 +805,15 @@ func (s *sessionService) UpdateSessionData(ctx context.Context, sessionID uint, 
 }
 
 func (s *sessionService) GetSessionKeyBySessionID(ctx context.Context, sessionID uint) (int, e.ApiError) {
+    // Definir la clave de caché basada en sessionID
+    cacheKey := fmt.Sprintf("session_key_%d", sessionID)
+
+    // Verificar si el session_key está en la caché
+    if cachedData, found := s.cache.Get(cacheKey); found {
+        return cachedData.(int), nil
+    }
+
+    // Obtener la sesión por ID
     session, err := s.sessionsRepo.GetSessionById(ctx, sessionID)
     if err != nil {
         return 0, err
@@ -710,6 +822,9 @@ func (s *sessionService) GetSessionKeyBySessionID(ctx context.Context, sessionID
     if session.SessionKey == nil {
         return 0, e.NewNotFoundApiError("Session key no encontrado para esta sesión")
     }
+
+    // Guardar el session_key en caché
+    s.cache.Set(cacheKey, *session.SessionKey, 1*time.Hour)
 
     return *session.SessionKey, nil
 }
