@@ -534,7 +534,7 @@ func (s *sessionService) ListUpcomingSessions(ctx context.Context) ([]dto.Respon
     }
 
     // Guardar las próximas sesiones en caché por 15 minutos
-    s.cache.Set(cacheKey, response, 15*time.Minute)
+    //s.cache.Set(cacheKey, response, 15*time.Minute)
 
     // Si no hay próximas sesiones, devolver lista vacía
     if len(response) == 0 {

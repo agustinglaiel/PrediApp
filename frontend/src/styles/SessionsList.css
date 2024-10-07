@@ -1,0 +1,71 @@
+/* Contenedor principal */
+.sessions-container {
+  display: flex;
+  flex-wrap: wrap; /* Permite que los recuadros se ajusten en filas cuando no hay suficiente espacio */
+  justify-content: center; /* Centra los recuadros en el contenedor */
+  gap: 20px; /* Espaciado entre los recuadros */
+  padding: 20px;
+}
+
+/* Agrupación por localización (isla flotante de los eventos) */
+.location-group {
+  background-color: #f9f9f9;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  width: 100%;
+  max-width: 350px; /* Ajusta el ancho máximo para que no sea demasiado ancho */
+  margin-bottom: 20px;
+  flex: 1; /* Permite que cada grupo ocupe espacio disponible */
+}
+
+/* Encabezado de la ubicación */
+.location-header {
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+/* Estilo para cada sesión */
+.session-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 10px -27px; /* Ajustamos el margen para que el espaciado sea uniforme arriba y abajo */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  width: calc(
+    100% - 20px
+  ); /* Asegura que ocupe el 100% menos un pequeño espaciado */
+}
+
+/* Detalles de la sesión */
+.session-details {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+/* Ajustes de margen y espaciado */
+.session-date,
+.session-name,
+.session-time {
+  margin: 0 0 5px 0;
+}
+
+/* Botón de pronóstico */
+.prediction-button {
+  background-color: #ff7f1c;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 15px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.prediction-button:hover {
+  background-color: #ff9c49;
+}
