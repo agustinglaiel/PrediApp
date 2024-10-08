@@ -20,22 +20,20 @@
   flex-wrap: wrap;
   justify-content: center;
   gap: 20px;
-  width: 100%;
+  width: 200%;
 }
 
 /* Agrupación por localización (isla flotante de los eventos) */
 .location-group {
   background-color: #f9f9f9;
   border-radius: 10px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.1);
   padding: 20px;
   width: 100%;
   max-width: 350px;
   margin-bottom: 20px;
   flex: 1;
 }
-
-/* ... (mantén el resto de los estilos igual) */
 
 /* Encabezado de la ubicación */
 .location-header {
@@ -82,6 +80,9 @@
   font-size: 1em;
   cursor: pointer;
   transition: background-color 0.3s ease;
+  width: 100%; /* Hacemos que todos los botones ocupen el 100% del espacio disponible */
+  max-width: 200px; /* Establecemos un ancho máximo consistente */
+  text-align: center; /* Aseguramos que el texto dentro esté centrado */
 }
 
 .prediction-button:hover {

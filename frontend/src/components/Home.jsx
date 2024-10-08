@@ -1,4 +1,5 @@
 import React, { useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import { SessionsContext } from "../contexts/SessionsContext";
 import "../styles/SessionsList.css";
 
@@ -25,6 +26,20 @@ const groupSessionsByLocation = (sessions) => {
 
 const Home = () => {
   const { sessions, loading, error } = useContext(SessionsContext);
+  const navigate = useNavigate(); // Para redireccionar
+
+  const validCombinations = {
+    "Sprint Qualifying": "Qualifying",
+    Sprint: "Race",
+    Qualifying: "Qualifying",
+    Race: "Race",
+  };
+
+  // Filtrar las sesiones en el frontend
+  const filteredSessions = sessions.filter(
+    (session) =>
+      validCombinations[session.session_name] === session.session_type
+  );
 
   if (loading) {
     return <div>Loading sessions...</div>;
@@ -34,7 +49,16 @@ const Home = () => {
     return <div>Error loading sessions: {error}</div>;
   }
 
-  const groupedSessions = groupSessionsByLocation(sessions);
+  const groupedSessions = groupSessionsByLocation(filteredSessions);
+
+  // Función para manejar la redirección según el tipo de sesión
+  const handlePredictionClick = (session) => {
+    if (session.session_name === "Race" && session.session_type === "Race") {
+      navigate(`/prode/race/${session.id}`);
+    } else {
+      navigate(`/prode/session/${session.id}`);
+    }
+  };
 
   return (
     <div className="page-container">
@@ -70,7 +94,10 @@ const Home = () => {
                         })}
                       </span>
                     </div>
-                    <button className="prediction-button">
+                    <button
+                      className="prediction-button"
+                      onClick={() => handlePredictionClick(session)}
+                    >
                       Completar pronóstico
                     </button>
                   </li>

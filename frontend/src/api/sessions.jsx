@@ -14,4 +14,12 @@ export const getUpcomingSessions = async () => {
   }
 };
 
-// Puedes agregar más funciones aquí para otras llamadas a la API relacionadas con sesiones
+// Función para obtener la sesión por ID
+export const getSessionById = async (sessionId) => {
+  try {
+    const response = await axios.get(`/api/sessions/${sessionId}`);
+    return response.data; // Retornamos los datos de la sesión
+  } catch (error) {
+    throw new Error("Error fetching session by ID");
+  }
+};
