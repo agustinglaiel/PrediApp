@@ -1,10 +1,26 @@
-/* Contenedor principal */
+/* Contenedor de la página */
+.page-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+}
+
+/* Título de la página */
+.page-title {
+  text-align: center;
+  margin-bottom: 30px;
+  font-size: 2em;
+  color: #333;
+}
+
+/* Contenedor principal de las sesiones */
 .sessions-container {
   display: flex;
-  flex-wrap: wrap; /* Permite que los recuadros se ajusten en filas cuando no hay suficiente espacio */
-  justify-content: center; /* Centra los recuadros en el contenedor */
-  gap: 20px; /* Espaciado entre los recuadros */
-  padding: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+  width: 100%;
 }
 
 /* Agrupación por localización (isla flotante de los eventos) */
@@ -14,10 +30,12 @@
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   padding: 20px;
   width: 100%;
-  max-width: 350px; /* Ajusta el ancho máximo para que no sea demasiado ancho */
+  max-width: 350px;
   margin-bottom: 20px;
-  flex: 1; /* Permite que cada grupo ocupe espacio disponible */
+  flex: 1;
 }
+
+/* ... (mantén el resto de los estilos igual) */
 
 /* Encabezado de la ubicación */
 .location-header {
