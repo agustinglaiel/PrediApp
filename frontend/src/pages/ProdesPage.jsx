@@ -24,7 +24,7 @@ const groupSessionsByLocation = (sessions) => {
   return Object.values(grouped);
 };
 
-const Home = () => {
+const ProdesPage = () => {
   const { sessions, loading, error } = useContext(SessionsContext);
   const navigate = useNavigate(); // Para redireccionar
 
@@ -111,4 +111,4 @@ const Home = () => {
   );
 };
 
-export default Home;
+export default ProdesPage;

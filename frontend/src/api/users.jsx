@@ -1,10 +1,11 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:8080";
+const API_URL = "http://localhost:8057";
 
 export const signUp = async (userData) => {
   try {
     const response = await axios.post(`${API_URL}/signup`, userData);
+    console.log(response.data);
     return response.data;
   } catch (error) {
     throw new Error(error.response.data.message || "Error signing up.");
@@ -14,6 +15,7 @@ export const signUp = async (userData) => {
 export const login = async (userData) => {
   try {
     const response = await axios.post(`${API_URL}/login`, userData);
+    console.log(response.data);
     return response.data;
   } catch (error) {
     throw new Error(error.response.data.message || "Error logging in.");

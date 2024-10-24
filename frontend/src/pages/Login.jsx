@@ -25,7 +25,7 @@ const Login = () => {
     e.preventDefault();
     try {
       await login(formData);
-      navigate("/");
+      navigate("/prodesPage");
     } catch (error) {
       setError("Error logging in. Please try again.");
     }

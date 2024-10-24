@@ -26,7 +26,7 @@ const SignUp = () => {
     e.preventDefault();
     try {
       await signUp(formData);
-      navigate("/");
+      navigate("/prodesPage");
     } catch (error) {
       setError("Error signing up. Please try again.");
     }

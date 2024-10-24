@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // Configura la URL base de tu API
-const API_BASE_URL = "http://localhost:8060"; // Asegúrate de que coincida con tu backend
+const API_BASE_URL = "http://localhost:8056"; // Asegúrate de que coincida con tu backend
 
 // Función para obtener las próximas sesiones
 export const getUpcomingSessions = async () => {

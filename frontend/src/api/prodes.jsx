@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:8081";
+const API_URL = "http://localhost:8054";
 
 // Crear un prode de carrera
 export const createProdeCarrera = async (prodeData) => {

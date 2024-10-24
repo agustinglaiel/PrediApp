@@ -1,14 +1,15 @@
 import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import SignUp from "./components/Signup";
-import Login from "./components/Login";
-import Home from "./components/Home";
-import AdminPanel from "./components/AdminPanel";
-import UpdateUser from "./components/UpdateUser";
-import RaceWeekendPage from "./components/RaceWeekendPage";
+import SignUp from "./pages/Signup";
+import Login from "./pages/Login";
+import ProdesPage from "./pages/ProdesPage";
+import AdminPanel from "./pages/AdminPanel";
+import UpdateUser from "./pages/UpdateUser";
+import RaceWeekendPage from "./pages/RaceWeekendPage";
 import { SessionsProvider } from "./contexts/SessionsContext"; // Importamos el proveedor del contexto
-import RacePredictionForm from "./components/RacePredictionForm";
-import SessionPredictionForm from "./components/SessionPredictionForm";
+import RacePredictionForm from "./pages/RacePredictionForm";
+import SessionPredictionForm from "./pages/SessionPredictionForm";
+import Home from "./pages/Home";
 
 const App = () => {
   return (
@@ -17,6 +18,7 @@ const App = () => {
       <Router>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/prodesPage" element={<ProdesPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/admin" element={<AdminPanel />} />
