@@ -43,7 +43,7 @@ func (sc *SessionController) CreateSession(c *gin.Context) {
 
 func (sc *SessionController) GetSessionById(c *gin.Context) {
 	// Obtener el ID de la sesión desde los parámetros de la URL
-	sessionID, err := ParseUintParam(c.Param("id"))
+	sessionID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID inválido"))
 		return
@@ -62,7 +62,7 @@ func (sc *SessionController) GetSessionById(c *gin.Context) {
 
 func (sc *SessionController) UpdateSessionById(c *gin.Context) {
 	// Obtener el ID de la sesión desde los parámetros de la URL
-	sessionID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	sessionID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID inválido"))
 		return
@@ -76,7 +76,7 @@ func (sc *SessionController) UpdateSessionById(c *gin.Context) {
 	}
 
 	// Llamar al servicio para actualizar la sesión
-	response, apiErr := sc.sessionService.UpdateSessionById(c.Request.Context(), uint(sessionID), request)
+	response, apiErr := sc.sessionService.UpdateSessionById(c.Request.Context(), sessionID, request)
 	if apiErr != nil {
 		c.JSON(apiErr.Status(), apiErr)
 		return
@@ -88,14 +88,14 @@ func (sc *SessionController) UpdateSessionById(c *gin.Context) {
 
 func (sc *SessionController) DeleteSessionById(c *gin.Context) {
 	// Obtener el ID de la sesión desde los parámetros de la URL
-	sessionID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	sessionID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID inválido"))
 		return
 	}
 
 	// Llamar al servicio para eliminar la sesión
-	apiErr := sc.sessionService.DeleteSessionById(c.Request.Context(), uint(sessionID))
+	apiErr := sc.sessionService.DeleteSessionById(c.Request.Context(), sessionID)
 	if apiErr != nil {
 		c.JSON(apiErr.Status(), apiErr)
 		return
@@ -126,14 +126,14 @@ func (sc *SessionController) ListSessionsByYear(c *gin.Context) {
 
 func (sc *SessionController) GetSessionNameAndTypeById(c *gin.Context) {
 	// Obtener el ID de la sesión desde los parámetros de la URL
-	sessionID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	sessionID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID inválido"))
 		return
 	}
 
 	// Llamar al servicio para obtener el nombre y tipo de la sesión
-	response, apiErr := sc.sessionService.GetSessionNameAndTypeById(c.Request.Context(), uint(sessionID))
+	response, apiErr := sc.sessionService.GetSessionNameAndTypeById(c.Request.Context(), sessionID)
 	if apiErr != nil {
 		c.JSON(apiErr.Status(), apiErr)
 		return
@@ -240,14 +240,6 @@ func (sc *SessionController) FindSessionsByNameAndType(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-func ParseUintParam(param string) (uint, error) {
-	id, err := strconv.ParseUint(param, 10, 32)
-	if err != nil {
-		return 0, e.NewBadRequestApiError("ID inválido")
-	}
-	return uint(id), nil
-}
-
 func (sc *SessionController) GetAllSessions(c *gin.Context) {
 	// Llamar al servicio para obtener todas las sesiones
 	response, apiErr := sc.sessionService.GetAllSessions(c.Request.Context())
@@ -262,7 +254,7 @@ func (sc *SessionController) GetAllSessions(c *gin.Context) {
 
 func (sc *SessionController) UpdateResultSCAndVSC(c *gin.Context) {
     // Obtener el ID de la sesión desde los parámetros de la URL
-    sessionID, err := ParseUintParam(c.Param("id"))
+    sessionID, err := strconv.Atoi(c.Param("id"))
     if err != nil {
         c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID inválido"))
         return
@@ -281,7 +273,7 @@ func (sc *SessionController) UpdateResultSCAndVSC(c *gin.Context) {
 
 func (sc *SessionController) UpdateDNF(c *gin.Context) {
     // Obtener el ID de la sesión desde los parámetros de la URL
-    sessionID, err := ParseUintParam(c.Param("id"))
+    sessionID, err := strconv.Atoi(c.Param("id"))
     if err != nil {
         c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID inválido"))
         return
@@ -307,7 +299,7 @@ func (sc *SessionController) UpdateDNF(c *gin.Context) {
 
 func (sc *SessionController) UpdateSessionData(c *gin.Context) {
     // Obtener el ID de la sesión desde los parámetros de la URL
-    sessionID, err := ParseUintParam(c.Param("id"))
+    sessionID, err := strconv.Atoi(c.Param("id"))
     if err != nil {
         c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de sesión inválido"))
         return
@@ -332,7 +324,7 @@ func (sc *SessionController) UpdateSessionData(c *gin.Context) {
 }
 
 func (sc *SessionController) GetSessionKeyBySessionID(c *gin.Context) {
-    sessionID, err := ParseUintParam(c.Param("id"))
+    sessionID, err := strconv.Atoi(c.Param("id"))
     if err != nil {
         c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de sesión inválido"))
         return
@@ -349,7 +341,7 @@ func (sc *SessionController) GetSessionKeyBySessionID(c *gin.Context) {
 
 func (sc *SessionController) UpdateSessionKeyAdmin(c *gin.Context) {
     // Obtener el ID de la sesión desde los parámetros de la URL
-    sessionID, err := ParseUintParam(c.Param("id"))
+    sessionID, err := strconv.Atoi(c.Param("id"))
     if err != nil {
         c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID inválido"))
         return
@@ -376,7 +368,7 @@ func (sc *SessionController) UpdateSessionKeyAdmin(c *gin.Context) {
 }
 
 func (sc *SessionController) UpdateDFastLap(c *gin.Context) {
-    sessionID, err := ParseUintParam(c.Param("id"))
+    sessionID, err := strconv.Atoi(c.Param("id"))
     if err != nil {
         c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de sesión inválido"))
         return

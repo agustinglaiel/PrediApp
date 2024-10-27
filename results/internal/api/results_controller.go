@@ -27,7 +27,7 @@ func (rc *ResultController) FetchResultsFromExternalAPI(c *gin.Context) {
 	fmt.Println("Controller: Iniciando FetchResultsFromExternalAPI")
 
 	// Imprimir el parámetro recibido
-	sessionID, err := ParseUintParam(c.Param("sessionId"))
+	sessionID, err := strconv.Atoi(c.Param("sessionID"))
 	if err != nil {
 		fmt.Println("Controller: Error al parsear sessionId", err)
 		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de sesión inválido"))
@@ -49,7 +49,7 @@ func (rc *ResultController) FetchResultsFromExternalAPI(c *gin.Context) {
 
 // GetResultByID obtiene un resultado por su ID
 func (rc *ResultController) GetResultByID(c *gin.Context) {
-	resultID, err := ParseUintParam(c.Param("id"))
+	resultID, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de resultado inválido"))
 		return
@@ -83,7 +83,7 @@ func (rc *ResultController) CreateResult(c *gin.Context) {
 
 // UpdateResult actualiza un resultado existente
 func (rc *ResultController) UpdateResult(c *gin.Context) {
-	resultID, err := ParseUintParam(c.Param("resultID"))
+	resultID, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de resultado inválido"))
 		return
@@ -106,7 +106,7 @@ func (rc *ResultController) UpdateResult(c *gin.Context) {
 
 // DeleteResult elimina un resultado por su ID
 func (rc *ResultController) DeleteResult(c *gin.Context) {
-	resultID, err := ParseUintParam(c.Param("id"))
+	resultID, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de resultado inválido"))
 		return
@@ -123,7 +123,7 @@ func (rc *ResultController) DeleteResult(c *gin.Context) {
 
 // GetResultsOrderedByPosition obtiene los resultados de una sesión ordenados por posición
 func (rc *ResultController) GetResultsOrderedByPosition(c *gin.Context) {
-	sessionID, err := ParseUintParam(c.Param("sessionID"))
+	sessionID, err := strconv.Atoi(c.Param("sessionID"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de sesión inválido"))
 		return
@@ -140,7 +140,7 @@ func (rc *ResultController) GetResultsOrderedByPosition(c *gin.Context) {
 
 // GetFastestLapInSession obtiene el piloto con la vuelta más rápida en una sesión
 func (rc *ResultController) GetFastestLapInSession(c *gin.Context) {
-	sessionID, err := ParseUintParam(c.Param("sessionID"))
+	sessionID, err := strconv.Atoi(c.Param("sessionID"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de sesión inválido"))
 		return
@@ -168,7 +168,7 @@ func (rc *ResultController) GetAllResults(c *gin.Context) {
 
 // GetResultsForDriverAcrossSessions obtiene todos los resultados de un piloto a través de las sesiones
 func (rc *ResultController) GetResultsForDriverAcrossSessions(c *gin.Context) {
-	driverID, err := ParseUintParam(c.Param("driverID"))
+	driverID, err := strconv.Atoi(c.Param("driverID"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de piloto inválido"))
 		return
@@ -185,7 +185,7 @@ func (rc *ResultController) GetResultsForDriverAcrossSessions(c *gin.Context) {
 
 // GetBestPositionForDriver obtiene la mejor posición de un piloto en cualquier sesión
 func (rc *ResultController) GetBestPositionForDriver(c *gin.Context) {
-	driverID, err := ParseUintParam(c.Param("driverID"))
+	driverID, err := strconv.Atoi(c.Param("driverID"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de piloto inválido"))
 		return
@@ -202,7 +202,7 @@ func (rc *ResultController) GetBestPositionForDriver(c *gin.Context) {
 
 // GetTopNDriversInSession obtiene los mejores N pilotos en una sesión
 func (rc *ResultController) GetTopNDriversInSession(c *gin.Context) {
-	sessionID, err := ParseUintParam(c.Param("sessionID"))
+	sessionID, err := strconv.Atoi(c.Param("sessionID"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de sesión inválido"))
 		return
@@ -225,7 +225,7 @@ func (rc *ResultController) GetTopNDriversInSession(c *gin.Context) {
 
 // DeleteAllResultsForSession elimina todos los resultados de una sesión específica
 func (rc *ResultController) DeleteAllResultsForSession(c *gin.Context) {
-	sessionID, err := ParseUintParam(c.Param("sessionID"))
+	sessionID, err := strconv.Atoi(c.Param("sessionID"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de sesión inválido"))
 		return
@@ -242,7 +242,7 @@ func (rc *ResultController) DeleteAllResultsForSession(c *gin.Context) {
 
 // GetResultsForSessionByDriverName obtiene los resultados de una sesión filtrados por el nombre del piloto
 func (rc *ResultController) GetResultsForSessionByDriverName(c *gin.Context) {
-	sessionID, err := ParseUintParam(c.Param("sessionID"))
+	sessionID, err := strconv.Atoi(c.Param("sessionID"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de sesión inválido"))
 		return
@@ -265,7 +265,7 @@ func (rc *ResultController) GetResultsForSessionByDriverName(c *gin.Context) {
 
 // GetTotalFastestLapsForDriver obtiene el total de vueltas rápidas de un piloto
 func (rc *ResultController) GetTotalFastestLapsForDriver(c *gin.Context) {
-	driverID, err := ParseUintParam(c.Param("driverID"))
+	driverID, err := strconv.Atoi(c.Param("driverID"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de piloto inválido"))
 		return
@@ -282,7 +282,7 @@ func (rc *ResultController) GetTotalFastestLapsForDriver(c *gin.Context) {
 
 // GetLastResultForDriver obtiene el último resultado registrado de un piloto
 func (rc *ResultController) GetLastResultForDriver(c *gin.Context) {
-	driverID, err := ParseUintParam(c.Param("driverID"))
+	driverID, err := strconv.Atoi(c.Param("driverID"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de piloto inválido"))
 		return
@@ -295,13 +295,4 @@ func (rc *ResultController) GetLastResultForDriver(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, lastResult)
-}
-
-// ParseUintParam obtiene un parámetro de la URL y lo convierte a uint
-func ParseUintParam(param string) (uint, error) {
-	id, err := strconv.ParseUint(param, 10, 32)
-	if err != nil {
-		return 0, e.NewBadRequestApiError("ID inválido")
-	}
-	return uint(id), nil
 }

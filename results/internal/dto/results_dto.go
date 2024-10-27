@@ -4,8 +4,8 @@ import "time"
 
 // DTO para crear un nuevo resultado
 type CreateResultDTO struct {
-	SessionID      uint    `json:"session_id" binding:"required"`
-	DriverID       uint    `json:"driver_id" binding:"required"`
+	SessionID      int  `json:"session_id" binding:"required"`
+	DriverID       int    `json:"driver_id" binding:"required"`
 	Position       int     `json:"position" binding:"required"`
 	FastestLapTime float64 `json:"fastest_lap_time"`
 }
@@ -18,7 +18,7 @@ type UpdateResultDTO struct {
 
 // DTO para devolver un resultado con detalles del piloto y la sesión
 type ResponseResultDTO struct {
-	ID             uint                 `json:"id"`
+	ID             uint64               `json:"id"`
 	Position       int                  `json:"position"`
 	FastestLapTime float64              `json:"fastest_lap_time"`
 	Session        ResponseSessionDTO   `json:"session"`
@@ -29,7 +29,7 @@ type ResponseResultDTO struct {
 
 // DTO para los detalles de la sesión asociados al resultado
 type ResponseSessionDTO struct {
-	ID               uint      `json:"id"`
+	ID               int      `json:"id"`
 	CircuitShortName string    `json:"circuit_short_name"`
 	CountryName      string    `json:"country_name"`
 	Location         string    `json:"location"`
@@ -40,7 +40,7 @@ type ResponseSessionDTO struct {
 
 // DTO para los detalles del piloto asociados al resultado
 type ResponseDriverDTO struct {
-    ID             uint   `json:"driver_id"`
+    ID             int   `json:"driver_id"`
     BroadcastName  string `json:"broadcast_name"`
     CountryCode    string `json:"country_code"`
     DriverNumber   int    `json:"driver_number"`

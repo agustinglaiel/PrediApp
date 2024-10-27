@@ -16,22 +16,22 @@ type sessionRepository struct {
 
 type SessionRepository interface{
 	CreateSession(ctx context.Context, session *model.Session) e.ApiError
-	GetSessionById(ctx context.Context, sessionID uint)(*model.Session, e.ApiError)
+	GetSessionById(ctx context.Context, sessionID int)(*model.Session, e.ApiError)
 	UpdateSessionById(ctx context.Context, session *model.Session) e.ApiError
-	DeleteSessionById(ctx context.Context, sessionID uint) e.ApiError
+	DeleteSessionById(ctx context.Context, sessionID int) e.ApiError
 	GetSessionByYear(ctx context.Context, year int) ([]*model.Session, e.ApiError)
-	GetSessionNameAndTypeBySessionID(ctx context.Context, sessionID uint) (string, string, e.ApiError)
+	GetSessionNameAndTypeBySessionID(ctx context.Context, sessionID int) (string, string, e.ApiError)
 	GetSessionsByCircuitKey(ctx context.Context, circuitKey int) ([]*model.Session, e.ApiError)
 	GetSessionsByCountryCode(ctx context.Context, countryCode string) ([]*model.Session, e.ApiError)
 	GetUpcomingSessions(ctx context.Context) ([]*model.Session, e.ApiError)
-	GetSessionsBetweenDates(ctx context.Context, startDate, endDate time.Time) ([]*model.Session, e.ApiError)
-	GetSessionsByNameAndType(ctx context.Context, sessionName, sessionType string) ([]*model.Session, e.ApiError)
+	GetSessionsBetweenDates(ctx context.Context, startDate time.Time, endDate time.Time) ([]*model.Session, e.ApiError)
+	GetSessionsByNameAndType(ctx context.Context, sessionName string, sessionType string) ([]*model.Session, e.ApiError)
 	GetSessionBySessionKey(ctx context.Context, sessionKey int) (*model.Session, e.ApiError)
 	GetAllSessions(ctx context.Context) ([]*model.Session, e.ApiError)
 	GetSessionsByCircuitKeyAndYear(ctx context.Context, circuitKey, year int) ([]*model.Session, e.ApiError)
-	UpdateSCAndVSC(ctx context.Context, sessionID uint, sc bool, vsc bool) e.ApiError
+	UpdateSCAndVSC(ctx context.Context, sessionID int, sc bool, vsc bool) e.ApiError
 	UpdateSessionKey(ctx context.Context, session *model.Session) e.ApiError
-	UpdateDFastLap(ctx context.Context, sessionID uint, driverID int) e.ApiError
+	UpdateDFastLap(ctx context.Context, sessionID int, driverID int) e.ApiError
 }
 
 func NewSessionRepository(db *gorm.DB) SessionRepository{
@@ -49,7 +49,7 @@ func (s *sessionRepository) CreateSession(ctx context.Context, session *model.Se
     return nil
 }
 
-func (s *sessionRepository) GetSessionById(ctx context.Context, sessionID uint)(*model.Session, e.ApiError){
+func (s *sessionRepository) GetSessionById(ctx context.Context, sessionID int)(*model.Session, e.ApiError){
 	var session model.Session
 	if err := s.db.WithContext(ctx).First(&session, sessionID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound{
@@ -67,7 +67,7 @@ func (s *sessionRepository) UpdateSessionById(ctx context.Context, session *mode
 	return nil
 }
 
-func (s *sessionRepository) DeleteSessionById(ctx context.Context, sessionID uint) e.ApiError {
+func (s *sessionRepository) DeleteSessionById(ctx context.Context, sessionID int) e.ApiError {
     // Eliminar físicamente la sesión utilizando el ID
     if err := s.db.WithContext(ctx).Unscoped().Where("id = ?", sessionID).Delete(&model.Session{}).Error; err != nil {
         return e.NewInternalServerApiError("Error eliminando la sesión", err)
@@ -83,7 +83,7 @@ func (s *sessionRepository) GetSessionByYear(ctx context.Context, year int) ([]*
 	return sessions, nil
 }
 
-func (s *sessionRepository) GetSessionNameAndTypeBySessionID(ctx context.Context, sessionID uint) (string, string, e.ApiError) {
+func (s *sessionRepository) GetSessionNameAndTypeBySessionID(ctx context.Context, sessionID int) (string, string, e.ApiError) {
 	var session model.Session
 	if err := s.db.WithContext(ctx).Select("session_name", "session_type").First(&session, sessionID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -119,7 +119,7 @@ func (s *sessionRepository) GetUpcomingSessions(ctx context.Context) ([]*model.S
     return sessions, nil
 }
 
-func (s *sessionRepository) GetSessionsBetweenDates(ctx context.Context, startDate, endDate time.Time) ([]*model.Session, e.ApiError) {
+func (s *sessionRepository) GetSessionsBetweenDates(ctx context.Context, startDate time.Time, endDate time.Time) ([]*model.Session, e.ApiError) {
     var sessions []*model.Session
     if err := s.db.WithContext(ctx).Where("date_start >= ? AND date_end <= ?", startDate, endDate).Find(&sessions).Error; err != nil {
         return nil, e.NewInternalServerApiError("Error encontrando sesiones entre fechas", err)
@@ -127,7 +127,7 @@ func (s *sessionRepository) GetSessionsBetweenDates(ctx context.Context, startDa
     return sessions, nil
 }
 
-func (s *sessionRepository) GetSessionsByNameAndType(ctx context.Context, sessionName, sessionType string) ([]*model.Session, e.ApiError) {
+func (s *sessionRepository) GetSessionsByNameAndType(ctx context.Context, sessionName string, sessionType string) ([]*model.Session, e.ApiError) {
 	var sessions []*model.Session
 	if err := s.db.WithContext(ctx).Where("session_name = ? AND session_type = ?", sessionName, sessionType).Find(&sessions).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -165,7 +165,7 @@ func (s *sessionRepository) GetSessionsByCircuitKeyAndYear(ctx context.Context, 
 	return sessions, nil
 }
 
-func (s *sessionRepository) UpdateSCAndVSC(ctx context.Context, sessionID uint, sc bool, vsc bool) e.ApiError {
+func (s *sessionRepository) UpdateSCAndVSC(ctx context.Context, sessionID int, sc bool, vsc bool) e.ApiError {
     // Actualizar solo los campos SC y VSC en la sesión
     if err := s.db.WithContext(ctx).Model(&model.Session{}).Where("id = ?", sessionID).Updates(map[string]interface{}{
         "sf":  sc,
@@ -185,7 +185,7 @@ func (s *sessionRepository) UpdateSessionKey(ctx context.Context, session *model
 }
 
 // UpdateDFastLap actualiza el valor del campo DFastLap en una sesión específica
-func (s *sessionRepository) UpdateDFastLap(ctx context.Context, sessionID uint, driverID int) e.ApiError {
+func (s *sessionRepository) UpdateDFastLap(ctx context.Context, sessionID int, driverID int) e.ApiError {
     // Actualizar el campo DFastLap de la sesión
     if err := s.db.WithContext(ctx).Model(&model.Session{}).Where("id = ?", sessionID).Update("d_fast_lap", driverID).Error; err != nil {
         return e.NewInternalServerApiError("Error actualizando el DFastLap en la sesión", err)

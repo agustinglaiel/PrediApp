@@ -44,7 +44,7 @@ type UpdateSessionDTO struct {
 }
 
 type ResponseSessionDTO struct {
-    ID               uint      `json:"id"`  // Identificador único en la base de datos
+    ID               int       `json:"id"`  // Identificador único en la base de datos
     CircuitKey       int       `json:"circuit_key"`
     CircuitShortName string    `json:"circuit_short_name"`
     CountryCode      string    `json:"country_code"`
@@ -65,7 +65,7 @@ type ResponseSessionDTO struct {
 }
 
 type DeleteSessionDTO struct {
-    SessionID uint `json:"session_id"`
+    SessionID int `json:"session_id"`
 }
 
 type SessionNameAndTypeDTO struct {
@@ -125,7 +125,7 @@ type UpdateSessionDataDTO struct {
 
 // FastestLapDTO representa el piloto con la vuelta más rápida de una sesión
 type FastestLapDTO struct {
-    ID             uint                 `json:"id"`
+    ID             int                  `json:"id"`
     Position       int                  `json:"position"`
     FastestLapTime float64              `json:"fastest_lap_time"`
     Session        ResponseSessionDTO   `json:"session"`  // Información de la sesión

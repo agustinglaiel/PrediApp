@@ -174,7 +174,7 @@ func (c *HttpClient) GetLaps(sessionKey int, driverNumber int) ([]dto.Lap, error
 }
 
 // Función para obtener sessionKey utilizando sessionId
-func (c *HttpClient) GetSessionKeyBySessionID(sessionID uint) (int, error) {
+func (c *HttpClient) GetSessionKeyBySessionID(sessionID int) (int, error) {
 	// Usar la URL correcta del microservicio de sessions
 	endpoint := fmt.Sprintf("http://localhost:8060/sessions/%d/get-session-key", sessionID)
 
@@ -221,7 +221,7 @@ func (c *HttpClient) GetDriverByNumber(driverNumber int) (dto.ResponseDriverDTO,
 }
 
 // Función para obtener la información de una sesión completa utilizando sessionId
-func (c *HttpClient) GetSessionByID(sessionID uint) (dto.ResponseSessionDTO, error) {
+func (c *HttpClient) GetSessionByID(sessionID int) (dto.ResponseSessionDTO, error) {
     // Usar la URL correcta del microservicio de sessions
     endpoint := fmt.Sprintf("http://localhost:8060/sessions/%d", sessionID)
 

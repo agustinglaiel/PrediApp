@@ -20,21 +20,21 @@ type resultService struct {
 }
 
 type ResultService interface {
-	FetchResultsFromExternalAPI(ctx context.Context, sessionId uint) ([]dto.ResponseResultDTO, e.ApiError)
-	UpdateResult(ctx context.Context, resultID uint, request dto.UpdateResultDTO) (dto.ResponseResultDTO, e.ApiError)
-	GetResultsOrderedByPosition(ctx context.Context, sessionID uint) ([]dto.ResponseResultDTO, e.ApiError)
-	GetFastestLapInSession(ctx context.Context, sessionID uint) (dto.ResponseResultDTO, e.ApiError)
+	FetchResultsFromExternalAPI(ctx context.Context, sessionId int) ([]dto.ResponseResultDTO, e.ApiError)
+	UpdateResult(ctx context.Context, resultID uint64, request dto.UpdateResultDTO) (dto.ResponseResultDTO, e.ApiError)
+	GetResultsOrderedByPosition(ctx context.Context, sessionID int) ([]dto.ResponseResultDTO, e.ApiError)
+	GetFastestLapInSession(ctx context.Context, sessionID int) (dto.ResponseResultDTO, e.ApiError)
 	CreateResult(ctx context.Context, request dto.CreateResultDTO) (dto.ResponseResultDTO, e.ApiError)
-	GetResultByID(ctx context.Context, resultID uint) (dto.ResponseResultDTO, e.ApiError)
-	DeleteResult(ctx context.Context, resultID uint) e.ApiError
+	GetResultByID(ctx context.Context, resultID uint64) (dto.ResponseResultDTO, e.ApiError)
+	DeleteResult(ctx context.Context, resultID uint64) e.ApiError
 	GetAllResults(ctx context.Context) ([]dto.ResponseResultDTO, e.ApiError)
-	GetResultsForDriverAcrossSessions(ctx context.Context, driverID uint) ([]dto.ResponseResultDTO, e.ApiError)
-	GetBestPositionForDriver(ctx context.Context, driverID uint) (dto.ResponseResultDTO, e.ApiError)
-	GetTopNDriversInSession(ctx context.Context, sessionID uint, n int) ([]dto.ResponseResultDTO, e.ApiError)
-	DeleteAllResultsForSession(ctx context.Context, sessionID uint) e.ApiError
-	GetResultsForSessionByDriverName(ctx context.Context, sessionID uint, driverName string) ([]dto.ResponseResultDTO, e.ApiError)
-	GetTotalFastestLapsForDriver(ctx context.Context, driverID uint) (int, e.ApiError)
-	GetLastResultForDriver(ctx context.Context, driverID uint) (dto.ResponseResultDTO, e.ApiError)
+	GetResultsForDriverAcrossSessions(ctx context.Context, driverID int) ([]dto.ResponseResultDTO, e.ApiError)
+	GetBestPositionForDriver(ctx context.Context, driverID int) (dto.ResponseResultDTO, e.ApiError)
+	GetTopNDriversInSession(ctx context.Context, sessionID int, n int) ([]dto.ResponseResultDTO, e.ApiError)
+	DeleteAllResultsForSession(ctx context.Context, sessionID int) e.ApiError
+	GetResultsForSessionByDriverName(ctx context.Context, sessionID int, driverName string) ([]dto.ResponseResultDTO, e.ApiError)
+	GetTotalFastestLapsForDriver(ctx context.Context, driverID int) (int, e.ApiError)
+	GetLastResultForDriver(ctx context.Context, driverID int) (dto.ResponseResultDTO, e.ApiError)
 }
 
 func NewResultService(resultRepo repository.ResultRepository, client *client.HttpClient) ResultService {
@@ -45,7 +45,7 @@ func NewResultService(resultRepo repository.ResultRepository, client *client.Htt
 }
 
 // FetchResultsFromExternalAPI obtiene los resultados de una API externa y los inserta o actualiza en la base de datos
-func (s *resultService) FetchResultsFromExternalAPI(ctx context.Context, sessionID uint) ([]dto.ResponseResultDTO, e.ApiError) {
+func (s *resultService) FetchResultsFromExternalAPI(ctx context.Context, sessionID int) ([]dto.ResponseResultDTO, e.ApiError) {
     fmt.Println("Service: Iniciando FetchResultsFromExternalAPI")
     
     // Llamar al microservicio de sessions para obtener el sessionKey
@@ -109,7 +109,7 @@ func (s *resultService) FetchResultsFromExternalAPI(ctx context.Context, session
         // Crear el nuevo resultado o actualizar si ya existe
         newResult := &model.Result{
             SessionID:      sessionID, 
-            DriverID:       uint(driverInfo.ID),
+            DriverID:       driverInfo.ID,
             Position:       pos.Position,
             FastestLapTime: fastestLap,
         }
@@ -136,7 +136,7 @@ func (s *resultService) FetchResultsFromExternalAPI(ctx context.Context, session
 
         // Convertir el modelo a DTO y agregarlo a la respuesta
         responseResult := dto.ResponseResultDTO{
-            ID:             newResult.ID,
+            ID:             uint64(newResult.ID),
             Position:       newResult.Position,
             FastestLapTime: newResult.FastestLapTime,
             Driver: dto.ResponseDriverDTO{
@@ -226,7 +226,7 @@ func (s *resultService) CreateResult(ctx context.Context, request dto.CreateResu
 }
 
 // UpdateResult actualiza un resultado existente
-func (s *resultService) UpdateResult(ctx context.Context, resultID uint, request dto.UpdateResultDTO) (dto.ResponseResultDTO, e.ApiError) {
+func (s *resultService) UpdateResult(ctx context.Context, resultID uint64, request dto.UpdateResultDTO) (dto.ResponseResultDTO, e.ApiError) {
 	result, err := s.resultRepo.GetResultByID(ctx, resultID)
 	if err != nil {
 		return dto.ResponseResultDTO{}, e.NewBadRequestApiError("error al obtener el resultado por su ID")
@@ -282,7 +282,7 @@ func (s *resultService) UpdateResult(ctx context.Context, resultID uint, request
 }
 
 // GetResultsOrderedByPosition obtiene los resultados de una sesión específica ordenados por posición
-func (s *resultService) GetResultsOrderedByPosition(ctx context.Context, sessionID uint) ([]dto.ResponseResultDTO, e.ApiError) {
+func (s *resultService) GetResultsOrderedByPosition(ctx context.Context, sessionID int) ([]dto.ResponseResultDTO, e.ApiError) {
 	// Verificar si existe el sessionID en la tabla de resultados
 	exists, err := s.resultRepo.ExistsSessionInResults(ctx, sessionID)
 	if err != nil {
@@ -334,7 +334,7 @@ func (s *resultService) GetResultsOrderedByPosition(ctx context.Context, session
 }
 
 // GetFastestLapInSession obtiene el piloto con la vuelta más rápida en una sesión específica
-func (s *resultService) GetFastestLapInSession(ctx context.Context, sessionID uint) (dto.ResponseResultDTO, e.ApiError) {
+func (s *resultService) GetFastestLapInSession(ctx context.Context, sessionID int) (dto.ResponseResultDTO, e.ApiError) {
     // Verificar si existe el sessionID en la tabla de resultados
     exists, err := s.resultRepo.ExistsSessionInResults(ctx, sessionID)
     if err != nil {
@@ -394,7 +394,7 @@ func (s *resultService) GetFastestLapInSession(ctx context.Context, sessionID ui
 }
 
 // GetResultByID obtiene un resultado específico por su ID
-func (s *resultService) GetResultByID(ctx context.Context, resultID uint) (dto.ResponseResultDTO, e.ApiError) {
+func (s *resultService) GetResultByID(ctx context.Context, resultID uint64) (dto.ResponseResultDTO, e.ApiError) {
 	// Validar que el resultID no sea 0
 	if resultID == 0 {
 		return dto.ResponseResultDTO{}, e.NewBadRequestApiError("El ID del resultado no puede ser 0")
@@ -441,7 +441,7 @@ func (s *resultService) GetResultByID(ctx context.Context, resultID uint) (dto.R
 }
 
 // DeleteResult elimina un resultado específico
-func (s *resultService) DeleteResult(ctx context.Context, resultID uint) e.ApiError {
+func (s *resultService) DeleteResult(ctx context.Context, resultID uint64) e.ApiError {
     // Validar que el resultID no sea 0
     if resultID == 0 {
         return e.NewBadRequestApiError("El ID del resultado no puede ser 0")
@@ -468,7 +468,7 @@ func (s *resultService) DeleteResult(ctx context.Context, resultID uint) e.ApiEr
 }
 
 // DeleteAllResultsForSession elimina todos los resultados asociados a una sesión específica
-func (s *resultService) DeleteAllResultsForSession(ctx context.Context, sessionID uint) e.ApiError {
+func (s *resultService) DeleteAllResultsForSession(ctx context.Context, sessionID int) e.ApiError {
     // Validar que el sessionID no sea 0
     if sessionID == 0 {
         return e.NewBadRequestApiError("El ID de la sesión no puede ser 0")
@@ -547,7 +547,7 @@ func (s *resultService) GetAllResults(ctx context.Context) ([]dto.ResponseResult
 }
 
 // GetResultsForDriverAcrossSessions obtiene todos los resultados de un piloto específico en todas las sesiones
-func (s *resultService) GetResultsForDriverAcrossSessions(ctx context.Context, driverID uint) ([]dto.ResponseResultDTO, e.ApiError) {
+func (s *resultService) GetResultsForDriverAcrossSessions(ctx context.Context, driverID int) ([]dto.ResponseResultDTO, e.ApiError) {
     // Verificar que el driverID sea válido
     if driverID == 0 {
         return nil, e.NewBadRequestApiError("El ID del piloto no puede ser 0")
@@ -602,7 +602,7 @@ func (s *resultService) GetResultsForDriverAcrossSessions(ctx context.Context, d
 }
 
 //Esta función obtiene la mejor posición que un piloto ha obtenido en cualquier sesión.
-func (s *resultService) GetBestPositionForDriver(ctx context.Context, driverID uint) (dto.ResponseResultDTO, e.ApiError) {
+func (s *resultService) GetBestPositionForDriver(ctx context.Context, driverID int) (dto.ResponseResultDTO, e.ApiError) {
     // Validar que el driverID sea mayor a 0
     if driverID == 0 {
         return dto.ResponseResultDTO{}, e.NewBadRequestApiError("El ID del piloto no puede ser 0")
@@ -657,7 +657,7 @@ func (s *resultService) GetBestPositionForDriver(ctx context.Context, driverID u
 }
 
 // GetTopNDriversInSession obtiene los mejores N pilotos de una sesión específica.
-func (s *resultService) GetTopNDriversInSession(ctx context.Context, sessionID uint, n int) ([]dto.ResponseResultDTO, e.ApiError) {
+func (s *resultService) GetTopNDriversInSession(ctx context.Context, sessionID int, n int) ([]dto.ResponseResultDTO, e.ApiError) {
     // Validar que sessionID no sea 0
     if sessionID == 0 {
         return nil, e.NewBadRequestApiError("El ID de la sesión no puede ser 0")
@@ -724,7 +724,7 @@ func (s *resultService) GetTopNDriversInSession(ctx context.Context, sessionID u
 }
 
 // GetResultsForSessionByDriverName obtiene los resultados de un piloto en una sesión específica por nombre o acrónimo
-func (s *resultService) GetResultsForSessionByDriverName(ctx context.Context, sessionID uint, driverName string) ([]dto.ResponseResultDTO, e.ApiError) {
+func (s *resultService) GetResultsForSessionByDriverName(ctx context.Context, sessionID int, driverName string) ([]dto.ResponseResultDTO, e.ApiError) {
     // Validar que el sessionID no sea 0
     if sessionID == 0 {
         return nil, e.NewBadRequestApiError("El ID de la sesión no puede ser 0")
@@ -785,7 +785,7 @@ func (s *resultService) GetResultsForSessionByDriverName(ctx context.Context, se
 }
 
 // GetTotalFastestLapsForDriver cuenta cuántas veces un piloto ha registrado la vuelta más rápida en diferentes sesiones
-func (s *resultService) GetTotalFastestLapsForDriver(ctx context.Context, driverID uint) (int, e.ApiError) {
+func (s *resultService) GetTotalFastestLapsForDriver(ctx context.Context, driverID int) (int, e.ApiError) {
     // Validar que el driverID no sea 0
     if driverID == 0 {
         return 0, e.NewBadRequestApiError("El ID del piloto no puede ser 0")
@@ -818,7 +818,7 @@ func (s *resultService) GetTotalFastestLapsForDriver(ctx context.Context, driver
 }
 
 // GetLastResultForDriver obtiene el último resultado registrado de un piloto en cualquier sesión
-func (s *resultService) GetLastResultForDriver(ctx context.Context, driverID uint) (dto.ResponseResultDTO, e.ApiError) {
+func (s *resultService) GetLastResultForDriver(ctx context.Context, driverID int) (dto.ResponseResultDTO, e.ApiError) {
     // Validar que el driverID no sea 0
     if driverID == 0 {
         return dto.ResponseResultDTO{}, e.NewBadRequestApiError("El ID del piloto no puede ser 0")

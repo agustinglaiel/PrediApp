@@ -19,24 +19,24 @@ type sessionService struct {
 
 type SessionServiceInterface interface{
 	CreateSession(ctx context.Context, request dto.CreateSessionDTO) (dto.ResponseSessionDTO, e.ApiError)
-	GetSessionById(ctx context.Context, sessionID uint) (dto.ResponseSessionDTO, e.ApiError)
-	UpdateSessionById(ctx context.Context, sessionID uint, request dto.UpdateSessionDTO) (dto.ResponseSessionDTO, e.ApiError)
-	DeleteSessionById(ctx context.Context, sessionID uint) e.ApiError
+	GetSessionById(ctx context.Context, sessionID int) (dto.ResponseSessionDTO, e.ApiError)
+	UpdateSessionById(ctx context.Context, sessionID int, request dto.UpdateSessionDTO) (dto.ResponseSessionDTO, e.ApiError)
+	DeleteSessionById(ctx context.Context, sessionID int) e.ApiError
 	ListSessionsByYear(ctx context.Context, year int) ([]dto.ResponseSessionDTO, e.ApiError)
-	GetSessionNameAndTypeById(ctx context.Context, sessionID uint) (dto.SessionNameAndTypeDTO, e.ApiError)
+	GetSessionNameAndTypeById(ctx context.Context, sessionID int) (dto.SessionNameAndTypeDTO, e.ApiError)
 	ListSessionsByCircuitKey(ctx context.Context, circuitKey int) ([]dto.ResponseSessionDTO, e.ApiError)
 	ListSessionsByCountryCode(ctx context.Context, countryCode string) ([]dto.ResponseSessionDTO, e.ApiError)
 	ListUpcomingSessions(ctx context.Context) ([]dto.ResponseSessionDTO, e.ApiError)
 	ListSessionsBetweenDates(ctx context.Context, startDate time.Time, endDate time.Time) ([]dto.ResponseSessionDTO, e.ApiError)
 	FindSessionsByNameAndType(ctx context.Context, sessionName string, sessionType string) ([]dto.ResponseSessionDTO, e.ApiError)
 	GetAllSessions(ctx context.Context) ([]dto.ResponseSessionDTO, e.ApiError)
-	GetRaceResultsById(ctx context.Context, sessionID uint) (dto.RaceResultsDTO, e.ApiError)
-	UpdateResultSCAndVSC(ctx context.Context, sessionID uint) e.ApiError 
-	UpdateDNFBySessionID(ctx context.Context, sessionID uint, dnf int) e.ApiError
-	UpdateSessionData(ctx context.Context, sessionID uint, location string, sessionName string, sessionType string, year int) e.ApiError
-    GetSessionKeyBySessionID(ctx context.Context, sessionID uint) (int, e.ApiError)
-	UpdateSessionKeyAdmin(ctx context.Context, sessionID uint, sessionKey int) e.ApiError
-	UpdateDFastLap(ctx context.Context, sessionID uint) e.ApiError
+	GetRaceResultsById(ctx context.Context, sessionID int) (dto.RaceResultsDTO, e.ApiError)
+	UpdateResultSCAndVSC(ctx context.Context, sessionID int) e.ApiError 
+	UpdateDNFBySessionID(ctx context.Context, sessionID int, dnf int) e.ApiError
+	UpdateSessionData(ctx context.Context, sessionID int, location string, sessionName string, sessionType string, year int) e.ApiError
+    GetSessionKeyBySessionID(ctx context.Context, sessionID int) (int, e.ApiError)
+	UpdateSessionKeyAdmin(ctx context.Context, sessionID int, sessionKey int) e.ApiError
+	UpdateDFastLap(ctx context.Context, sessionID int) e.ApiError
 }
 
 func NewSessionService(sessionsRepo repository.SessionRepository, client *client.HttpClient, cache *e.Cache) SessionServiceInterface{
@@ -147,7 +147,7 @@ func (s *sessionService) CreateSession(ctx context.Context, request dto.CreateSe
     return response, nil
 }
 
-func (s *sessionService) GetSessionById(ctx context.Context, sessionID uint) (dto.ResponseSessionDTO, e.ApiError) {
+func (s *sessionService) GetSessionById(ctx context.Context, sessionID int) (dto.ResponseSessionDTO, e.ApiError) {
 	// Definir la clave de la caché
     cacheKey := fmt.Sprintf("session_%d", sessionID)
 
@@ -193,7 +193,7 @@ func (s *sessionService) GetSessionById(ctx context.Context, sessionID uint) (dt
 	return response, nil
 }
 
-func (s *sessionService) UpdateSessionById(ctx context.Context, sessionID uint, request dto.UpdateSessionDTO) (dto.ResponseSessionDTO, e.ApiError) {
+func (s *sessionService) UpdateSessionById(ctx context.Context, sessionID int, request dto.UpdateSessionDTO) (dto.ResponseSessionDTO, e.ApiError) {
     // Obtén la sesión existente por su ID
     session, apiErr := s.sessionsRepo.GetSessionById(ctx, sessionID)
     if apiErr != nil {
@@ -329,7 +329,7 @@ func (s *sessionService) UpdateSessionById(ctx context.Context, sessionID uint, 
     return response, nil
 }
 
-func (s *sessionService) DeleteSessionById(ctx context.Context, sessionID uint) e.ApiError {
+func (s *sessionService) DeleteSessionById(ctx context.Context, sessionID int) e.ApiError {
 	// Verificar si la sesión existe antes de intentar eliminarla
 	session, apiErr := s.sessionsRepo.GetSessionById(ctx, sessionID)
 	if apiErr != nil {
@@ -392,7 +392,7 @@ func (s *sessionService) ListSessionsByYear(ctx context.Context, year int) ([]dt
 	return response, nil
 }
 
-func (s *sessionService) GetSessionNameAndTypeById(ctx context.Context, sessionID uint) (dto.SessionNameAndTypeDTO, e.ApiError) {
+func (s *sessionService) GetSessionNameAndTypeById(ctx context.Context, sessionID int) (dto.SessionNameAndTypeDTO, e.ApiError) {
 	// Definir la clave de la caché
     cacheKey := fmt.Sprintf("session_name_type_%d", sessionID)
 
@@ -678,7 +678,7 @@ func (s *sessionService) GetAllSessions(ctx context.Context) ([]dto.ResponseSess
     return response, nil
 }
 
-func (s *sessionService) GetRaceResultsById(ctx context.Context, sessionID uint) (dto.RaceResultsDTO, e.ApiError) {
+func (s *sessionService) GetRaceResultsById(ctx context.Context, sessionID int) (dto.RaceResultsDTO, e.ApiError) {
     // Definir la clave de la caché basada en sessionID
     cacheKey := fmt.Sprintf("race_results_%d", sessionID)
 
@@ -712,7 +712,7 @@ func (s *sessionService) GetRaceResultsById(ctx context.Context, sessionID uint)
     return response, nil
 }
 
-func (s *sessionService) UpdateResultSCAndVSC(ctx context.Context, sessionID uint) e.ApiError {
+func (s *sessionService) UpdateResultSCAndVSC(ctx context.Context, sessionID int) e.ApiError {
     // Obtener la sesión por su ID para tener el SessionKey
     session, apiErr := s.sessionsRepo.GetSessionById(ctx, sessionID)
     if apiErr != nil {
@@ -753,7 +753,7 @@ func (s *sessionService) UpdateResultSCAndVSC(ctx context.Context, sessionID uin
     return nil
 }
 
-func (s *sessionService) UpdateDNFBySessionID(ctx context.Context, sessionID uint, dnf int) e.ApiError {
+func (s *sessionService) UpdateDNFBySessionID(ctx context.Context, sessionID int, dnf int) e.ApiError {
     // Obtener la sesión por su ID para asegurarnos que existe y que sea una carrera
     session, apiErr := s.sessionsRepo.GetSessionById(ctx, sessionID)
     if apiErr != nil {
@@ -776,7 +776,7 @@ func (s *sessionService) UpdateDNFBySessionID(ctx context.Context, sessionID uin
     return nil
 }
 
-func (s *sessionService) UpdateSessionData(ctx context.Context, sessionID uint, location string, sessionName string, sessionType string, year int) e.ApiError {
+func (s *sessionService) UpdateSessionData(ctx context.Context, sessionID int, location string, sessionName string, sessionType string, year int) e.ApiError {
     // Obtener el session_data desde la API externa usando el cliente HTTP
     sessionData, err := s.client.GetSessionData(location, sessionName, sessionType, year)
     if err != nil {
@@ -804,7 +804,7 @@ func (s *sessionService) UpdateSessionData(ctx context.Context, sessionID uint, 
     return nil
 }
 
-func (s *sessionService) GetSessionKeyBySessionID(ctx context.Context, sessionID uint) (int, e.ApiError) {
+func (s *sessionService) GetSessionKeyBySessionID(ctx context.Context, sessionID int) (int, e.ApiError) {
     // Definir la clave de caché basada en sessionID
     cacheKey := fmt.Sprintf("session_key_%d", sessionID)
 
@@ -829,7 +829,7 @@ func (s *sessionService) GetSessionKeyBySessionID(ctx context.Context, sessionID
     return *session.SessionKey, nil
 }
 
-func (s *sessionService) UpdateSessionKeyAdmin(ctx context.Context, sessionID uint, sessionKey int) e.ApiError {
+func (s *sessionService) UpdateSessionKeyAdmin(ctx context.Context, sessionID int, sessionKey int) e.ApiError {
     // Obtener la sesión actual por ID
     session, apiErr := s.sessionsRepo.GetSessionById(ctx, sessionID)
     if apiErr != nil {
@@ -845,7 +845,7 @@ func (s *sessionService) UpdateSessionKeyAdmin(ctx context.Context, sessionID ui
     return nil
 }
 
-func (s *sessionService) UpdateDFastLap(ctx context.Context, sessionID uint) e.ApiError {
+func (s *sessionService) UpdateDFastLap(ctx context.Context, sessionID int) e.ApiError {
     // Obtener la vuelta más rápida desde el microservicio de results
     fastestLapResult, err := s.client.GetFastestLapBySessionID(sessionID)
     if err != nil {

@@ -7,7 +7,7 @@ import (
 )
 
 type Session struct {
-	ID               uint           `gorm:"primaryKey" json:"id"`
+	ID               int            `gorm:"primaryKey" json:"id"`
 	WeekendID        int            `json:"weekend_id"`           // Representa el evento o fin de semana de carreras
 	CircuitKey       int            `json:"circuit_key"`          // Identificador único del circuito
 	CircuitShortName string         `json:"circuit_short_name"`   // Nombre corto del circuito

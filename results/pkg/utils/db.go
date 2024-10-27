@@ -37,7 +37,9 @@ func DisconnectDB() {
 
 // StartDbEngine migrates the database tables
 func StartDbEngine() {
-    DB.AutoMigrate(&model.Result{})
-    // Agrega otras migraciones aquí si es necesario
+    if err := DB.AutoMigrate(&model.Result{}); err != nil {
+        fmt.Printf("Error migrating database tables: %v\n", err)
+        return
+    }
     fmt.Println("Finishing Migration Database Tables")
 }
