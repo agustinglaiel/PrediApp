@@ -26,13 +26,17 @@ func NewResultController(resultService service.ResultService) *ResultController 
 func (rc *ResultController) FetchResultsFromExternalAPI(c *gin.Context) {
 	fmt.Println("Controller: Iniciando FetchResultsFromExternalAPI")
 
-	// Imprimir el parámetro recibido
-	sessionID, err := strconv.Atoi(c.Param("sessionID"))
-	if err != nil {
-		fmt.Println("Controller: Error al parsear sessionId", err)
-		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de sesión inválido"))
-		return
-	}
+    // Obtener el parámetro sessionId desde la URL
+    sessionIDStr := c.Param("sessionId")
+    fmt.Println("Controller: sessionID obtenido:", sessionIDStr)
+
+    // Convertir sessionId de string a int
+    sessionID, err := strconv.Atoi(sessionIDStr)
+    if err != nil {
+        fmt.Println("Controller: Error al parsear sessionId", err)
+        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de sesión inválido"))
+        return
+    }
 	fmt.Println("Controller: sessionID obtenido:", sessionID)
 
 	// Llamar al servicio para hacer fetch de los resultados desde la API externa

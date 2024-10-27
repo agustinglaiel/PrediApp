@@ -20,7 +20,7 @@ func NewHttpClient(baseURL string) *HttpClient {
 	return &HttpClient{
 		BaseURL: baseURL,
 		HTTPClient: &http.Client{
-			Timeout: time.Second * 10,
+			Timeout: time.Second * 30,
 		},
 	}
 }
@@ -176,7 +176,7 @@ func (c *HttpClient) GetLaps(sessionKey int, driverNumber int) ([]dto.Lap, error
 // Función para obtener sessionKey utilizando sessionId
 func (c *HttpClient) GetSessionKeyBySessionID(sessionID int) (int, error) {
 	// Usar la URL correcta del microservicio de sessions
-	endpoint := fmt.Sprintf("http://localhost:8060/sessions/%d/get-session-key", sessionID)
+	endpoint := fmt.Sprintf("http://localhost:8056/sessions/%d/get-session-key", sessionID)
 
 	// Hacer la solicitud GET utilizando el cliente HTTP
 	body, err := c.Get(endpoint)
@@ -198,7 +198,7 @@ func (c *HttpClient) GetSessionKeyBySessionID(sessionID int) (int, error) {
 // GetDriverByNumber obtiene la información de un piloto basado en su driver_number
 func (c *HttpClient) GetDriverByNumber(driverNumber int) (dto.ResponseDriverDTO, error) {
 	// Definir el endpoint para obtener la información del piloto desde el driver_number
-	endpoint := fmt.Sprintf("http://localhost:8070/drivers/number/%d", driverNumber)
+	endpoint := fmt.Sprintf("http://localhost:8051/drivers/number/%d", driverNumber)
 
 	// Hacer la solicitud GET utilizando el cliente HTTP
 	body, err := c.Get(endpoint)
@@ -223,7 +223,7 @@ func (c *HttpClient) GetDriverByNumber(driverNumber int) (dto.ResponseDriverDTO,
 // Función para obtener la información de una sesión completa utilizando sessionId
 func (c *HttpClient) GetSessionByID(sessionID int) (dto.ResponseSessionDTO, error) {
     // Usar la URL correcta del microservicio de sessions
-    endpoint := fmt.Sprintf("http://localhost:8060/sessions/%d", sessionID)
+    endpoint := fmt.Sprintf("http://localhost:8056/sessions/%d", sessionID)
 
     // Hacer la solicitud GET utilizando el cliente HTTP
     body, err := c.Get(endpoint)

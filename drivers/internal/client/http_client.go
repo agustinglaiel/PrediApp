@@ -132,6 +132,7 @@ func (c *HttpClient) Delete(endpoint string) error {
 func (c *HttpClient) GetAllDriversFromExternalAPI() ([]dto.ResponseDriverDTO, error) {
     // Definir el endpoint para obtener los drivers
     endpoint := "drivers"
+	print("Endpoint: ", endpoint)
 
     // Hacer la solicitud GET utilizando el cliente HTTP
     body, err := c.Get(endpoint)

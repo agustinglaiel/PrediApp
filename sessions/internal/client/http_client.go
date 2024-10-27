@@ -131,7 +131,8 @@ func (c *HttpClient) Delete(endpoint string) error {
 // GetRaceControlData realiza una solicitud GET para obtener los datos de control de carrera (VSC/SC) de la API externa
 func (c *HttpClient) GetRaceControlData(sessionKey *int) ([]dto.RaceControlEvent, error) {
     // Definir el endpoint para la solicitud GET
-    endpoint := fmt.Sprintf("race_control?session_key=%d", *sessionKey)
+    endpoint := fmt.Sprintf("https://api.openf1.org/v1/race_control?session_key=%d", *sessionKey)
+	print("Endpoint: ", endpoint)
 
     // Hacer la solicitud GET utilizando el cliente HTTP
     body, err := c.Get(endpoint)
@@ -172,10 +173,9 @@ func (c *HttpClient) GetLapsData(sessionKey int) ([]dto.LapData, e.ApiError) {
 
 //Esta función la usamos para obtener el session_key de una session para luego poder hacer el update de sc y vsc
 // GetSessionKey obtiene el session_key basado en location, session_name, session_type, y year
-// GetSessionData obtiene session_key, date_start y date_end basado en location, session_name, session_type y year
 func (c *HttpClient) GetSessionData(location string, sessionName string, sessionType string, year int) (*dto.SessionKeyResponseDTO, utils.ApiError) {
     // Definir el endpoint con los parámetros
-    endpoint := fmt.Sprintf("/sessions?location=%s&session_name=%s&session_type=%s&year=%d", location, sessionName, sessionType, year)
+    endpoint := fmt.Sprintf("https://api.openf1.org/v1/sessions?location=%s&session_name=%s&session_type=%s&year=%d", location, sessionName, sessionType, year)
     
     // Print del endpoint que estamos consultando
     fmt.Printf("Consultando endpoint: %s\n", endpoint)
