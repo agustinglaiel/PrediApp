@@ -37,13 +37,13 @@ func (c *DriverController) CreateDriver(ctx *gin.Context) {
 }
 
 func (c *DriverController) GetDriverByID(ctx *gin.Context) {
-	driverID, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
+	driverID, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Invalid driver ID"))
 		return
 	}
 
-	response, apiErr := c.driversService.GetDriverByID(ctx.Request.Context(), uint(driverID))
+	response, apiErr := c.driversService.GetDriverByID(ctx.Request.Context(), driverID)
 	if apiErr != nil {
 		ctx.JSON(apiErr.Status(), apiErr)
 		return
@@ -53,7 +53,7 @@ func (c *DriverController) GetDriverByID(ctx *gin.Context) {
 }
 
 func (c *DriverController) UpdateDriver(ctx *gin.Context) {
-	driverID, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
+	driverID, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Invalid driver ID"))
 		return
@@ -65,7 +65,7 @@ func (c *DriverController) UpdateDriver(ctx *gin.Context) {
 		return
 	}
 
-	response, apiErr := c.driversService.UpdateDriver(ctx.Request.Context(), uint(driverID), request)
+	response, apiErr := c.driversService.UpdateDriver(ctx.Request.Context(), driverID, request)
 	if apiErr != nil {
 		ctx.JSON(apiErr.Status(), apiErr)
 		return
@@ -75,13 +75,13 @@ func (c *DriverController) UpdateDriver(ctx *gin.Context) {
 }
 
 func (c *DriverController) DeleteDriver(ctx *gin.Context) {
-	driverID, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
+	driverID, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Invalid driver ID"))
 		return
 	}
 
-	apiErr := c.driversService.DeleteDriver(ctx.Request.Context(), uint(driverID))
+	apiErr := c.driversService.DeleteDriver(ctx.Request.Context(), driverID)
 	if apiErr != nil {
 		ctx.JSON(apiErr.Status(), apiErr)
 		return

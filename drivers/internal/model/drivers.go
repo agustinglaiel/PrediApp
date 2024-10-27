@@ -1,7 +1,7 @@
 package model
 
 type Driver struct {
-	ID            uint   `gorm:"primaryKey" json:"id"`
+	ID            int    `gorm:"primaryKey;type:int" json:"id"`
 	BroadcastName string `json:"broadcast_name"`
 	CountryCode   string `json:"country_code"`
 	DriverNumber  int    `json:"driver_number"`

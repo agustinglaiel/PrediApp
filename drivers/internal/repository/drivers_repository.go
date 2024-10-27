@@ -14,9 +14,9 @@ type driverRepository struct {
 
 type DriverRepository interface {
 	CreateDriver(ctx context.Context, driver *model.Driver) e.ApiError
-	GetDriverByID(ctx context.Context, driverID uint) (*model.Driver, e.ApiError)
+	GetDriverByID(ctx context.Context, driverID int) (*model.Driver, e.ApiError)
 	UpdateDriver(ctx context.Context, driver *model.Driver) e.ApiError
-	DeleteDriver(ctx context.Context, driverID uint) e.ApiError
+	DeleteDriver(ctx context.Context, driverID int) e.ApiError
 	ListDrivers(ctx context.Context) ([]*model.Driver, e.ApiError)
 	GetDriverByName(ctx context.Context, firstName, lastName string) (*model.Driver, e.ApiError)
 	GetDriverByNumber(ctx context.Context, driverNumber int) (*model.Driver, e.ApiError)
@@ -38,7 +38,7 @@ func (r *driverRepository) CreateDriver(ctx context.Context, driver *model.Drive
     return nil
 }
 
-func (r *driverRepository) GetDriverByID(ctx context.Context, driverID uint) (*model.Driver, e.ApiError) {
+func (r *driverRepository) GetDriverByID(ctx context.Context, driverID int) (*model.Driver, e.ApiError) {
 	var driver model.Driver
 	if err := r.db.WithContext(ctx).First(&driver, driverID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -56,7 +56,7 @@ func (r *driverRepository) UpdateDriver(ctx context.Context, driver *model.Drive
 	return nil
 }
 
-func (r *driverRepository) DeleteDriver(ctx context.Context, driverID uint) e.ApiError {
+func (r *driverRepository) DeleteDriver(ctx context.Context, driverID int) e.ApiError {
 	if err := r.db.WithContext(ctx).Where("id = ?", driverID).Delete(&model.Driver{}).Error; err != nil {
 		return e.NewInternalServerApiError("Error eliminando el piloto", err)
 	}

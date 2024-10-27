@@ -16,9 +16,9 @@ type driverService struct {
 
 type DriverService interface {
 	CreateDriver(ctx context.Context, request dto.CreateDriverDTO) (dto.ResponseDriverDTO, e.ApiError)
-	GetDriverByID(ctx context.Context, driverID uint) (dto.ResponseDriverDTO, e.ApiError)
-	UpdateDriver(ctx context.Context, driverID uint, request dto.UpdateDriverDTO) (dto.ResponseDriverDTO, e.ApiError)
-	DeleteDriver(ctx context.Context, driverID uint) e.ApiError
+	GetDriverByID(ctx context.Context, driverID int) (dto.ResponseDriverDTO, e.ApiError)
+	UpdateDriver(ctx context.Context, driverID int, request dto.UpdateDriverDTO) (dto.ResponseDriverDTO, e.ApiError)
+	DeleteDriver(ctx context.Context, driverID int) e.ApiError
 	ListDrivers(ctx context.Context) ([]dto.ResponseDriverDTO, e.ApiError)
 	ListDriversByTeam(ctx context.Context, teamName string) ([]dto.ResponseDriverDTO, e.ApiError)
 	ListDriversByCountry(ctx context.Context, countryCode string) ([]dto.ResponseDriverDTO, e.ApiError)
@@ -80,7 +80,7 @@ func (s *driverService) CreateDriver(ctx context.Context, request dto.CreateDriv
 	return response, nil
 }
 
-func (s *driverService) GetDriverByID(ctx context.Context, driverID uint) (dto.ResponseDriverDTO, e.ApiError) {
+func (s *driverService) GetDriverByID(ctx context.Context, driverID int) (dto.ResponseDriverDTO, e.ApiError) {
 	driver, err := s.driverRepo.GetDriverByID(ctx, driverID)
 	if err != nil {
 		return dto.ResponseDriverDTO{}, err
@@ -102,7 +102,7 @@ func (s *driverService) GetDriverByID(ctx context.Context, driverID uint) (dto.R
 	return response, nil
 }
 
-func (s *driverService) UpdateDriver(ctx context.Context, driverID uint, request dto.UpdateDriverDTO) (dto.ResponseDriverDTO, e.ApiError) {
+func (s *driverService) UpdateDriver(ctx context.Context, driverID int, request dto.UpdateDriverDTO) (dto.ResponseDriverDTO, e.ApiError) {
 	driver, err := s.driverRepo.GetDriverByID(ctx, driverID)
 	if err != nil {
 		return dto.ResponseDriverDTO{}, err
@@ -154,7 +154,7 @@ func (s *driverService) UpdateDriver(ctx context.Context, driverID uint, request
 	return response, nil
 }
 
-func (s *driverService) DeleteDriver(ctx context.Context, driverID uint) e.ApiError {
+func (s *driverService) DeleteDriver(ctx context.Context, driverID int) e.ApiError {
 	// Check if the driver exists before attempting to delete
 	driver, err := s.driverRepo.GetDriverByID(ctx, driverID)
 	if err != nil {

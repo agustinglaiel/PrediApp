@@ -23,7 +23,7 @@ type UpdateDriverDTO struct {
 }
 
 type ResponseDriverDTO struct {
-    ID             uint   `json:"driver_id"`
+    ID             int   `json:"driver_id"`
     BroadcastName  string `json:"broadcast_name"`
     CountryCode    string `json:"country_code"`
     DriverNumber   int    `json:"driver_number"`
@@ -35,5 +35,5 @@ type ResponseDriverDTO struct {
 }
 
 type DeleteDriverDTO struct {
-    DriverID uint `json:"driver_id"`
+    DriverID int `json:"driver_id"`
 }
