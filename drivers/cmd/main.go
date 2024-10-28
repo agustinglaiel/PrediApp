@@ -18,7 +18,7 @@ func main() {
 	// Obtener el puerto de la variable de entorno PORT
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8070" // Valor por defecto en caso de que no esté configurado
+		port = "8051" // Valor por defecto en caso de que no esté configurado
 	}
 
 	// Inicializar la base de datos

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	dto "sessions/internal/dto"
 	"sessions/pkg/utils"
 	"time"
@@ -21,7 +22,7 @@ func NewHttpClient(baseURL string) *HttpClient {
 	return &HttpClient{
 		BaseURL: baseURL,
 		HTTPClient: &http.Client{
-			Timeout: time.Second * 10,
+			Timeout: time.Second * 30,
 		},
 	}
 }
@@ -174,10 +175,15 @@ func (c *HttpClient) GetLapsData(sessionKey int) ([]dto.LapData, e.ApiError) {
 //Esta función la usamos para obtener el session_key de una session para luego poder hacer el update de sc y vsc
 // GetSessionKey obtiene el session_key basado en location, session_name, session_type, y year
 func (c *HttpClient) GetSessionData(location string, sessionName string, sessionType string, year int) (*dto.SessionKeyResponseDTO, utils.ApiError) {
-    // Definir el endpoint con los parámetros
-    endpoint := fmt.Sprintf("https://api.openf1.org/v1/sessions?location=%s&session_name=%s&session_type=%s&year=%d", location, sessionName, sessionType, year)
-    
-    // Print del endpoint que estamos consultando
+    // Escapar los parámetros individuales
+    locationEscaped := url.QueryEscape(location)
+    sessionNameEscaped := url.QueryEscape(sessionName)
+    sessionTypeEscaped := url.QueryEscape(sessionType)
+
+    // Definir el endpoint con los parámetros escapados
+    endpoint := fmt.Sprintf("https://api.openf1.org/v1/sessions?location=%s&session_name=%s&session_type=%s&year=%d",
+        locationEscaped, sessionNameEscaped, sessionTypeEscaped, year)
+
     fmt.Printf("Consultando endpoint: %s\n", endpoint)
     
     // Hacer la solicitud GET

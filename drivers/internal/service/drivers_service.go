@@ -7,6 +7,7 @@ import (
 	model "drivers/internal/model"
 	repository "drivers/internal/repository"
 	e "drivers/pkg/utils"
+	"fmt"
 )
 
 type driverService struct {
@@ -371,6 +372,11 @@ func (s *driverService) GetDriverByNumber(ctx context.Context, driverNumber int)
 	driver, err := s.driverRepo.GetDriverByNumber(ctx, driverNumber)
 	if err != nil {
 		return dto.ResponseDriverDTO{}, err
+	}
+
+	// Verificar si el driver es nil
+	if driver == nil {
+		return dto.ResponseDriverDTO{}, e.NewNotFoundApiError(fmt.Sprintf("Driver with number %d not found", driverNumber))
 	}
 
 	// Convert Model to Response DTO
