@@ -336,6 +336,7 @@ func (s *driverService) FetchAllDriversFromExternalAPI(ctx context.Context) ([]d
 
             // Añadir a la lista de pilotos insertados para la respuesta
             insertedDrivers = append(insertedDrivers, dto.ResponseDriverDTO{
+				ID:			    newDriver.ID,
                 BroadcastName:  newDriver.BroadcastName,
                 CountryCode:    newDriver.CountryCode,
                 DriverNumber:   newDriver.DriverNumber,

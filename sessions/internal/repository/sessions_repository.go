@@ -32,6 +32,7 @@ type SessionRepository interface{
 	UpdateSCAndVSC(ctx context.Context, sessionID int, sc bool, vsc bool) e.ApiError
 	UpdateSessionKey(ctx context.Context, session *model.Session) e.ApiError
 	UpdateDFastLap(ctx context.Context, sessionID int, driverID int) e.ApiError
+	GetSessionsByLocationAndYear(ctx context.Context, location string, year int) ([]*model.Session, e.ApiError)
 }
 
 func NewSessionRepository(db *gorm.DB) SessionRepository{
@@ -191,4 +192,13 @@ func (s *sessionRepository) UpdateDFastLap(ctx context.Context, sessionID int, d
         return e.NewInternalServerApiError("Error actualizando el DFastLap en la sesión", err)
     }
     return nil
+}
+
+// GetSessionsByLocationAndYear obtiene todas las sesiones de un fin de semana y año específicos
+func (s *sessionRepository) GetSessionsByLocationAndYear(ctx context.Context, location string, year int) ([]*model.Session, e.ApiError) {
+	var sessions []*model.Session
+	if err := s.db.WithContext(ctx).Where("location = ? AND year = ?", location, year).Find(&sessions).Error; err != nil {
+		return nil, e.NewInternalServerApiError("Error obteniendo sesiones por localización y año", err)
+	}
+	return sessions, nil
 }

@@ -85,11 +85,21 @@ func (s *sessionService) CreateSession(ctx context.Context, request dto.CreateSe
     }
 
     // Validar que no exista ya una combinación idéntica para el mismo fin de semana (mismo circuito y año)
-    existingSessions, err := s.sessionsRepo.GetSessionsByCircuitKeyAndYear(ctx, request.CircuitKey, request.Year)
+    existingSessions, err := s.sessionsRepo.GetSessionsByLocationAndYear(ctx, request.Location, request.Year)
     if err != nil {
         return dto.ResponseSessionDTO{}, e.NewInternalServerApiError("Error validando sesiones existentes", err)
     }
 
+    // I want to print the existing sessions information as JSON
+    // for _, session := range existingSessions {
+    //     sessionJSON, err := json.Marshal(session)
+    //     if err != nil {
+    //         fmt.Printf("Error marshaling session to JSON: %v\n", err)
+    //         continue
+    //     }
+    //     fmt.Printf("Existing Session: %s\n", sessionJSON)
+    // }
+    
     for _, session := range existingSessions {
         if session.SessionName == request.SessionName && session.SessionType == request.SessionType {
             return dto.ResponseSessionDTO{}, e.NewBadRequestApiError("Ya existe una sesión con el mismo nombre y tipo para este fin de semana")

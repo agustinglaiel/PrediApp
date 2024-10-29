@@ -153,7 +153,6 @@ func (c *HttpClient) GetAllDriversFromExternalAPI() ([]dto.ResponseDriverDTO, er
         FullName       string `json:"full_name"`
         NameAcronym    string `json:"name_acronym"`
         TeamName       string `json:"team_name"`
-        // Otros atributos que no usaremos: team_colour, meeting_key, session_key
     }
 
     if err := json.Unmarshal(body, &allDrivers); err != nil {

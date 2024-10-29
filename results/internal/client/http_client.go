@@ -177,6 +177,7 @@ func (c *HttpClient) GetLaps(sessionKey int, driverNumber int) ([]dto.Lap, error
 func (c *HttpClient) GetSessionKeyBySessionID(sessionID int) (int, error) {
 	// Usar la URL correcta del microservicio de sessions
 	endpoint := fmt.Sprintf("http://localhost:8056/sessions/%d/get-session-key", sessionID)
+	fmt.Println("Endpoint: ", endpoint)
 
 	// Hacer la solicitud GET utilizando el cliente HTTP
 	body, err := c.Get(endpoint)

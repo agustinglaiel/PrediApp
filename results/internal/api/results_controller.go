@@ -47,7 +47,7 @@ func (rc *ResultController) FetchResultsFromExternalAPI(c *gin.Context) {
 		return
 	}
 
-	fmt.Println("Controller: Resultados obtenidos:", results)
+	// fmt.Println("Controller: Resultados obtenidos:", results)
 	c.JSON(http.StatusOK, results)
 }
 

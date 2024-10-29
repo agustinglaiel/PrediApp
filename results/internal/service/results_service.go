@@ -46,8 +46,7 @@ func NewResultService(resultRepo repository.ResultRepository, client *client.Htt
 
 // FetchResultsFromExternalAPI obtiene los resultados de una API externa y los inserta o actualiza en la base de datos
 func (s *resultService) FetchResultsFromExternalAPI(ctx context.Context, sessionID int) ([]dto.ResponseResultDTO, e.ApiError) {
-    fmt.Println("Service: Iniciando FetchResultsFromExternalAPI")
-    
+    // fmt.Println("Service: Iniciando FetchResultsFromExternalAPI")
     // Llamar al microservicio de sessions para obtener el sessionKey
     sessionKey, err := s.client.GetSessionKeyBySessionID(sessionID)
     if err != nil {
