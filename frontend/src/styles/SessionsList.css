@@ -72,7 +72,7 @@
 
 /* Botón de pronóstico */
 .prediction-button {
-  background-color: #ff7f1c;
+  background-color: #d9534f;
   color: white;
   border: none;
   border-radius: 5px;
@@ -86,5 +86,5 @@
 }
 
 .prediction-button:hover {
-  background-color: #ff9c49;
+  background-color: #c9302c;
 }

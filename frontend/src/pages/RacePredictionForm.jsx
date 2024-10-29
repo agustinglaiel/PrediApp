@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { useParams } from "react-router-dom";
-import DriverSelect from "./DriverSelect";
+import DriverSelect from "../components/driverSelect";
 import { createProdeCarrera } from "../api/prodes";
+// import { getAllDrivers } from "../api/drivers";
 import "../styles/RaceWeekendPage.css";
 
 const RacePredictionForm = ({ sessionType, onSubmit }) => {
@@ -35,11 +36,10 @@ const RacePredictionForm = ({ sessionType, onSubmit }) => {
     });
   };
 
-  // Marcar esta función como async para poder usar await dentro de ella
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validación simple: Asegurar que P1, P2 y P3 estén seleccionados
+    // Validación simple: Asegurar que P1, P2, P3, etc. estén seleccionados
     if (
       !formData.p1 ||
       !formData.p2 ||
@@ -47,8 +47,6 @@ const RacePredictionForm = ({ sessionType, onSubmit }) => {
       !formData.p4 ||
       !formData.p5 ||
       !formData.fastestLap ||
-      !formData.sc ||
-      !formData.vsc ||
       !formData.dnf
     ) {
       alert("Please fill out all data!");
@@ -58,10 +56,9 @@ const RacePredictionForm = ({ sessionType, onSubmit }) => {
     const predictionData = { ...formData, sessionId, userId }; // Incluir userId y sessionId
 
     try {
-      // Llamar a la función de creación de prode con los datos del formulario
       const response = await createProdeCarrera(predictionData);
       console.log("Prediction created successfully:", response);
-      onSubmit(predictionData); // Puedes actualizar la UI o redirigir al usuario aquí
+      onSubmit(predictionData);
     } catch (error) {
       console.error("Error creating prediction:", error.message);
     }
@@ -75,8 +72,6 @@ const RacePredictionForm = ({ sessionType, onSubmit }) => {
       formData.p4 &&
       formData.p5 &&
       formData.fastestLap &&
-      formData.sc &&
-      formData.vsc &&
       formData.dnf
     );
   };
@@ -86,30 +81,42 @@ const RacePredictionForm = ({ sessionType, onSubmit }) => {
       <h3>
         {sessionType} Prediction for Session {sessionId}
       </h3>
-      <DriverSelect
-        label="P1"
-        onSelect={(driverId) => handleDriverSelect("p1", driverId)}
-      />
-      <DriverSelect
-        label="P2"
-        onSelect={(driverId) => handleDriverSelect("p2", driverId)}
-      />
-      <DriverSelect
-        label="P3"
-        onSelect={(driverId) => handleDriverSelect("p3", driverId)}
-      />
-      <DriverSelect
-        label="P4"
-        onSelect={(driverId) => handleDriverSelect("p4", driverId)}
-      />
-      <DriverSelect
-        label="P5"
-        onSelect={(driverId) => handleDriverSelect("p5", driverId)}
-      />
-      <DriverSelect
-        label="Fastest Lap"
-        onSelect={(driverId) => handleDriverSelect("fastestLap", driverId)}
-      />
+      <div className="driver-select">
+        <label>P1</label>
+        <DriverSelect
+          onSelect={(driverId) => handleDriverSelect("p1", driverId)}
+        />
+      </div>
+      <div className="driver-select">
+        <label>P2</label>
+        <DriverSelect
+          onSelect={(driverId) => handleDriverSelect("p2", driverId)}
+        />
+      </div>
+      <div className="driver-select">
+        <label>P3</label>
+        <DriverSelect
+          onSelect={(driverId) => handleDriverSelect("p3", driverId)}
+        />
+      </div>
+      <div className="driver-select">
+        <label>P4</label>
+        <DriverSelect
+          onSelect={(driverId) => handleDriverSelect("p4", driverId)}
+        />
+      </div>
+      <div className="driver-select">
+        <label>P5</label>
+        <DriverSelect
+          onSelect={(driverId) => handleDriverSelect("p5", driverId)}
+        />
+      </div>
+      <div className="driver-select">
+        <label>Fastest Lap</label>
+        <DriverSelect
+          onSelect={(driverId) => handleDriverSelect("fastestLap", driverId)}
+        />
+      </div>
 
       <div className="checkbox-group">
         <label>
@@ -144,7 +151,6 @@ const RacePredictionForm = ({ sessionType, onSubmit }) => {
         />
       </div>
 
-      {/* Cambiar el color del botón según si el formulario está completo o no */}
       <button type="submit" className={isFormComplete() ? "complete" : ""}>
         Submit Prediction
       </button>

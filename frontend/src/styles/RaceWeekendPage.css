@@ -1,85 +1,95 @@
 /* Contenedor principal del formulario */
 .race-prediction-form {
-  background-color: #f9f9f9;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Sombra suave */
-  max-width: 500px; /* Aumentamos el ancho */
-  margin: 20px auto;
+  background-color: #ffffff;
+  padding: 30px;
+  border-radius: 30px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15); /* Sombra más definida */
+  max-width: 600px;
+  margin: 60px auto; /* Mayor espaciado superior */
   color: #333;
 }
 
-/* Estilo para los títulos */
+/* Título centrado */
 .race-prediction-form h3 {
   text-align: center;
   color: #333;
-  font-size: 24px;
-  margin-bottom: 20px;
+  font-size: 26px;
+  font-weight: 600;
+  margin-bottom: 25px;
 }
 
-/* Alinear los labels a la izquierda y los selects a la derecha */
+/* Estilo para las etiquetas de selección */
 .driver-select {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
+  padding-left: 10px; /* Desplazamiento hacia la izquierda */
 }
 
 .driver-select label {
   font-weight: bold;
-  color: #333;
-  flex: 0.3; /* Espacio que ocupa el label */
+  color: #555;
+  flex: 0.25; /* Ajuste para ocupar menos espacio y alinear más al centro */
+  font-size: 16px;
+  text-align: left;
 }
 
 .driver-select select {
-  flex: 0.7; /* Espacio que ocupa el select */
+  flex: 0.75; /* Mayor espacio para el select */
   padding: 10px;
   border-radius: 8px;
   border: 1px solid #ddd;
   font-size: 16px;
   background-color: #fff;
+  transition: border-color 0.3s;
 }
 
-/* Estilo para el grupo de checkboxes */
+.driver-select select:focus {
+  border-color: #007bff; /* Color al enfocar */
+}
+
+/* Grupo de checkboxes con espaciado */
 .checkbox-group {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
 }
 
 .checkbox-group label {
   font-size: 16px;
-  color: #555;
+  color: #333;
 }
 
-.checkbox-group input {
-  margin-right: 5px;
-}
-
-/* Estilo para el campo DNF */
+/* Campo de DNF */
 .dnf-group {
   display: flex;
   align-items: center;
   justify-content: space-between;
   font-size: 16px;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
+}
+
+.dnf-group label {
+  font-weight: bold;
+  color: #555;
 }
 
 .dnf-group input {
-  width: 60px;
-  padding: 5px;
+  width: 80px;
+  padding: 8px;
   font-size: 16px;
   border-radius: 8px;
   border: 1px solid #ddd;
 }
 
-/* Botón inicial en rojo */
+/* Botón con estilo y transición */
 button[type="submit"] {
   width: 100%;
-  background-color: #d9534f; /* Color rojo inicial */
+  background-color: #d9534f;
   color: white;
   padding: 12px 0;
   font-size: 18px;
+  font-weight: bold;
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -87,12 +97,11 @@ button[type="submit"] {
 }
 
 button[type="submit"]:hover {
-  background-color: #c9302c; /* Rojo más oscuro al hacer hover */
+  background-color: #c9302c;
 }
 
-/* Botón en verde cuando todos los campos estén completos */
 button[type="submit"].complete {
-  background-color: #5cb85c; /* Color verde */
+  background-color: #5cb85c;
 }
 
 button[type="submit"].complete:hover {
