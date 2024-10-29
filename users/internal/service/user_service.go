@@ -6,10 +6,9 @@ import (
 	"users/internal/dto"
 	"users/internal/model"
 	"users/internal/repository"
+	jwt "users/pkg/jwt"
 	e "users/pkg/utils"
 
-	"github.com/markbates/goth"
-	"github.com/markbates/goth/providers/google"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -20,7 +19,7 @@ type userService struct {
 type UserServiceInterface interface {
     SignUp(ctx context.Context, request dto.UserSignUpRequestDTO) (dto.UserSignUpResponseDTO, e.ApiError)
     Login(ctx context.Context, request dto.UserLoginRequestDTO) (dto.UserLoginResponseDTO, e.ApiError)
-    OAuthSignIn(ctx context.Context, request dto.GoogleOAuthRequestDTO) (dto.GoogleOAuthResponseDTO, e.ApiError)
+    // OAuthSignIn(ctx context.Context, request dto.GoogleOAuthRequestDTO) (dto.GoogleOAuthResponseDTO, e.ApiError)
     GetUserById(ctx context.Context, id uint) (dto.UserResponseDTO, e.ApiError)
     GetUserByUsername(ctx context.Context, username string) (dto.UserResponseDTO, e.ApiError)
     GetUsers(ctx context.Context) ([]dto.UserResponseDTO, e.ApiError)
@@ -90,6 +89,12 @@ func (s *userService) Login(ctx context.Context, request dto.UserLoginRequestDTO
 		return dto.UserLoginResponseDTO{}, e.NewBadRequestApiError("invalid credentials")
 	}
 
+	// Generar el token JWT utilizando el user.ID
+	token, err := jwt.GenerateJWT(user.ID)
+	if err != nil {
+		return dto.UserLoginResponseDTO{}, e.NewInternalServerApiError("error generating token", err)
+	}
+
 	response := dto.UserLoginResponseDTO{
 		ID:        user.ID,
 		FirstName: user.FirstName,
@@ -97,86 +102,77 @@ func (s *userService) Login(ctx context.Context, request dto.UserLoginRequestDTO
 		Username:  user.Username,
 		Email:     user.Email,
 		Role:      user.Role,
-		Token:     "dummy-jwt-token", // Reemplazar con el token real
+		Token:     token,
 	}
 
 	return response, nil
 }
 
-func (s *userService) OAuthSignIn(ctx context.Context, request dto.GoogleOAuthRequestDTO) (dto.GoogleOAuthResponseDTO, e.ApiError) {
-	googleUser, err := VerifyGoogleToken(request.GoogleToken)
-	if err != nil {
-		return dto.GoogleOAuthResponseDTO{}, e.NewBadRequestApiError("invalid Google token")
-	}
+// func (s *userService) OAuthSignIn(ctx context.Context, request dto.GoogleOAuthRequestDTO) (dto.GoogleOAuthResponseDTO, e.ApiError) {
+// 	googleUser, err := VerifyGoogleToken(request.GoogleToken)
+// 	if err != nil {
+// 		return dto.GoogleOAuthResponseDTO{}, e.NewBadRequestApiError("invalid Google token")
+// 	}
+// 	user, apiErr := s.userRepo.GetUserByEmail(ctx, googleUser.Email)
+// 	if apiErr != nil {
+// 		if apiErr.Status() != 404 {
+// 			return dto.GoogleOAuthResponseDTO{}, apiErr
+// 		}
+// 		user = &model.User{
+// 			FirstName:       googleUser.FirstName,
+// 			LastName:        googleUser.LastName,
+// 			Username:        googleUser.NickName,
+// 			Email:           googleUser.Email,
+// 			Role:            "user",
+// 			Provider:        "google",
+// 			ProviderID:      googleUser.UserID,
+// 			AvatarURL:       googleUser.AvatarURL,
+// 			IsActive:        true,
+// 			IsEmailVerified: true,
+// 			CreatedAt:       time.Now(),
+// 		}
+// 		if apiErr := s.userRepo.CreateUser(ctx, user); apiErr != nil {
+// 			return dto.GoogleOAuthResponseDTO{}, apiErr
+// 		}
+// 	} else {
+// 		user.Provider = "google"
+// 		user.ProviderID = googleUser.UserID
+// 		user.AvatarURL = googleUser.AvatarURL
+// 		user.IsActive = true
+// 		now := time.Now()
+// 		user.LastLoginAt = &now
+// 		if apiErr := s.userRepo.UpdateUserByID(ctx, user.ID, user); apiErr != nil {
+// 			return dto.GoogleOAuthResponseDTO{}, apiErr
+// 		}
+// 	}
+// 	response := dto.GoogleOAuthResponseDTO{
+// 		ID:          user.ID,
+// 		FirstName:   user.FirstName,
+// 		LastName:    user.LastName,
+// 		Username:    user.Username,
+// 		Email:       user.Email,
+// 		Role:        user.Role,
+// 		Token:       "dummy-jwt-token", // Reemplazar con el token real
+// 		Provider:    user.Provider,
+// 		ProviderID:  user.ProviderID,
+// 		AvatarURL:   user.AvatarURL,
+// 	}
+// 	return response, nil
+// }
 
-	user, apiErr := s.userRepo.GetUserByEmail(ctx, googleUser.Email)
-	if apiErr != nil {
-		if apiErr.Status() != 404 {
-			return dto.GoogleOAuthResponseDTO{}, apiErr
-		}
-
-		user = &model.User{
-			FirstName:       googleUser.FirstName,
-			LastName:        googleUser.LastName,
-			Username:        googleUser.NickName,
-			Email:           googleUser.Email,
-			Role:            "user",
-			Provider:        "google",
-			ProviderID:      googleUser.UserID,
-			AvatarURL:       googleUser.AvatarURL,
-			IsActive:        true,
-			IsEmailVerified: true,
-			CreatedAt:       time.Now(),
-		}
-
-		if apiErr := s.userRepo.CreateUser(ctx, user); apiErr != nil {
-			return dto.GoogleOAuthResponseDTO{}, apiErr
-		}
-	} else {
-		user.Provider = "google"
-		user.ProviderID = googleUser.UserID
-		user.AvatarURL = googleUser.AvatarURL
-		user.IsActive = true
-		now := time.Now()
-		user.LastLoginAt = &now
-
-		if apiErr := s.userRepo.UpdateUserByID(ctx, user.ID, user); apiErr != nil {
-			return dto.GoogleOAuthResponseDTO{}, apiErr
-		}
-	}
-
-	response := dto.GoogleOAuthResponseDTO{
-		ID:          user.ID,
-		FirstName:   user.FirstName,
-		LastName:    user.LastName,
-		Username:    user.Username,
-		Email:       user.Email,
-		Role:        user.Role,
-		Token:       "dummy-jwt-token", // Reemplazar con el token real
-		Provider:    user.Provider,
-		ProviderID:  user.ProviderID,
-		AvatarURL:   user.AvatarURL,
-	}
-
-	return response, nil
-}
-
-func VerifyGoogleToken(googleToken string) (*goth.User, e.ApiError) {
-	provider := google.New("client-id", "client-secret", "redirect-url", "profile", "email")
-	goth.UseProviders(provider)
-
-	session, err := provider.UnmarshalSession(`{"AuthURL":"","AccessToken":"` + googleToken + `"}`)
-	if err != nil {
-		return nil, e.NewInternalServerApiError("failed to unmarshal session", err)
-	}
-
-	user, err := provider.FetchUser(session)
-	if err != nil {
-		return nil, e.NewInternalServerApiError("failed to verify Google token", err)
-	}
-
-	return &user, nil
-}
+// func VerifyGoogleToken(googleToken string) (*goth.User, e.ApiError) {
+// 	provider := google.New("client-id", "client-secret", "redirect-url", "profile", "email")
+// 	goth.UseProviders(provider)
+// 	session, err := provider.UnmarshalSession(`{"AuthURL":"","AccessToken":"` + googleToken + `"}`)
+// 	if err != nil {
+// 		return nil, e.NewInternalServerApiError("failed to unmarshal session", err)
+// 	}
+// 	user, err := provider.FetchUser(session)
+// 	if err != nil {
+// 		return nil, e.NewInternalServerApiError("failed to verify Google token", err)
+// 	}
+// 	return &user, nil
+// }
 
 func (s *userService) GetUserById(ctx context.Context, id uint) (dto.UserResponseDTO, e.ApiError) {
     user, apiErr := s.userRepo.GetUserByID(ctx, id)

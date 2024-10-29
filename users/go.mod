@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/gin-contrib/cors v1.7.2
 	github.com/gin-gonic/gin v1.10.0
+	github.com/golang-jwt/jwt/v4 v4.2.0
 	github.com/json-iterator/go v1.1.12
 	github.com/markbates/goth v1.80.0
 	golang.org/x/crypto v0.23.0

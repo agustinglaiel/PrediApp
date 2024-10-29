@@ -63,22 +63,20 @@ func (ctrl *UserController) Login(c *gin.Context) {
 }
 
 // OAuthSignIn handles Google OAuth sign-in
-func (ctrl *UserController) OAuthSignIn(c *gin.Context) {
-    var request dto.GoogleOAuthRequestDTO
-    if err := c.ShouldBindJSON(&request); err != nil {
-        apiErr := e.NewBadRequestApiError("invalid request")
-        c.JSON(apiErr.Status(), apiErr)
-        return
-    }
-
-    response, apiErr := ctrl.userService.OAuthSignIn(c.Request.Context(), request)
-    if apiErr != nil {
-        c.JSON(apiErr.Status(), apiErr)
-        return
-    }
-
-    c.JSON(http.StatusOK, response)
-}
+// func (ctrl *UserController) OAuthSignIn(c *gin.Context) {
+//     var request dto.GoogleOAuthRequestDTO
+//     if err := c.ShouldBindJSON(&request); err != nil {
+//         apiErr := e.NewBadRequestApiError("invalid request")
+//         c.JSON(apiErr.Status(), apiErr)
+//         return
+//     }
+//     response, apiErr := ctrl.userService.OAuthSignIn(c.Request.Context(), request)
+//     if apiErr != nil {
+//         c.JSON(apiErr.Status(), apiErr)
+//         return
+//     }
+//     c.JSON(http.StatusOK, response)
+// }
 
 // GetUserByID handles fetching a user by their ID
 func (ctrl *UserController) GetUserByID(c *gin.Context) {
