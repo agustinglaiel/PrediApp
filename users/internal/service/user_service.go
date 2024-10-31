@@ -55,7 +55,7 @@ func (s *userService) SignUp(ctx context.Context, request dto.UserSignUpRequestD
 		Username:        request.Username,
 		Email:           request.Email,
 		Password:        string(hashedPassword),
-		Role:            "user",
+		Role:            request.Role,
 		Score:           0,
 		CreatedAt:       time.Now(),
 		IsActive:        true,
@@ -66,6 +66,12 @@ func (s *userService) SignUp(ctx context.Context, request dto.UserSignUpRequestD
 		return dto.UserSignUpResponseDTO{}, e.NewInternalServerApiError("error creating user", err)
 	}
 
+    // Genarar el token JWT para el usuario regittado
+    token, err := jwt.GenerateJWT(newUser.ID, newUser.Role)
+    if err != nil {
+        return dto.UserSignUpResponseDTO{}, e.NewInternalServerApiError("error generating token", err)
+    }
+
 	response := dto.UserSignUpResponseDTO{
 		ID:        newUser.ID,
 		FirstName: newUser.FirstName,
@@ -73,6 +79,7 @@ func (s *userService) SignUp(ctx context.Context, request dto.UserSignUpRequestD
 		Username:  newUser.Username,
 		Email:     newUser.Email,
 		Role:      newUser.Role,
+        Token:     token,
 		CreatedAt: newUser.CreatedAt.Format(time.RFC3339),
 	}
 
@@ -303,6 +310,12 @@ func (s *userService) UpdateUserByUsername(ctx context.Context, username string,
 }
 
 func (s *userService) DeleteUserById(ctx context.Context, id uint) e.ApiError {
+    // Verificar si el usuario existe
+    _ , err := s.userRepo.GetUserByID(ctx, id)
+    if err != nil {
+        return  e.NewBadRequestApiError("user not found")
+    }
+
     if apiErr := s.userRepo.DeleteUserByID(ctx, id); apiErr != nil {
         return apiErr
     }

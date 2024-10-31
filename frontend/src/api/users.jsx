@@ -2,26 +2,52 @@ import axios from "axios";
 
 const API_URL = "http://localhost:8057";
 
+// Función para establecer el token JWT en el encabezado de autorización
+const setAuthToken = (token) => {
+  if (token) {
+    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+  } else {
+    delete axios.defaults.headers.common["Authorization"];
+  }
+};
+
+// Función de registro que guarda el token en localStorage
 export const signUp = async (userData) => {
   try {
-    const response = await axios.post(`${API_URL}/signup`, userData);
-    console.log(response.data);
+    const response = await axios.post(`${API_URL}/users/signup`, userData);
+    const { token } = response.data;
+
+    // Almacenar el token y establecerlo en las solicitudes
+    if (token) {
+      localStorage.setItem("jwtToken", token);
+      setAuthToken(token);
+    }
+
     return response.data;
   } catch (error) {
     throw new Error(error.response.data.message || "Error signing up.");
   }
 };
 
+// Función de inicio de sesión que guarda el token en localStorage
 export const login = async (userData) => {
   try {
-    const response = await axios.post(`${API_URL}/login`, userData);
-    console.log(response.data);
+    const response = await axios.post(`${API_URL}/users/login`, userData);
+    const { token } = response.data;
+
+    // Almacenar el token y establecerlo en las solicitudes
+    if (token) {
+      localStorage.setItem("jwtToken", token);
+      setAuthToken(token);
+    }
+
     return response.data;
   } catch (error) {
     throw new Error(error.response.data.message || "Error logging in.");
   }
 };
 
+// Obtener usuario por ID (requiere token en el encabezado)
 export const getUserById = async (id) => {
   try {
     const response = await axios.get(`${API_URL}/users/${id}`);
@@ -31,6 +57,7 @@ export const getUserById = async (id) => {
   }
 };
 
+// Actualizar usuario por ID (requiere token en el encabezado)
 export const updateUserById = async (id, userData) => {
   try {
     const response = await axios.put(`${API_URL}/users/${id}`, userData);
@@ -40,6 +67,7 @@ export const updateUserById = async (id, userData) => {
   }
 };
 
+// Eliminar usuario por ID (requiere token en el encabezado)
 export const deleteUserById = async (id) => {
   try {
     await axios.delete(`${API_URL}/users/${id}`);
@@ -48,6 +76,7 @@ export const deleteUserById = async (id) => {
   }
 };
 
+// Obtener todos los usuarios (requiere token en el encabezado)
 export const getUsers = async () => {
   try {
     const response = await axios.get(`${API_URL}/users`);
@@ -56,3 +85,9 @@ export const getUsers = async () => {
     throw new Error(error.response.data.message || "Error fetching users.");
   }
 };
+
+// Verificar si hay un token almacenado al cargar la aplicación
+const token = localStorage.getItem("jwtToken");
+if (token) {
+  setAuthToken(token);
+}

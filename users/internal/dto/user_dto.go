@@ -41,6 +41,7 @@ type UserSignUpResponseDTO struct {
     Username    string `json:"username"`
     Email       string `json:"email"`
     Role        string `json:"role"`
+    Token       string `json:"token"` // JWT token
     CreatedAt   string `json:"created_at"`
 }
 
