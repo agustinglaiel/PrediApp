@@ -14,13 +14,15 @@ import (
 // Define una estructura para los claims del token
 type JWTClaims struct {
 	UserID uint `json:"user_id"`
+	Role   string `json:"role"`
 	jwt.RegisteredClaims
 }
 
 // Genera un token JWT con el user_id
-func GenerateJWT(userID uint) (string, e.ApiError) {
+func GenerateJWT(userID uint, role string) (string, e.ApiError) {
 	claims := JWTClaims{
 		UserID: userID,
+		Role:   role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(12 * time.Hour)), // Expiración de 12 horas
 		},
@@ -72,6 +74,13 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			c.Abort()
 			return
+		}
+
+		// Verificar si el rol es admin
+		if claims.Role != "admin" {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+			c.Abort()
+			return 
 		}
 
 		// Guarda el user_id en el contexto de la solicitud para su uso posterior

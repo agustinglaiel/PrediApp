@@ -90,7 +90,7 @@ func (s *userService) Login(ctx context.Context, request dto.UserLoginRequestDTO
 	}
 
 	// Generar el token JWT utilizando el user.ID
-	token, err := jwt.GenerateJWT(user.ID)
+	token, err := jwt.GenerateJWT(user.ID, user.Role)
 	if err != nil {
 		return dto.UserLoginResponseDTO{}, e.NewInternalServerApiError("error generating token", err)
 	}
