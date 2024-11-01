@@ -106,18 +106,19 @@ func (r *userRepository) UpdateUserByUsername(ctx context.Context, username stri
 
 // DeleteUserByID elimina un usuario por su ID de la base de datos
 func (r *userRepository) DeleteUserByID(ctx context.Context, id uint) e.ApiError {
-	var user model.User
-	if err := r.db.WithContext(ctx).First(&user, id).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return e.NewNotFoundApiError("user not found")
-		}
-		return e.NewInternalServerApiError("error finding user by ID", err)
-	}
-	if err := r.db.WithContext(ctx).Delete(&user).Error; err != nil {
-		return e.NewInternalServerApiError("error deleting user by ID", err)
-	}
-	return nil
+    var user model.User
+    if err := r.db.WithContext(ctx).First(&user, id).Error; err != nil {
+        if err == gorm.ErrRecordNotFound {
+            return e.NewNotFoundApiError("user not found")
+        }
+        return e.NewInternalServerApiError("error finding user by ID", err)
+    }
+    if err := r.db.WithContext(ctx).Unscoped().Delete(&user).Error; err != nil { // Unscoped para eliminación física
+        return e.NewInternalServerApiError("error deleting user by ID", err)
+    }
+    return nil
 }
+
 
 // DeleteUserByUsername elimina un usuario por su nombre de usuario de la base de datos
 func (r *userRepository) DeleteUserByUsername(ctx context.Context, username string) e.ApiError {
