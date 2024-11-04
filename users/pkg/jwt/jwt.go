@@ -65,44 +65,46 @@ func ValidateJWT(tokenString string) (*JWTClaims, e.ApiError) {
 
 // Middleware para verificar el JWT
 func JWTAuthMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" {
-			log.Println("Authorization header is missing")
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header required"})
-			c.Abort()
-			return
-		}
+    return func(c *gin.Context) {
+        authHeader := c.GetHeader("Authorization")
+        if authHeader == "" {
+            log.Println("Authorization header is missing")
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header required"})
+            c.Abort()
+            return
+        }
 
-		// Extrae el token del encabezado Authorization (Bearer <token>)
-		tokenParts := strings.Split(authHeader, "Bearer ")
-		if len(tokenParts) != 2 {
-			log.Println("Invalid Authorization header format")
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid Authorization header format"})
-			c.Abort()
-			return
-		}
+        // Extrae el token del encabezado Authorization (Bearer <token>)
+        tokenParts := strings.Split(authHeader, "Bearer ")
+        if len(tokenParts) != 2 {
+            log.Println("Invalid Authorization header format")
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid Authorization header format"})
+            c.Abort()
+            return
+        }
 
-		tokenString := tokenParts[1]
-		claims, err := ValidateJWT(tokenString)
-		if err != nil {
-			log.Printf("Token validation failed: %v", err)
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
-			c.Abort()
-			return
-		}
+        tokenString := tokenParts[1]
+        log.Printf("Received JWT token: %s", tokenString) // Print the received token
 
-		// Verificar si el rol es admin
-		if claims.Role != "admin" {
-			log.Printf("Access denied: User ID %d does not have admin role", claims.UserID)
-			c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
-			c.Abort()
-			return 
-		}
+        claims, err := ValidateJWT(tokenString)
+        if err != nil {
+            log.Printf("Token validation failed: %v", err)
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
+            c.Abort()
+            return
+        }
 
-		// Guarda el user_id en el contexto de la solicitud para su uso posterior
-		log.Printf("Access granted for user ID %d with admin role", claims.UserID)
-		c.Set("user_id", claims.UserID)
-		c.Next()
-	}
+        // Verificar si el rol es admin
+        if claims.Role != "admin" {
+            log.Printf("Access denied: User ID %d does not have admin role", claims.UserID)
+            c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+            c.Abort()
+            return 
+        }
+
+        // Guarda el user_id en el contexto de la solicitud para su uso posterior
+        log.Printf("Access granted for user ID %d with admin role", claims.UserID)
+        c.Set("user_id", claims.UserID)
+        c.Next()
+    }
 }

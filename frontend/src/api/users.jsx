@@ -16,6 +16,7 @@ export const signUp = async (userData) => {
   try {
     const response = await axios.post(`${API_URL}/users/signup`, userData);
     const { token } = response.data;
+    console.log(token);
 
     // Almacenar el token y establecerlo en las solicitudes
     if (token) {
@@ -33,12 +34,15 @@ export const signUp = async (userData) => {
 export const login = async (userData) => {
   try {
     const response = await axios.post(`${API_URL}/users/login`, userData);
-    const { token } = response.data;
+    const { token, id: userId } = response.data;
 
     // Almacenar el token y establecerlo en las solicitudes
     if (token) {
       localStorage.setItem("jwtToken", token);
+      localStorage.setItem("userId", userId);
       setAuthToken(token);
+      console.log("Token:", token);
+      console.log("User ID:", userId); // Imprimir el userId para verificar
     }
 
     return response.data;
@@ -50,7 +54,12 @@ export const login = async (userData) => {
 // Obtener usuario por ID (requiere token en el encabezado)
 export const getUserById = async (id) => {
   try {
-    const response = await axios.get(`${API_URL}/users/${id}`);
+    const token = localStorage.getItem("jwtToken");
+    const response = await axios.get(`${API_URL}/users/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
     return response.data;
   } catch (error) {
     throw new Error(error.response.data.message || "Error fetching user.");

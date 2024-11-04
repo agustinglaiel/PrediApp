@@ -1,40 +1,56 @@
 import React, { useState } from "react";
 import DriverSelect from "../components/driverSelect"; // Asegúrate de la ruta correcta
 import "../styles/RaceWeekendPage.css";
+import { createProdeSession } from "../api/prodes"; // Asegúrate de importar la función correcta
 
-const SessionPredictionForm = ({ sessionType, onSubmit }) => {
+const SessionPredictionForm = () => {
+  const sessionId = 3; // Valor definido para sessionId
   const [formData, setFormData] = useState({
-    p1: "",
-    p2: "",
-    p3: "",
+    p1: null,
+    p2: null,
+    p3: null,
   });
 
   const handleDriverSelect = (position, driverId) => {
-    setFormData({
-      ...formData,
+    setFormData((prevData) => ({
+      ...prevData,
       [position]: driverId,
-    });
+    }));
   };
 
-  const handleSubmit = (e) => {
+  const isFormComplete = () => {
+    return formData.p1 && formData.p2 && formData.p3;
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (isFormComplete()) {
-      onSubmit(formData);
+      try {
+        // Crear el payload con los datos de la predicción y el sessionId
+        const prodeData = {
+          ...formData,
+          session_id: sessionId,
+        };
+
+        // Llamar a la función para crear el prode de sesión
+        const response = await createProdeSession(prodeData);
+        alert("Prediction submitted successfully!");
+        console.log(response); // Puedes manejar la respuesta como desees
+      } catch (error) {
+        console.error("Error submitting prediction:", error);
+        alert(
+          error.response?.data?.message ||
+            "An error occurred while submitting your prediction."
+        );
+      }
     } else {
       alert("Please fill out all fields before submitting.");
     }
   };
 
-  // Validación para verificar si todos los campos están completos
-  const isFormComplete = () => {
-    return formData.p1 && formData.p2 && formData.p3;
-  };
-
   return (
-    <form className="race-prediction-form" onSubmit={handleSubmit}>
-      <h3>
-        {sessionType} Prediction for Session {sessionType}
-      </h3>
+    <form onSubmit={handleSubmit}>
+      <h3>Submit Your Prediction</h3>
       <div className="driver-select">
         <label>P1</label>
         <DriverSelect

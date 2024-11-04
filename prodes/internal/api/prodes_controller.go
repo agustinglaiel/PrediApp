@@ -1,6 +1,7 @@
 package api
 
 import (
+	"log"
 	"net/http"
 	dto "prodes/internal/dto"
 	prodes "prodes/internal/service"
@@ -37,11 +38,15 @@ func (c *ProdeController) CreateProdeCarrera(ctx *gin.Context) {
 }
 
 func (c *ProdeController) CreateProdeSession(ctx *gin.Context) {
+    log.Printf("Creando pronóstico de sesión")
 	var request dto.CreateProdeSessionDTO
 	if err := ctx.ShouldBindJSON(&request); err != nil {
+        log.Printf("Error en el bind del JSON: %v", err)
 		ctx.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Invalid JSON data"))
 		return
 	}
+
+    log.Printf("Data recibida: %+v", request)
 
 	response, err := c.prodeService.CreateProdeSession(ctx.Request.Context(), request)
 	if err != nil {

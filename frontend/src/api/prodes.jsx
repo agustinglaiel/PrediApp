@@ -17,11 +17,38 @@ export const createProdeCarrera = async (prodeData) => {
 // Crear un prode de sesión
 export const createProdeSession = async (prodeData) => {
   try {
-    const response = await axios.post(`${API_URL}/prodes/session`, prodeData);
+    const userId = localStorage.getItem("userId");
+    if (!userId) {
+      throw new Error("User ID not found.");
+    }
+
+    // Convertir los valores de p1, p2, y p3 a números
+    const prodeDataWithUserId = {
+      ...prodeData,
+      user_id: parseInt(userId, 10),
+      p1: parseInt(prodeData.p1, 10),
+      p2: parseInt(prodeData.p2, 10),
+      p3: parseInt(prodeData.p3, 10),
+    };
+
+    // Imprimir los datos antes de enviarlos
+    console.log("Datos enviados:", prodeDataWithUserId);
+
+    const response = await axios.post(
+      `${API_URL}/prodes/session`,
+      prodeDataWithUserId,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
     return response.data;
   } catch (error) {
+    console.error("Error creating session prediction:", error);
+    console.error("Error details:", error.response || error.message || error);
     throw new Error(
-      error.response.data.message || "Error creating session prediction."
+      error.response?.data?.message || "Error creating session prediction."
     );
   }
 };
