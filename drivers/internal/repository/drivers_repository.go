@@ -4,6 +4,7 @@ import (
 	"context"
 	model "drivers/internal/model"
 	e "drivers/pkg/utils"
+	"fmt"
 
 	"gorm.io/gorm"
 )
@@ -84,14 +85,16 @@ func (r *driverRepository) GetDriverByName(ctx context.Context, firstName string
 
 func (r *driverRepository) GetDriverByNumber(ctx context.Context, driverNumber int) (*model.Driver, e.ApiError) {
 	var driver model.Driver
-	if err := r.db.WithContext(ctx).Where("driver_number = ?", driverNumber).First(&driver).Error; err != nil {
+	err := r.db.WithContext(ctx).Where("driver_number = ?", driverNumber).First(&driver).Error
+	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, nil // No encontrado, no es un error
+			return nil, e.NewNotFoundApiError(fmt.Sprintf("Piloto con número %d no encontrado", driverNumber))
 		}
 		return nil, e.NewInternalServerApiError("Error encontrando piloto por número", err)
 	}
 	return &driver, nil
 }
+
 
 func (r *driverRepository) GetDriversByTeam(ctx context.Context, teamName string) ([]*model.Driver, e.ApiError) {
 	var model []*model.Driver

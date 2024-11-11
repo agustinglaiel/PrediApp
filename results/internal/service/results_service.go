@@ -96,6 +96,7 @@ func (s *resultService) FetchResultsFromExternalAPI(ctx context.Context, session
         }
 
         // Llamar al microservicio de drivers para obtener la información completa del piloto
+        fmt.Printf("Verificando pos.DriverNumber: %d\n", pos.DriverNumber)
         driverInfo, err := s.client.GetDriverByNumber(pos.DriverNumber)
         if err != nil {
             fmt.Printf("Error obteniendo piloto para el driver_number %d: %v\n", pos.DriverNumber, err)

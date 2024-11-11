@@ -40,7 +40,7 @@ type ResponseSessionDTO struct {
 
 // DTO para los detalles del piloto asociados al resultado
 type ResponseDriverDTO struct {
-    ID             int   `json:"driver_id"`
+    ID             int    `json:"id"`
     BroadcastName  string `json:"broadcast_name"`
     CountryCode    string `json:"country_code"`
     DriverNumber   int    `json:"driver_number"`

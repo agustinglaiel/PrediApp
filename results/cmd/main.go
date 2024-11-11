@@ -33,7 +33,7 @@ func main() {
 	utils.StartDbEngine()
 
 	// Crear el cliente HTTP para interactuar con la API externa
-	externalAPIClient := client.NewHttpClient("https://api.openf1.org/v1/")
+	externalAPIClient := client.NewHttpClient("")
 
 	// Inicializar repositorio y servicio
 	resultRepo := repository.NewResultRepository(db)
