@@ -49,7 +49,12 @@ func DisconnectDB() {
 
 // StartDbEngine migrates the database tables
 func StartDbEngine() {
-    DB.AutoMigrate(&model.ProdeCarrera{})
-    DB.AutoMigrate(&model.ProdeSession{})
+    DB.AutoMigrate(
+        &model.User{},         // Migrar la tabla User
+        &model.Session{},      // Migrar la tabla Session
+        &model.ProdeCarrera{}, // Migrar la tabla ProdeCarrera con relaciones
+        &model.ProdeSession{}, // Migrar la tabla ProdeSession con relaciones
+    )
+
     fmt.Println("Finishing Migration Database Tables")
 }
