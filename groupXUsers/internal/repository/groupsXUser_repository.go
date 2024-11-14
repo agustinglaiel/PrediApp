@@ -19,6 +19,7 @@ type GroupXUserRepository interface {
 	GetGroupXUsers(ctx context.Context) ([]*model.GroupXUser, e.ApiError)
 	RemoveUserFromGroup(ctx context.Context, userId int, groupId int) e.ApiError
 	RemoveUserFromGroupByGroupName(ctx context.Context, userId int, groupName string) e.ApiError
+	GetGroupXUserByGroupIDAndUserID(ctx context.Context, groupId int, userId int) (*model.GroupXUser, e.ApiError)
 }
 
 func NewGroupXUserRepository(db *gorm.DB) GroupXUserRepository {
@@ -86,4 +87,17 @@ func (r *groupXUserRepository) RemoveUserFromGroupByGroupName(ctx context.Contex
 		return e.NewInternalServerApiError("error removing user from group by name", err)
 	}
 	return nil
+}
+
+func (r *groupXUserRepository) GetGroupXUserByGroupIDAndUserID(ctx context.Context, groupId int, userId int) (*model.GroupXUser, e.ApiError) {
+	var groupXUser model.GroupXUser
+	if err := r.db.WithContext(ctx).
+		Where("group_id = ? AND user_id = ?", groupId, userId).
+		First(&groupXUser).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, e.NewNotFoundApiError("groupXUser not found")
+		}
+		return nil, e.NewInternalServerApiError("error finding groupXUser by group ID and user ID", err)
+	}
+	return &groupXUser, nil
 }

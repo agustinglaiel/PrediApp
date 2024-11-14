@@ -16,7 +16,7 @@ type GroupXUserResponseWithUserAndGroupDTO struct {
 	UserId  int    `json:"user_id"`
 	User    User   `json:"user"`
 	GroupId int    `json:"group_id"`
-	Group   Group  `json:"group"`
+	Group   GroupDTO  `json:"group"`
 }
 
 type User struct {
@@ -26,7 +26,7 @@ type User struct {
 	Username  string `json:"username"`
 }
 
-type Group struct {
+type GroupDTO struct {
 	ID          int    `json:"id"`
 	GroupName   string `json:"group_name"`
 }
