@@ -41,7 +41,7 @@ type UserSignUpResponseDTO struct {
     Username    string `json:"username"`
     Email       string `json:"email"`
     Role        string `json:"role"`
-    Token       string `json:"token"` // JWT token
+    // Token       string `json:"token"` // JWT token
     CreatedAt   string `json:"created_at"`
 }
 
@@ -60,6 +60,7 @@ type UserLoginResponseDTO struct {
     Email     string `json:"email"`
     Role      string `json:"role"`
     Token     string `json:"token"` // JWT token
+    RefreshToken string `json:"refresh_token"`
 }
 
 // UserResponseDTO representa la respuesta general de un usuario

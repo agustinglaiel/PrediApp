@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:8057";
+const API_URL = "http://localhost:8080";
 
 // Función para establecer el token JWT en el encabezado de autorización
 const setAuthToken = (token) => {
@@ -8,6 +8,15 @@ const setAuthToken = (token) => {
     axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
   } else {
     delete axios.defaults.headers.common["Authorization"];
+  }
+};
+
+// Función para establecer el RefreshToken en el encabezado de autorización
+const setRefreshToken = (refreshToken) => {
+  if (refreshToken) {
+    axios.defaults.headers.common["Refresh-Token"] = refreshToken;
+  } else {
+    delete axios.defaults.headers.common["Refresh-Token"];
   }
 };
 
@@ -39,9 +48,14 @@ export const login = async (userData) => {
     // Almacenar el token y establecerlo en las solicitudes
     if (token) {
       localStorage.setItem("jwtToken", token);
+      localStorage.setItem("refresToken", refreshToken);
       localStorage.setItem("userId", userId);
+
       setAuthToken(token);
+      setRefreshToken(refreshToken);
+
       console.log("Token:", token);
+      console.log("Refresh Token:", refreshToken);
       console.log("User ID:", userId); // Imprimir el userId para verificar
     }
 
@@ -99,4 +113,15 @@ export const getUsers = async () => {
 const token = localStorage.getItem("jwtToken");
 if (token) {
   setAuthToken(token);
+  console.log("JWT Token establecido desde almacenamiento local");
+} else {
+  console.warn("No se encontró un JWT Token almacenado");
+}
+
+const refreshToken = localStorage.getItem("refreshToken");
+if (refreshToken) {
+  setRefreshToken(refreshToken);
+  console.log("Refresh Token establecido desde almacenamiento local");
+} else {
+  console.warn("No se encontró un Refresh Token almacenado");
 }

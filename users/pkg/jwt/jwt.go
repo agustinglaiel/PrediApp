@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"log"
 	"net/http"
 	"os"
@@ -25,7 +27,7 @@ func GenerateJWT(userID uint, role string) (string, e.ApiError) {
 		UserID: userID,
 		Role:   role,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(240 * time.Hour)), // Expiración de 12 horas
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(240 * time.Hour)),
 		},
 	}
 
@@ -39,6 +41,16 @@ func GenerateJWT(userID uint, role string) (string, e.ApiError) {
 	log.Printf("Generated JWT token for user ID %d with role %s", userID, role)
 	return tokenString, nil
 }
+
+func GenerateRefreshToken() (string, e.ApiError) {
+    refreshToken := make([]byte, 32)
+    _, err := rand.Read(refreshToken)
+    if err != nil {
+        return "", e.NewInternalServerApiError("Error generating refresh token", err)
+    }
+    return base64.URLEncoding.EncodeToString(refreshToken), nil
+}
+
 
 func ValidateJWT(tokenString string) (*JWTClaims, e.ApiError) {
 	log.Printf("Validating JWT token: %s", tokenString)

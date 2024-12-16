@@ -71,10 +71,10 @@ func (s *userService) SignUp(ctx context.Context, request dto.UserSignUpRequestD
 	}
 
     // Genarar el token JWT para el usuario regittado
-    token, err := jwt.GenerateJWT(newUser.ID, newUser.Role)
-    if err != nil {
-        return dto.UserSignUpResponseDTO{}, e.NewInternalServerApiError("error generating token", err)
-    }
+    // token, err := jwt.GenerateJWT(newUser.ID, newUser.Role)
+    // if err != nil {
+    //     return dto.UserSignUpResponseDTO{}, e.NewInternalServerApiError("error generating token", err)
+    // }
 
 	response := dto.UserSignUpResponseDTO{
 		ID:        newUser.ID,
@@ -83,7 +83,7 @@ func (s *userService) SignUp(ctx context.Context, request dto.UserSignUpRequestD
 		Username:  newUser.Username,
 		Email:     newUser.Email,
 		Role:      newUser.Role,
-        Token:     token,
+        // Token:     token,
 		CreatedAt: newUser.CreatedAt.Format(time.RFC3339),
 	}
 
@@ -106,6 +106,12 @@ func (s *userService) Login(ctx context.Context, request dto.UserLoginRequestDTO
 		return dto.UserLoginResponseDTO{}, e.NewInternalServerApiError("error generating token", err)
 	}
 
+    // Generar el Refresh Token
+    refreshToken, err := jwt.GenerateRefreshToken()
+    if err != nil {
+        return dto.UserLoginResponseDTO{}, e.NewInternalServerApiError("error generating refresh token", err)
+    }
+
 	response := dto.UserLoginResponseDTO{
 		ID:        user.ID,
 		FirstName: user.FirstName,
@@ -114,6 +120,7 @@ func (s *userService) Login(ctx context.Context, request dto.UserLoginRequestDTO
 		Email:     user.Email,
 		Role:      user.Role,
 		Token:     token,
+        RefreshToken: refreshToken,
 	}
 
 	return response, nil
