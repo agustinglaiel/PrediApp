@@ -17,23 +17,23 @@ func MapUrls(engine *gin.Engine, userController *api.UserController) {
         AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
         ExposeHeaders:    []string{"Content-Length"},
         AllowCredentials: true,
-    }))
+    })) 
 
     // Rutas abiertas (sin autenticación)
-    engine.POST("users/signup", userController.SignUp)
-    engine.POST("users/login", userController.Login)
+    engine.POST("/signup", userController.SignUp)
+    engine.POST("/login", userController.Login)
 
     // Grupo de rutas protegidas con JWT
     protected := engine.Group("/")
     protected.Use(jwt.JWTAuthMiddleware()) // Aplicar el middleware JWT a las rutas protegidas
     {
-        protected.GET("/users/:id", userController.GetUserByID)
-        protected.GET("/users/username/:username", userController.GetUserByUsername)
-        protected.GET("/users", userController.GetUsers)
-        protected.PUT("/users/:id", userController.UpdateUserByID)
-        protected.PUT("/users/username/:username", userController.UpdateUserByUsername)
-        protected.DELETE("/users/:id", userController.DeleteUserByID)
-        protected.DELETE("/users/username/:username", userController.DeleteUserByUsername)
+        protected.GET("/:id", userController.GetUserByID)
+        protected.GET("/username/:username", userController.GetUserByUsername)
+        protected.GET("", userController.GetUsers)
+        protected.PUT("/:id", userController.UpdateUserByID)
+        protected.PUT("/username/:username", userController.UpdateUserByUsername)
+        protected.DELETE("/:id", userController.DeleteUserByID)
+        protected.DELETE("/username/:username", userController.DeleteUserByUsername)
     }
 	
     fmt.Println("Finishing mappings configurations")

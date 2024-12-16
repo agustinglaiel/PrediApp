@@ -49,6 +49,10 @@ func (s *userService) SignUp(ctx context.Context, request dto.UserSignUpRequestD
 		return dto.UserSignUpResponseDTO{}, e.NewInternalServerApiError("error hashing password", err)
 	}
 
+    if request.Role == "" {
+        request.Role = "user"
+    }
+
 	newUser := &model.User{
 		FirstName:       request.FirstName,
 		LastName:        request.LastName,

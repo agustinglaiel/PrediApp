@@ -1,26 +1,26 @@
 package dto
 
-// GoogleOAuthRequestDTO representa la solicitud de OAuth de Google
-type GoogleOAuthRequestDTO struct {
-    GoogleToken string `json:"google_token" binding:"required"`
-}
+// // GoogleOAuthRequestDTO representa la solicitud de OAuth de Google
+// type GoogleOAuthRequestDTO struct {
+//     GoogleToken string `json:"google_token" binding:"required"`
+// }
 
-// GoogleOAuthResponseDTO representa la respuesta de un registro/inicio de sesión exitoso utilizando Google OAuth
-type GoogleOAuthResponseDTO struct {
-    ID            uint   `json:"id"`
-    FirstName     string `json:"first_name"`
-    LastName      string `json:"last_name"`
-    Username      string `json:"username"`
-    Email         string `json:"email"`
-    Role          string `json:"role"`
-    Token         string `json:"token"` // JWT token
-    Provider      string `json:"provider"`
-    ProviderID    string `json:"provider_id"`
-    AvatarURL     string `json:"avatar_url,omitempty"`
-    AccessToken   string `json:"access_token,omitempty"`
-    RefreshToken  string `json:"refresh_token,omitempty"`
-    ExpiresAt     string `json:"expires_at,omitempty"`
-}
+// // GoogleOAuthResponseDTO representa la respuesta de un registro/inicio de sesión exitoso utilizando Google OAuth
+// type GoogleOAuthResponseDTO struct {
+//     ID            uint   `json:"id"`
+//     FirstName     string `json:"first_name"`
+//     LastName      string `json:"last_name"`
+//     Username      string `json:"username"`
+//     Email         string `json:"email"`
+//     Role          string `json:"role"`
+//     Token         string `json:"token"` // JWT token
+//     Provider      string `json:"provider"`
+//     ProviderID    string `json:"provider_id"`
+//     AvatarURL     string `json:"avatar_url,omitempty"`
+//     AccessToken   string `json:"access_token,omitempty"`
+//     RefreshToken  string `json:"refresh_token,omitempty"`
+//     ExpiresAt     string `json:"expires_at,omitempty"`
+// }
 
 // UserSignUpRequestDTO representa la solicitud de registro de un usuario con email y contraseña
 type UserSignUpRequestDTO struct {
@@ -29,7 +29,7 @@ type UserSignUpRequestDTO struct {
     Username    string `json:"username" binding:"required"`
     Email       string `json:"email" binding:"required,email"`
     Password    string `json:"password" binding:"required"`
-    Role        string `json:"role" binding:"required"`
+    Role        string `json:"role"`
     PhoneNumber string `json:"phone_number,omitempty"`
 }
 

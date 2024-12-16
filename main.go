@@ -53,6 +53,7 @@ func main() {
 		"./results/cmd":   "8055",
 		"./sessions/cmd":  "8056",
 		"./users/cmd":     "8057",
+		"./gateway":       "8080", // Añadimos el nuevo servicio de gateway
 	}
 
 	// Ejecutar cada main.go en paralelo
