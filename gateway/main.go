@@ -1,76 +1,59 @@
 package main
 
 import (
-	"bytes"
-	"io/ioutil"
+	"fmt"
+	"gateway/handlers"
+	"gateway/middleware"
+	"gateway/proxy"
 	"log"
-	"net/http"
-	"net/http/httputil"
-	"net/url"
 	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
+// El punto de entrada principal del gateway, donde se configura el enrutador, los middlewares y el proxy inverso.
+
 func main() {
-    port := os.Getenv("PORT")
-    if port == "" {
-        port = "8080"
+    // cargar variables de entorno y obtener puerto y secret key 
+    err := godotenv.Load()
+    if err != nil{
+        log.Fatalf("Error loading .env file: %v", err)
     }
 
+    // Obtener el puerto de la variable de entorno PORT
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080" // Valor por defecto
+	}
+
+    // Obtener la Secret Key de la variable de entorno
+    secretKey := os.Getenv("JWT_SECRET")
+    if secretKey == "" {
+        log.Fatal("JWT_SECRET is not set in the environment")
+    }
+    // crear instancia del router gin
     router := gin.Default()
 
-    // Mantenemos un prefijo a nivel de gateway para cada servicio, de este modo:
-    // - http://localhost:8080/users/xxx -> http://localhost:8057/xxx (servicio users)
-    // - http://localhost:8080/drivers/xxx -> http://localhost:8051/xxx (servicio drivers)
-    // y así con los demás servicios
-    router.Any("/drivers/*proxyPath", reverseProxy("http://localhost:8051"))
-    router.Any("/prodes/*proxyPath", reverseProxy("http://localhost:8054"))
-    router.Any("/results/*proxyPath", reverseProxy("http://localhost:8055"))
-    router.Any("/sessions/*proxyPath", reverseProxy("http://localhost:8056"))
-    router.Any("/users/*proxyPath", reverseProxy("http://localhost:8057"))
+    // configurar middlewares CORS
+    router.Use(middleware.CorsMiddleware())
 
-    log.Printf("Gateway escuchando en el puerto %s", port)
-    router.Run(":" + port)
-}
+    // configurar ruta para el login
+    router.POST("/api/login", handlers.LoginHandler)
 
-func reverseProxy(target string) gin.HandlerFunc {
-    return func(c *gin.Context) {
-        targetURL, _ := url.Parse(target)
-        proxy := httputil.NewSingleHostReverseProxy(targetURL)
+    // Configurar proxy inverso para las demas rutas
+    router.Any("/api/*proxyPath", proxy.ReverseProxy())
 
-        proxy.Director = func(req *http.Request) {
-            req.URL.Scheme = targetURL.Scheme
-            req.URL.Host = targetURL.Host
-
-            // Aquí originalPath representa el path capturado luego del prefijo /users/ (por ejemplo /signup)
-            originalPath := c.Param("proxyPath") 
-            
-            // Asignamos el path tal cual al request hacia el microservicio
-            req.URL.Path = originalPath
-
-            // Restaurar el body si existe
-            if req.Body != nil {
-                body, _ := ioutil.ReadAll(req.Body)
-                req.Body = ioutil.NopCloser(bytes.NewBuffer(body))
-                req.ContentLength = int64(len(body))
-            }
-
-            req.Host = targetURL.Host
-            log.Printf("Proxying request to: %s %s", req.Method, req.URL.String())
-        }
-
-        proxy.ModifyResponse = func(res *http.Response) error {
-            body, err := ioutil.ReadAll(res.Body)
-            if err != nil {
-                return err
-            }
-            log.Printf("Received response from microservice: %d", res.StatusCode)
-            log.Printf("Response body: %s", string(body))
-            res.Body = ioutil.NopCloser(bytes.NewBuffer(body))
-            return nil
-        }
-
-        proxy.ServeHTTP(c.Writer, c.Request)
+    // Grupo de rutas que requieren autenticación
+    protected := router.Group("/api")
+    protected.Use(middleware.JwtAuthentication("")) // Aplicar el middleware JWT a las rutas protegidas
+    {
+        // Aquí van las rutas protegidas
     }
+
+    // Iniciar el servidor HTTP
+	fmt.Printf("Gateway listening on port %s...\n", port)
+	if err := router.Run(":" + port); err != nil {
+		log.Fatalf("Failed to run server on port %s: %v", port, err)
+	}
 }
