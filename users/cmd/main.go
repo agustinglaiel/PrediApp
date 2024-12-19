@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"users/internal/api"
 	"users/internal/repository"
@@ -45,7 +44,7 @@ func main() {
 	router.MapUrls(ginRouter, userController)
 
 	// Iniciar servidor usando el puerto obtenido de la variable de entorno
-	if err := ginRouter.Run(":" + port); err != nil {
-		log.Fatalf("Failed to run server on port %s: %v", port, err)
-	}
+	// if err := ginRouter.Run(":" + port); err != nil {
+	// 	log.Fatalf("Failed to run server on port %s: %v", port, err)
+	// }
 }

@@ -35,7 +35,7 @@ func main() {
 
 	router.MapUrls(ginRouter, groupController)
 
-	if err := ginRouter.Run(":" + port); err != nil {
-		fmt.Printf("Failed to run server on port %s: %v", port, err)
-	}
+	// if err := ginRouter.Run(":" + port); err != nil {
+	// 	fmt.Printf("Failed to run server on port %s: %v", port, err)
+	// }
 }

@@ -6,7 +6,6 @@ import (
 	"users/internal/dto"
 	"users/internal/model"
 	"users/internal/repository"
-	jwt "users/pkg/jwt"
 	e "users/pkg/utils"
 
 	"golang.org/x/crypto/bcrypt"
@@ -100,18 +99,6 @@ func (s *userService) Login(ctx context.Context, request dto.UserLoginRequestDTO
 		return dto.UserLoginResponseDTO{}, e.NewBadRequestApiError("invalid credentials")
 	}
 
-	// Generar el token JWT utilizando el user.ID
-	token, err := jwt.GenerateJWT(user.ID, user.Role)
-	if err != nil {
-		return dto.UserLoginResponseDTO{}, e.NewInternalServerApiError("error generating token", err)
-	}
-
-    // Generar el Refresh Token
-    refreshToken, err := jwt.GenerateRefreshToken()
-    if err != nil {
-        return dto.UserLoginResponseDTO{}, e.NewInternalServerApiError("error generating refresh token", err)
-    }
-
 	response := dto.UserLoginResponseDTO{
 		ID:        user.ID,
 		FirstName: user.FirstName,
@@ -119,8 +106,6 @@ func (s *userService) Login(ctx context.Context, request dto.UserLoginRequestDTO
 		Username:  user.Username,
 		Email:     user.Email,
 		Role:      user.Role,
-		Token:     token,
-        RefreshToken: refreshToken,
 	}
 
 	return response, nil

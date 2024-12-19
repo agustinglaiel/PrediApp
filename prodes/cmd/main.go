@@ -62,7 +62,7 @@ func main() {
 	router.MapUrls(ginRouter, prodeController)
 
 	// Iniciar el servidor usando el puerto obtenido de la variable de entorno
-	if err := ginRouter.Run(":" + port); err != nil {
-		log.Fatalf("Failed to run server on port %s: %v", port, err)
-	}
+	// if err := ginRouter.Run(":" + port); err != nil {
+	// 	log.Fatalf("Failed to run server on port %s: %v", port, err)
+	// }
 }
