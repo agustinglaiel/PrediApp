@@ -24,17 +24,17 @@ func main() {
     }
     envPath := filepath.Join(filepath.Dir(currentDir), ".env")
 
-    // cargar variables de entorno y obtener puerto y secret key 
+    // cargar variables de entorno y obtener puerto y secret key
     err = godotenv.Load(envPath)
-    if err != nil{
+    if err != nil {
         log.Fatalf("Error loading .env file: %v", err)
     }
 
     // Obtener el puerto de la variable de entorno PORT
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080" // Valor por defecto
-	}
+    port := os.Getenv("PORT")
+    if port == "" {
+        port = "8080" // Valor por defecto
+    }
 
     // Obtener la Secret Key de la variable de entorno
     secretKey := os.Getenv("JWT_SECRET")
@@ -47,23 +47,23 @@ func main() {
     // configurar middlewares CORS
     router.Use(middleware.CorsMiddleware())
 
-	// Configurar ruta para el login
-	router.POST("/api/users/login", handlers.LoginHandler)
+    // Configurar ruta para el login (Fuera del grupo /api)
+    router.POST("/api/users/login", handlers.LoginHandler)
 
     // Grupo de rutas que requieren autenticación
     protected := router.Group("/api")
-    protected.Use(middleware.JwtAuthentication("")) // Aplicar el middleware JWT a las rutas protegidas
+    protected.Use(middleware.JwtAuthentication(""))
     {
-         // Aquí van las rutas protegidas
-         router.POST("/users/signup", proxy.ReverseProxy())
+        router.Any("/users/*proxyPath", proxy.ReverseProxy())
+        router.Any("/drivers/*proxyPath", proxy.ReverseProxy())
+        router.Any("/prodes/*proxyPath", proxy.ReverseProxy())
+        router.Any("/results/*proxyPath", proxy.ReverseProxy())
+        router.Any("/sessions/*proxyPath", proxy.ReverseProxy())
     }
-    
-    // Configurar proxy inverso para las demas rutas
-    router.Any("/api/*proxyPath", proxy.ReverseProxy())
 
     // Iniciar el servidor HTTP
-	fmt.Printf("Gateway listening on port %s...\n", port)
-	if err := router.Run(":" + port); err != nil {
-		log.Fatalf("Failed to run server on port %s: %v", port, err)
-	}
+    fmt.Printf("Gateway listening on port %s...\n", port)
+    if err := router.Run(":" + port); err != nil {
+        log.Fatalf("Failed to run server on port %s: %v", port, err)
+    }
 }
