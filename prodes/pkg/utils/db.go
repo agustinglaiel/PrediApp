@@ -54,6 +54,7 @@ func StartDbEngine() {
         &model.Session{},      // Migrar la tabla Session
         &model.ProdeCarrera{}, // Migrar la tabla ProdeCarrera con relaciones
         &model.ProdeSession{}, // Migrar la tabla ProdeSession con relaciones
+        &model.Driver{},       // Migrar la tabla Driver
     )
 
     fmt.Println("Finishing Migration Database Tables")
