@@ -10,7 +10,7 @@ var (
     DBPassword = getEnv("DB_PASSWORD", "1A2g3u4s.")
     DBHost     = getEnv("DB_HOST", "localhost")
     DBPort     = getEnv("DB_PORT", "3306")
-    DBName     = getEnv("DB_NAME", "prediApp")
+    DBName     = getEnv("DB_NAME", "prediapp")
 
     DBConnectionURL = fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
         DBUser, DBPassword, DBHost, DBPort, DBName)

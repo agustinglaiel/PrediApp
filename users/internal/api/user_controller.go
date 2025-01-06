@@ -81,14 +81,14 @@ func (ctrl *UserController) Login(c *gin.Context) {
 // GetUserByID handles fetching a user by their ID
 func (ctrl *UserController) GetUserByID(c *gin.Context) {
     id := c.Param("id")
-    uintID, err := strconv.ParseUint(id, 10, 32)
+    intID, err := strconv.Atoi(id) // Cambiado a Atoi para int
     if err != nil {
         apiErr := e.NewBadRequestApiError("invalid user ID")
         c.JSON(apiErr.Status(), apiErr)
         return
     }
 
-    user, apiErr := ctrl.userService.GetUserById(c.Request.Context(), uint(uintID))
+    user, apiErr := ctrl.userService.GetUserById(c.Request.Context(), intID) // Cambiado a int
     if apiErr != nil {
         c.JSON(apiErr.Status(), apiErr)
         return
@@ -120,7 +120,7 @@ func (ctrl *UserController) GetUsers(c *gin.Context) {
 // UpdateUserByID handles updating a user by their ID
 func (ctrl *UserController) UpdateUserByID(c *gin.Context) {
     id := c.Param("id")
-    uintID, err := strconv.ParseUint(id, 10, 32)
+    intID, err := strconv.Atoi(id) // Cambiado a Atoi para int
     if err != nil {
         apiErr := e.NewBadRequestApiError("invalid user ID")
         c.JSON(apiErr.Status(), apiErr)
@@ -134,7 +134,7 @@ func (ctrl *UserController) UpdateUserByID(c *gin.Context) {
         return
     }
 
-    user, apiErr := ctrl.userService.UpdateUserById(c.Request.Context(), uint(uintID), request)
+    user, apiErr := ctrl.userService.UpdateUserById(c.Request.Context(), intID, request) 
     if apiErr != nil {
         c.JSON(apiErr.Status(), apiErr)
         return
@@ -165,14 +165,14 @@ func (ctrl *UserController) UpdateUserByUsername(c *gin.Context) {
 // DeleteUserByID handles deleting a user by their ID
 func (ctrl *UserController) DeleteUserByID(c *gin.Context) {
     id := c.Param("id")
-    uintID, err := strconv.ParseUint(id, 10, 32)
+    intID, err := strconv.Atoi(id) // Cambiado a Atoi para int
     if err != nil {
         apiErr := e.NewBadRequestApiError("invalid user ID")
         c.JSON(apiErr.Status(), apiErr)
         return
     }
 
-    apiErr := ctrl.userService.DeleteUserById(c.Request.Context(), uint(uintID))
+    apiErr := ctrl.userService.DeleteUserById(c.Request.Context(), intID) // Cambiado a int
     if apiErr != nil {
         c.JSON(apiErr.Status(), apiErr)
         return

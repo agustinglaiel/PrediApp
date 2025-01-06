@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"prodes/internal/api"
 	client "prodes/internal/client"
@@ -44,19 +43,19 @@ func main() {
 	// Configurar el router
 	ginRouter := gin.Default()
 
-	// Configurar RabbitMQ y comenzar a consumir mensajes
-	conn, ch, err := utils.SetupRabbitMQ()
-	if err != nil {
-		log.Fatalf("Error configurando RabbitMQ: %v", err)
-	}
-	defer utils.CloseRabbitMQ(conn, ch)
+	// // Configurar RabbitMQ y comenzar a consumir mensajes
+	// conn, ch, err := utils.SetupRabbitMQ()
+	// if err != nil {
+	// 	log.Fatalf("Error configurando RabbitMQ: %v", err)
+	// }
+	// defer utils.CloseRabbitMQ(conn, ch)
 
-	// Iniciar la escucha de mensajes en segundo plano
-	msgs, err := utils.ConsumeMessages(ch)
-	if err != nil {
-		log.Fatalf("Error al consumir mensajes de RabbitMQ: %v", err)
-	}
-	go utils.HandleMessage(msgs)
+	// // Iniciar la escucha de mensajes en segundo plano
+	// msgs, err := utils.ConsumeMessages(ch)
+	// if err != nil {
+	// 	log.Fatalf("Error al consumir mensajes de RabbitMQ: %v", err)
+	// }
+	// go utils.HandleMessage(msgs)
 
 	// Llamar a MapUrls para configurar las rutas
 	router.MapUrls(ginRouter, prodeController)

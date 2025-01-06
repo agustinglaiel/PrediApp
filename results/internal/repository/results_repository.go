@@ -15,9 +15,9 @@ type resultRepository struct {
 
 type ResultRepository interface {
 	CreateResult(ctx context.Context, result *model.Result) e.ApiError
-	GetResultByID(ctx context.Context, resultID uint64) (*model.Result, e.ApiError)
+	GetResultByID(ctx context.Context, resultID int) (*model.Result, e.ApiError)
 	UpdateResult(ctx context.Context, result *model.Result) e.ApiError
-	DeleteResult(ctx context.Context, resultID uint64) e.ApiError
+	DeleteResult(ctx context.Context, resultID int) e.ApiError
 	GetResultsBySessionID(ctx context.Context, sessionID int) ([]*model.Result, e.ApiError)
 	GetResultsByDriverID(ctx context.Context, driverID int) ([]*model.Result, e.ApiError)
 	GetAllResults(ctx context.Context) ([]*model.Result, e.ApiError)
@@ -40,7 +40,7 @@ func (r *resultRepository) CreateResult(ctx context.Context, result *model.Resul
 }
 
 // GetResultByID obtiene un resultado específico por su ID
-func (r *resultRepository) GetResultByID(ctx context.Context, resultID uint64) (*model.Result, e.ApiError) {
+func (r *resultRepository) GetResultByID(ctx context.Context, resultID int) (*model.Result, e.ApiError) {
 	var result model.Result
 	if err := r.db.WithContext(ctx).Preload("Driver").Preload("Session").First(&result, resultID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -60,7 +60,7 @@ func (r *resultRepository) UpdateResult(ctx context.Context, result *model.Resul
 }
 
 // DeleteResult elimina un resultado de la base de datos por su ID
-func (r *resultRepository) DeleteResult(ctx context.Context, resultID uint64) e.ApiError {
+func (r *resultRepository) DeleteResult(ctx context.Context, resultID int) e.ApiError {
 	if err := r.db.WithContext(ctx).Delete(&model.Result{}, resultID).Error; err != nil {
 		return e.NewInternalServerApiError("Error deleting result", err)
 	}

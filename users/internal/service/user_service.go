@@ -19,12 +19,12 @@ type UserServiceInterface interface {
     SignUp(ctx context.Context, request dto.UserSignUpRequestDTO) (dto.UserSignUpResponseDTO, e.ApiError)
     Login(ctx context.Context, request dto.UserLoginRequestDTO) (dto.UserLoginResponseDTO, e.ApiError)
     // OAuthSignIn(ctx context.Context, request dto.GoogleOAuthRequestDTO) (dto.GoogleOAuthResponseDTO, e.ApiError)
-    GetUserById(ctx context.Context, id uint) (dto.UserResponseDTO, e.ApiError)
+    GetUserById(ctx context.Context, id int) (dto.UserResponseDTO, e.ApiError)
     GetUserByUsername(ctx context.Context, username string) (dto.UserResponseDTO, e.ApiError)
     GetUsers(ctx context.Context) ([]dto.UserResponseDTO, e.ApiError)
-    UpdateUserById(ctx context.Context, id uint, request dto.UserUpdateRequestDTO) (dto.UserResponseDTO, e.ApiError)
+    UpdateUserById(ctx context.Context, id int, request dto.UserUpdateRequestDTO) (dto.UserResponseDTO, e.ApiError)
     UpdateUserByUsername(ctx context.Context, username string, request dto.UserUpdateRequestDTO) (dto.UserResponseDTO, e.ApiError)
-    DeleteUserById(ctx context.Context, id uint) e.ApiError
+    DeleteUserById(ctx context.Context, id int) e.ApiError
     DeleteUserByUsername(ctx context.Context, username string) e.ApiError
 }
 
@@ -177,7 +177,7 @@ func (s *userService) Login(ctx context.Context, request dto.UserLoginRequestDTO
 // 	return &user, nil
 // }
 
-func (s *userService) GetUserById(ctx context.Context, id uint) (dto.UserResponseDTO, e.ApiError) {
+func (s *userService) GetUserById(ctx context.Context, id int) (dto.UserResponseDTO, e.ApiError) {
     user, apiErr := s.userRepo.GetUserByID(ctx, id)
     if apiErr != nil {
         return dto.UserResponseDTO{}, apiErr
@@ -243,7 +243,7 @@ func (s *userService) GetUsers(ctx context.Context) ([]dto.UserResponseDTO, e.Ap
     return response, nil
 }
 
-func (s *userService) UpdateUserById(ctx context.Context, id uint, request dto.UserUpdateRequestDTO) (dto.UserResponseDTO, e.ApiError) {
+func (s *userService) UpdateUserById(ctx context.Context, id int, request dto.UserUpdateRequestDTO) (dto.UserResponseDTO, e.ApiError) {
     user, apiErr := s.userRepo.GetUserByID(ctx, id)
     if apiErr != nil {
         return dto.UserResponseDTO{}, apiErr
@@ -305,7 +305,7 @@ func (s *userService) UpdateUserByUsername(ctx context.Context, username string,
     return response, nil
 }
 
-func (s *userService) DeleteUserById(ctx context.Context, id uint) e.ApiError {
+func (s *userService) DeleteUserById(ctx context.Context, id int) e.ApiError {
     // Verificar si el usuario existe
     _ , err := s.userRepo.GetUserByID(ctx, id)
     if err != nil {

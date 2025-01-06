@@ -53,7 +53,7 @@ func (rc *ResultController) FetchResultsFromExternalAPI(c *gin.Context) {
 
 // GetResultByID obtiene un resultado por su ID
 func (rc *ResultController) GetResultByID(c *gin.Context) {
-	resultID, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	resultID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de resultado inválido"))
 		return
@@ -87,7 +87,7 @@ func (rc *ResultController) CreateResult(c *gin.Context) {
 
 // UpdateResult actualiza un resultado existente
 func (rc *ResultController) UpdateResult(c *gin.Context) {
-	resultID, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	resultID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de resultado inválido"))
 		return
@@ -110,7 +110,7 @@ func (rc *ResultController) UpdateResult(c *gin.Context) {
 
 // DeleteResult elimina un resultado por su ID
 func (rc *ResultController) DeleteResult(c *gin.Context) {
-	resultID, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	resultID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de resultado inválido"))
 		return

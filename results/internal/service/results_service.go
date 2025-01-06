@@ -21,12 +21,12 @@ type resultService struct {
 
 type ResultService interface {
 	FetchResultsFromExternalAPI(ctx context.Context, sessionId int) ([]dto.ResponseResultDTO, e.ApiError)
-	UpdateResult(ctx context.Context, resultID uint64, request dto.UpdateResultDTO) (dto.ResponseResultDTO, e.ApiError)
+	UpdateResult(ctx context.Context, resultID int, request dto.UpdateResultDTO) (dto.ResponseResultDTO, e.ApiError)
 	GetResultsOrderedByPosition(ctx context.Context, sessionID int) ([]dto.ResponseResultDTO, e.ApiError)
 	GetFastestLapInSession(ctx context.Context, sessionID int) (dto.ResponseResultDTO, e.ApiError)
 	CreateResult(ctx context.Context, request dto.CreateResultDTO) (dto.ResponseResultDTO, e.ApiError)
-	GetResultByID(ctx context.Context, resultID uint64) (dto.ResponseResultDTO, e.ApiError)
-	DeleteResult(ctx context.Context, resultID uint64) e.ApiError
+	GetResultByID(ctx context.Context, resultID int) (dto.ResponseResultDTO, e.ApiError)
+	DeleteResult(ctx context.Context, resultID int) e.ApiError
 	GetAllResults(ctx context.Context) ([]dto.ResponseResultDTO, e.ApiError)
 	GetResultsForDriverAcrossSessions(ctx context.Context, driverID int) ([]dto.ResponseResultDTO, e.ApiError)
 	GetBestPositionForDriver(ctx context.Context, driverID int) (dto.ResponseResultDTO, e.ApiError)
@@ -136,7 +136,7 @@ func (s *resultService) FetchResultsFromExternalAPI(ctx context.Context, session
 
         // Convertir el modelo a DTO y agregarlo a la respuesta
         responseResult := dto.ResponseResultDTO{
-            ID:             uint64(newResult.ID),
+            ID:             newResult.ID,
             Position:       newResult.Position,
             FastestLapTime: newResult.FastestLapTime,
             Driver: dto.ResponseDriverDTO{
@@ -226,7 +226,7 @@ func (s *resultService) CreateResult(ctx context.Context, request dto.CreateResu
 }
 
 // UpdateResult actualiza un resultado existente
-func (s *resultService) UpdateResult(ctx context.Context, resultID uint64, request dto.UpdateResultDTO) (dto.ResponseResultDTO, e.ApiError) {
+func (s *resultService) UpdateResult(ctx context.Context, resultID int, request dto.UpdateResultDTO) (dto.ResponseResultDTO, e.ApiError) {
 	result, err := s.resultRepo.GetResultByID(ctx, resultID)
 	if err != nil {
 		return dto.ResponseResultDTO{}, e.NewBadRequestApiError("error al obtener el resultado por su ID")
@@ -394,7 +394,7 @@ func (s *resultService) GetFastestLapInSession(ctx context.Context, sessionID in
 }
 
 // GetResultByID obtiene un resultado específico por su ID
-func (s *resultService) GetResultByID(ctx context.Context, resultID uint64) (dto.ResponseResultDTO, e.ApiError) {
+func (s *resultService) GetResultByID(ctx context.Context, resultID int) (dto.ResponseResultDTO, e.ApiError) {
 	// Validar que el resultID no sea 0
 	if resultID == 0 {
 		return dto.ResponseResultDTO{}, e.NewBadRequestApiError("El ID del resultado no puede ser 0")
@@ -441,7 +441,7 @@ func (s *resultService) GetResultByID(ctx context.Context, resultID uint64) (dto
 }
 
 // DeleteResult elimina un resultado específico
-func (s *resultService) DeleteResult(ctx context.Context, resultID uint64) e.ApiError {
+func (s *resultService) DeleteResult(ctx context.Context, resultID int) e.ApiError {
     // Validar que el resultID no sea 0
     if resultID == 0 {
         return e.NewBadRequestApiError("El ID del resultado no puede ser 0")

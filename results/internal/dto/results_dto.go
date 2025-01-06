@@ -18,7 +18,7 @@ type UpdateResultDTO struct {
 
 // DTO para devolver un resultado con detalles del piloto y la sesión
 type ResponseResultDTO struct {
-	ID             uint64               `json:"id"`
+	ID             int                  `json:"id"`
 	Position       int                  `json:"position"`
 	FastestLapTime float64              `json:"fastest_lap_time"`
 	Session        ResponseSessionDTO   `json:"session"`

@@ -19,11 +19,11 @@ type UserRepository interface {
 	CreateUser(ctx context.Context, user *model.User) e.ApiError
 	GetUserByEmail(ctx context.Context, email string) (*model.User, e.ApiError)
 	GetUserByUsername(ctx context.Context, username string) (*model.User, e.ApiError)
-	GetUserByID(ctx context.Context, id uint) (*model.User, e.ApiError)
+	GetUserByID(ctx context.Context, id int) (*model.User, e.ApiError)
 	GetUsers(ctx context.Context) ([]*model.User, e.ApiError)
-	UpdateUserByID(ctx context.Context, id uint, user *model.User) e.ApiError
+	UpdateUserByID(ctx context.Context, id int, user *model.User) e.ApiError
 	UpdateUserByUsername(ctx context.Context, username string, user *model.User) e.ApiError
-	DeleteUserByID(ctx context.Context, id uint) e.ApiError
+	DeleteUserByID(ctx context.Context, id int) e.ApiError
 	DeleteUserByUsername(ctx context.Context, username string) e.ApiError
 }
 
@@ -68,7 +68,7 @@ func (r *userRepository) GetUserByUsername(ctx context.Context, username string)
 }
 
 // GetUserByID obtiene un usuario por su ID
-func (r *userRepository) GetUserByID(ctx context.Context, id uint) (*model.User, e.ApiError) {
+func (r *userRepository) GetUserByID(ctx context.Context, id int) (*model.User, e.ApiError) {
 	var user model.User
 	if err := r.db.WithContext(ctx).First(&user, id).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -89,7 +89,7 @@ func (r *userRepository) GetUsers(ctx context.Context) ([]*model.User, e.ApiErro
 }
 
 // UpdateUserByID actualiza un usuario por su ID en la base de datos
-func (r *userRepository) UpdateUserByID(ctx context.Context, id uint, user *model.User) e.ApiError {
+func (r *userRepository) UpdateUserByID(ctx context.Context, id int, user *model.User) e.ApiError {
 	if err := r.db.WithContext(ctx).Model(&model.User{}).Where("id = ?", id).Updates(user).Error; err != nil {
 		return e.NewInternalServerApiError("error updating user by ID", err)
 	}
@@ -105,7 +105,7 @@ func (r *userRepository) UpdateUserByUsername(ctx context.Context, username stri
 }
 
 // DeleteUserByID elimina un usuario por su ID de la base de datos
-func (r *userRepository) DeleteUserByID(ctx context.Context, id uint) e.ApiError {
+func (r *userRepository) DeleteUserByID(ctx context.Context, id int) e.ApiError {
     var user model.User
     if err := r.db.WithContext(ctx).First(&user, id).Error; err != nil {
         if err == gorm.ErrRecordNotFound {

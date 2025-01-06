@@ -8,7 +8,7 @@ import (
 
 // User represents a user in the system
 type User struct {
-	ID              uint           `gorm:"primaryKey" json:"id"`
+	ID              int           `gorm:"primaryKey" json:"id"`
 	FirstName       string         `gorm:"size:255" json:"first_name"`
 	LastName        string         `gorm:"size:255" json:"last_name"`
 	Username        string         `gorm:"size:255;uniqueIndex" json:"username"`

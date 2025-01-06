@@ -4,11 +4,11 @@ import "time"
 
 // Result representa los resultados de una sesión para un piloto
 type Result struct {
-    ID             uint64    `gorm:"primaryKey" json:"id"`
+    ID             int    `gorm:"primaryKey" json:"id"`
     SessionID      int       `json:"session_id"` // Foreign key to sessions
-	Session        Session   `gorm:"foreignKey:SessionID"` // Relación con la tabla sessions (Preload)
+    Session        Session   `gorm:"foreignKey:SessionID;constraint:OnDelete:CASCADE;OnUpdate:CASCADE;"`
     DriverID       int       `json:"driver_id" gorm:"type:int"`  // Foreign key to drivers
-	Driver         Driver    `gorm:"foreignKey:DriverID"` // Relación con la tabla drivers (Preload)
+    Driver         Driver    `gorm:"foreignKey:DriverID;constraint:OnDelete:CASCADE;OnUpdate:CASCADE;"`
     Position       int       `json:"position"`   // Posición del piloto en la carrera
     FastestLapTime float64   `json:"fastest_lap_time"` // Duración de la vuelta rápida en segundos (con decimales)
     CreatedAt      time.Time `gorm:"autoCreateTime" json:"created_at"`
@@ -27,7 +27,7 @@ type Driver struct {
 
 // Definir el modelo Session solo con los campos que necesitas para el preload
 type Session struct {
-    ID               int       `json:"id"` // Mantener como uint
+    ID               int       `json:"id"`
     CircuitShortName string    `json:"circuit_short_name"`
     CountryName      string    `json:"country_name"`
 	Location         string    `json:"location"`
