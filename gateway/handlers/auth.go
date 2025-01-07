@@ -22,12 +22,12 @@ import (
 
 // Estructura para el JWT Payload
 type Claims struct {
-	UserID uint   `json:"user_id"`
+	UserID int   `json:"user_id"`
 	Role   string `json:"role"`
 	jwt.RegisteredClaims
 }
 
-func GenerateJWT(userID uint, role string, secretKey string) (string, error) {
+func GenerateJWT(userID int, role string, secretKey string) (string, error) {
     claims := Claims{
         UserID: userID,
         Role:   role,
@@ -123,7 +123,7 @@ func LoginHandler(c *gin.Context) {
 		return
 	}
     
-	token, err := GenerateJWT(uint(userID), role, secretKey)
+	token, err := GenerateJWT(int(userID), role, secretKey)
 	if err != nil {
 		log.Printf("Error generating JWT token: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})

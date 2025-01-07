@@ -21,7 +21,15 @@ func NewUserController(userService service.UserServiceInterface) *UserController
     }
 }
 
-// SignUp handles user registration
+// @Summary Register a new user
+// @Description Creates a new user account in the system
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param user body dto.UserSignUpRequestDTO true "User sign-up details"
+// @Success 201 {object} dto.UserResponseDTO
+// @Failure 400 {object} utils.ApiError
+// @Router /users/signup [post]
 func (ctrl *UserController) SignUp(c *gin.Context) {
     var request dto.UserSignUpRequestDTO
     if err := c.ShouldBindJSON(&request); err != nil {
@@ -44,7 +52,15 @@ func (ctrl *UserController) SignUp(c *gin.Context) {
     c.JSON(http.StatusCreated, response)
 }
 
-// Login handles user login
+// @Summary Log in a user
+// @Description Authenticates a user and returns a JWT token
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param credentials body dto.UserLoginRequestDTO true "User login details"
+// @Success 200 {object} dto.UserLoginRequestDTO
+// @Failure 401 {object} utils.ApiError
+// @Router /users/login [post]
 func (ctrl *UserController) Login(c *gin.Context) {
     var request dto.UserLoginRequestDTO
     if err := c.ShouldBindJSON(&request); err != nil {
@@ -78,7 +94,14 @@ func (ctrl *UserController) Login(c *gin.Context) {
 //     c.JSON(http.StatusOK, response)
 // }
 
-// GetUserByID handles fetching a user by their ID
+// @Summary Get user by ID
+// @Description Retrieves a user's details by their ID
+// @Tags Users
+// @Produce json
+// @Param id path int true "User ID"
+// @Success 200 {object} dto.UserResponseDTO
+// @Failure 404 {object} utils.ApiError
+// @Router /users/{id} [get]
 func (ctrl *UserController) GetUserByID(c *gin.Context) {
     id := c.Param("id")
     intID, err := strconv.Atoi(id) // Cambiado a Atoi para int
@@ -96,7 +119,14 @@ func (ctrl *UserController) GetUserByID(c *gin.Context) {
     c.JSON(http.StatusOK, user)
 }
 
-// GetUserByUsername handles fetching a user by their username
+// @Summary Get user by username
+// @Description Retrieves a user's details by their username
+// @Tags Users
+// @Produce json
+// @Param username path string true "Username"
+// @Success 200 {object} dto.UserResponseDTO
+// @Failure 404 {object} utils.ApiError
+// @Router /users/username/{username} [get]
 func (ctrl *UserController) GetUserByUsername(c *gin.Context) {
     username := c.Param("username")
     user, apiErr := ctrl.userService.GetUserByUsername(c.Request.Context(), username)
@@ -107,7 +137,13 @@ func (ctrl *UserController) GetUserByUsername(c *gin.Context) {
     c.JSON(http.StatusOK, user)
 }
 
-// GetUsers handles fetching all users
+// @Summary Get all users
+// @Description Retrieves all users in the system
+// @Tags Users
+// @Produce json
+// @Success 200 {array} dto.UserResponseDTO
+// @Failure 500 {object} utils.ApiError
+// @Router /users [get]
 func (ctrl *UserController) GetUsers(c *gin.Context) {
     users, apiErr := ctrl.userService.GetUsers(c.Request.Context())
     if apiErr != nil {
@@ -117,7 +153,17 @@ func (ctrl *UserController) GetUsers(c *gin.Context) {
     c.JSON(http.StatusOK, users)
 }
 
-// UpdateUserByID handles updating a user by their ID
+// @Summary Update user by ID
+// @Description Updates a user's details by their ID
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param id path int true "User ID"
+// @Param user body dto.UserUpdateRequestDTO true "User update details"
+// @Success 200 {object} dto.UserResponseDTO
+// @Failure 400 {object} utils.ApiError
+// @Failure 404 {object} utils.ApiError
+// @Router /users/{id} [put]
 func (ctrl *UserController) UpdateUserByID(c *gin.Context) {
     id := c.Param("id")
     intID, err := strconv.Atoi(id) // Cambiado a Atoi para int
@@ -143,7 +189,7 @@ func (ctrl *UserController) UpdateUserByID(c *gin.Context) {
     c.JSON(http.StatusOK, user)
 }
 
-// UpdateUserByUsername handles updating a user by their username
+
 func (ctrl *UserController) UpdateUserByUsername(c *gin.Context) {
     username := c.Param("username")
     var request dto.UserUpdateRequestDTO
@@ -162,7 +208,13 @@ func (ctrl *UserController) UpdateUserByUsername(c *gin.Context) {
     c.JSON(http.StatusOK, user)
 }
 
-// DeleteUserByID handles deleting a user by their ID
+// @Summary Delete user by ID
+// @Description Deletes a user by their ID
+// @Tags Users
+// @Param id path int true "User ID"
+// @Success 204
+// @Failure 404 {object} utils.ApiError
+// @Router /users/{id} [delete]
 func (ctrl *UserController) DeleteUserByID(c *gin.Context) {
     id := c.Param("id")
     intID, err := strconv.Atoi(id) // Cambiado a Atoi para int
