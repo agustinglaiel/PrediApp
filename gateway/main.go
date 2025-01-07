@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"gateway/handlers"
 	"gateway/middleware"
-	"gateway/proxy"
 	"log"
 	"os"
 	"path/filepath"
