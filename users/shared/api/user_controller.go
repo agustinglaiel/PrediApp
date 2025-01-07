@@ -4,9 +4,9 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"users/internal/dto"
-	"users/internal/service"
 	e "users/pkg/utils"
+	"users/shared/dto"
+	"users/shared/service"
 
 	"github.com/gin-gonic/gin"
 )

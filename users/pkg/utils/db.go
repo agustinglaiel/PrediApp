@@ -2,8 +2,8 @@ package utils
 
 import (
 	"fmt"
-	"users/internal/model"
 	"users/pkg/config"
+	"users/shared/model"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"

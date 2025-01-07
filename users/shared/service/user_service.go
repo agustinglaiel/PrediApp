@@ -3,10 +3,10 @@ package service
 import (
 	"context"
 	"time"
-	"users/internal/dto"
-	"users/internal/model"
-	"users/internal/repository"
 	e "users/pkg/utils"
+	"users/shared/dto"
+	"users/shared/model"
+	"users/shared/repository"
 
 	"golang.org/x/crypto/bcrypt"
 )

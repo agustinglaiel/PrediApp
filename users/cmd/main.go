@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"users/internal/api"
-	"users/internal/repository"
-	"users/internal/router"
-	"users/internal/service"
 	"users/pkg/utils"
+	"users/shared/api"
+	"users/shared/repository"
+	"users/shared/router"
+	"users/shared/service"
 
 	_ "users/docs" // Importa el paquete generado por swag init
 

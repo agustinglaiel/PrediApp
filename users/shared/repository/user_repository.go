@@ -3,8 +3,8 @@ package repository
 import (
 	"context"
 	"log"
-	"users/internal/model"
 	e "users/pkg/utils"
+	"users/shared/model"
 
 	"gorm.io/gorm"
 )
