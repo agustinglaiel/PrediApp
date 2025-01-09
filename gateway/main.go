@@ -55,10 +55,10 @@ func main() {
     protected.Use(middleware.JwtAuthentication(""))
     {
         router.Any("/users/*proxyPath", proxy.ReverseProxy())
-        router.Any("/drivers/*proxyPath", proxy.ReverseProxy())
-        router.Any("/prodes/*proxyPath", proxy.ReverseProxy())
-        router.Any("/results/*proxyPath", proxy.ReverseProxy())
-        router.Any("/sessions/*proxyPath", proxy.ReverseProxy())
+        // router.Any("/drivers/*proxyPath", proxy.ReverseProxy())
+        // router.Any("/prodes/*proxyPath", proxy.ReverseProxy())
+        // router.Any("/results/*proxyPath", proxy.ReverseProxy())
+        // router.Any("/sessions/*proxyPath", proxy.ReverseProxy())
     }
 
     // Iniciar el servidor HTTP

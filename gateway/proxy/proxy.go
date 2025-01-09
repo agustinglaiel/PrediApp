@@ -5,7 +5,6 @@ package proxy
 import (
 	"bytes"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -25,7 +24,6 @@ func ReverseProxy() gin.HandlerFunc {
 
         targetURL, err := url.Parse(target)
         if err != nil {
-            log.Printf("Error parsing target URL: %v", err)
             c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
             return
         }
@@ -35,11 +33,8 @@ func ReverseProxy() gin.HandlerFunc {
         proxy.Director = func(req *http.Request) {
             req.URL.Scheme = targetURL.Scheme
             req.URL.Host = targetURL.Host
-
-            // Asignamos el path tal cual al request hacia el microservicio
             req.URL.Path = proxyPath
 
-            // Restaurar el body si existe
             if req.Body != nil {
                 body, _ := ioutil.ReadAll(req.Body)
                 req.Body = ioutil.NopCloser(bytes.NewBuffer(body))
@@ -47,7 +42,6 @@ func ReverseProxy() gin.HandlerFunc {
             }
 
             req.Host = targetURL.Host
-            log.Printf("Proxying request to: %s %s", req.Method, req.URL.String())
         }
 
         proxy.ModifyResponse = func(res *http.Response) error {
@@ -55,8 +49,6 @@ func ReverseProxy() gin.HandlerFunc {
             if err != nil {
                 return err
             }
-            log.Printf("Received response from microservice: %d", res.StatusCode)
-            log.Printf("Response body: %s", string(body))
             res.Body = ioutil.NopCloser(bytes.NewBuffer(body))
             return nil
         }
@@ -65,16 +57,13 @@ func ReverseProxy() gin.HandlerFunc {
     }
 }
 
-
 func getTargetURL(path string) (string, string) {
     parts := strings.Split(path, "/")
         if len(parts) < 3{
             return "", ""
         }
-
         service := parts[1]
-        proxyPath := strings.Join(parts[2:], "/")
-
+        proxyPath := strings.Join(parts[1:], "/")
         switch service {
         case "drivers":
             return os.Getenv("DRIVERS_SERVICE_URL"), "/" + proxyPath

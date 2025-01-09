@@ -72,10 +72,10 @@ func main() {
 
     // Lista de directorios con sus respectivos puertos
     services := map[string]string{
-        "./drivers/cmd":   "",
-        "./prodes/cmd":    "",
-        "./results/cmd":   "",
-        "./sessions/cmd":  "",
+        // "./drivers/cmd":   "",
+        // "./prodes/cmd":    "",
+        // "./results/cmd":   "",
+        // "./sessions/cmd":  "",
         "./users/cmd":     "",
         // "./gateway":       "8080",
     }
