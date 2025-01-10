@@ -62,6 +62,7 @@ func (ctrl *UserController) SignUp(c *gin.Context) {
 // @Failure 401 {object} utils.ApiError
 // @Router /users/login [post]
 func (ctrl *UserController) Login(c *gin.Context) {
+    // log.Printf("Login endpoint: ", c.Request.URL.Path)
     var request dto.UserLoginRequestDTO
     if err := c.ShouldBindJSON(&request); err != nil {
         apiErr := e.NewBadRequestApiError("invalid request")

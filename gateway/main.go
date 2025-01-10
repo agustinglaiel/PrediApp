@@ -49,6 +49,7 @@ func main() {
 
     // Configurar ruta para el login (Fuera del grupo /api)
     router.POST("/api/users/login", handlers.LoginHandler)
+    router.POST("/api/users/signup", handlers.SignupHandler)
 
     // Grupo de rutas que requieren autenticación
     protected := router.Group("/api")
