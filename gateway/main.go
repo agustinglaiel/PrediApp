@@ -48,18 +48,18 @@ func main() {
     router.Use(middleware.CorsMiddleware())
 
     // Configurar ruta para el login (Fuera del grupo /api)
-    router.POST("/api/users/login", handlers.LoginHandler)
-    router.POST("/api/users/signup", handlers.SignupHandler)
+    router.POST("/api/login", handlers.LoginHandler)
+    router.POST("/api/signup", handlers.SignupHandler)
 
     // Grupo de rutas que requieren autenticación
-    protected := router.Group("/api")
+    protected := router.Group("/")
     protected.Use(middleware.JwtAuthentication(""))
     {
-        router.Any("/users/*proxyPath", proxy.ReverseProxy())
-        // router.Any("/drivers/*proxyPath", proxy.ReverseProxy())
-        // router.Any("/prodes/*proxyPath", proxy.ReverseProxy())
-        // router.Any("/results/*proxyPath", proxy.ReverseProxy())
-        // router.Any("/sessions/*proxyPath", proxy.ReverseProxy())
+        protected.Any("/users/*proxyPath", proxy.ReverseProxy())
+        // protected.Any("/drivers/*proxyPath", proxy.ReverseProxy())
+        // protected.Any("/prodes/*proxyPath", proxy.ReverseProxy())
+        // protected.Any("/results/*proxyPath", proxy.ReverseProxy())
+        // protected.Any("/sessions/*proxyPath", proxy.ReverseProxy())
     }
 
     // Iniciar el servidor HTTP
