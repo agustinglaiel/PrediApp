@@ -37,7 +37,7 @@ func (rc *ResultController) FetchResultsFromExternalAPI(c *gin.Context) {
         c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de sesión inválido"))
         return
     }
-	fmt.Println("Controller: sessionID obtenido:", sessionID)
+	// fmt.Println("Controller: sessionID obtenido:", sessionID)
 
 	// Llamar al servicio para hacer fetch de los resultados desde la API externa
 	results, apiErr := rc.resultService.FetchResultsFromExternalAPI(c.Request.Context(), sessionID)
