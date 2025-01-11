@@ -10,11 +10,7 @@ import (
 	"users/internal/service"
 	"users/pkg/utils"
 
-	_ "users/docs" // Importa el paquete generado por swag init
-
 	"github.com/gin-gonic/gin"
-	swaggerFiles "github.com/swaggo/files"     // Swagger UI
-	ginSwagger "github.com/swaggo/gin-swagger" // Swagger handler
 )
 
 // @title Users Microservice API
@@ -52,9 +48,6 @@ func main() {
 
 	// Mapear URLs
 	router.MapUrls(ginRouter, userController)
-
-	// Configurar Swagger UI
-	ginRouter.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Iniciar servidor usando el puerto obtenido de la variable de entorno
 	fmt.Printf("Users service listening on port %s...\n", port)

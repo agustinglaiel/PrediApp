@@ -59,7 +59,7 @@ func main() {
         // protected.Any("/drivers/*proxyPath", proxy.ReverseProxy())
         // protected.Any("/prodes/*proxyPath", proxy.ReverseProxy())
         // protected.Any("/results/*proxyPath", proxy.ReverseProxy())
-        // protected.Any("/sessions/*proxyPath", proxy.ReverseProxy())
+        protected.Any("/sessions/*proxyPath", proxy.ReverseProxy())
     }
 
     // Iniciar el servidor HTTP
