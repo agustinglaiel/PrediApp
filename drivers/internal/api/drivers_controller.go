@@ -4,6 +4,7 @@ import (
 	dto "drivers/internal/dto"
 	service "drivers/internal/service"
 	e "drivers/pkg/utils"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -113,8 +114,8 @@ func (c *DriverController) ListDriversByTeam(ctx *gin.Context) {
 }
 
 func (c *DriverController) ListDriversByCountry(ctx *gin.Context) {
-    countryCode := ctx.Query("country_code")
-
+    countryCode := ctx.Param("countryCode")
+	log.Printf("Country code: %s", countryCode)
     response, apiErr := c.driversService.ListDriversByCountry(ctx.Request.Context(), countryCode)
     if apiErr != nil {
         ctx.JSON(apiErr.Status(), apiErr)
@@ -125,8 +126,8 @@ func (c *DriverController) ListDriversByCountry(ctx *gin.Context) {
 }
 
 func (c *DriverController) ListDriversByFullName(ctx *gin.Context) {
-    fullName := ctx.Query("full_name")
-
+    fullName := ctx.Param("fullName")
+	log.Printf("Full name: %s", fullName)
     response, apiErr := c.driversService.ListDriversByFullName(ctx.Request.Context(), fullName)
     if apiErr != nil {
         ctx.JSON(apiErr.Status(), apiErr)
@@ -137,8 +138,8 @@ func (c *DriverController) ListDriversByFullName(ctx *gin.Context) {
 }
 
 func (c *DriverController) ListDriversByAcronym(ctx *gin.Context) {
-    acronym := ctx.Query("acronym")
-
+    acronym := ctx.Param("acronym")
+	log.Printf("Acronym: %s", acronym)
     response, apiErr := c.driversService.ListDriversByAcronym(ctx.Request.Context(), acronym)
     if apiErr != nil {
         ctx.JSON(apiErr.Status(), apiErr)

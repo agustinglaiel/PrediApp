@@ -8,6 +8,7 @@ import (
 	repository "drivers/internal/repository"
 	e "drivers/pkg/utils"
 	"fmt"
+	"log"
 )
 
 type driverService struct {
@@ -224,6 +225,7 @@ func (s *driverService) ListDriversByCountry(ctx context.Context, countryCode st
 	if err != nil {
 		return nil, err
 	}
+	log.Printf("Drivers: %v", drivers)
 
 	var response []dto.ResponseDriverDTO
 	for _, driver := range drivers {
@@ -239,6 +241,7 @@ func (s *driverService) ListDriversByCountry(ctx context.Context, countryCode st
 			TeamName:       driver.TeamName,
 		})
 	}
+	log.Printf("Drivers despues: %v", response)
 
 	return response, nil
 }

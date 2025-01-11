@@ -17,7 +17,7 @@ import (
 
 func ReverseProxy() gin.HandlerFunc {
     return func(c *gin.Context) {
-        log.Printf("Incoming request: %s %s", c.Request.Method, c.Request.URL.Path)
+        // log.Printf("Incoming request: %s %s", c.Request.Method, c.Request.URL.Path)
 
         target, proxyPath := getTargetURL(c.Request.URL.Path)
         if target == "" {
@@ -29,7 +29,7 @@ func ReverseProxy() gin.HandlerFunc {
         if strings.HasSuffix(proxyPath, "/") && len(proxyPath) > 1 {
             proxyPath = strings.TrimSuffix(proxyPath, "/")
         }
-        log.Printf("Target Base URL: %s, ProxyPath: %s", target, proxyPath)
+        // log.Printf("Target Base URL: %s, ProxyPath: %s", target, proxyPath)
 
         targetURL, err := url.Parse(target)
         if err != nil {
@@ -42,9 +42,9 @@ func ReverseProxy() gin.HandlerFunc {
         proxy := httputil.NewSingleHostReverseProxy(targetURL)
 
         proxy.Director = func(req *http.Request) {
-            log.Printf("Original Request Path: %s", req.URL.Path)
-            log.Printf("Resolved Target URL: %s", targetURL.String())
-            log.Printf("Proxy Path: %s", proxyPath)
+            // log.Printf("Original Request Path: %s", req.URL.Path)
+            // log.Printf("Resolved Target URL: %s", targetURL.String())
+            // log.Printf("Proxy Path: %s", proxyPath)
         
             req.URL.Scheme = targetURL.Scheme
             req.URL.Host = targetURL.Host
@@ -57,14 +57,14 @@ func ReverseProxy() gin.HandlerFunc {
             }
         
             req.Host = targetURL.Host
-            log.Printf("Forwarding final request to: %s", req.URL.String())
+            // log.Printf("Forwarding final request to: %s", req.URL.String())
         }
 
         proxy.ModifyResponse = func(res *http.Response) error {
             if res.StatusCode == http.StatusMovedPermanently || res.StatusCode == http.StatusFound {
                 location := res.Header.Get("Location")
                 if location != "" {
-                    log.Printf("Redirecting to: %s", location)
+                    // log.Printf("Redirecting to: %s", location)
                     c.Redirect(res.StatusCode, location) // Redirigir al cliente
                     return nil
                 }

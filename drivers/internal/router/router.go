@@ -24,9 +24,9 @@ func MapUrls(engine *gin.Engine, driverController *drivers.DriverController) {
 	engine.DELETE("/drivers/:id", driverController.DeleteDriver)
 	engine.GET("/drivers", driverController.ListDrivers)
 	engine.GET("/drivers/team", driverController.ListDriversByTeam)
-	engine.GET("/drivers/country", driverController.ListDriversByCountry)
-	engine.GET("/drivers/fullname", driverController.ListDriversByFullName)
-	engine.GET("/drivers/acronym", driverController.ListDriversByAcronym)
+	engine.GET("/drivers/country/:countryCode", driverController.ListDriversByCountry)
+	engine.GET("/drivers/fullname/:fullName", driverController.ListDriversByFullName)
+	engine.GET("/drivers/acronym/:acronym", driverController.ListDriversByAcronym)
 	engine.GET("/drivers/external", driverController.FetchAllDriversFromExternalAPI)
 	engine.GET("/drivers/number/:driver_number", driverController.GetDriverByNumber)
 

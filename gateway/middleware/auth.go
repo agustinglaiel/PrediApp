@@ -40,7 +40,7 @@ func JwtAuthentication(requiredRole string) gin.HandlerFunc {
 		}
 
 		tokenString := tokenParts[1]
-		log.Printf("Received JWT token: %s", tokenString)
+		// log.Printf("Received JWT token: %s", tokenString)
 
 		claims := &Claims{}
 

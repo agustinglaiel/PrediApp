@@ -56,7 +56,7 @@ func main() {
     protected.Use(middleware.JwtAuthentication(""))
     {
         protected.Any("/users/*proxyPath", proxy.ReverseProxy())
-        // protected.Any("/drivers/*proxyPath", proxy.ReverseProxy())
+        protected.Any("/drivers/*proxyPath", proxy.ReverseProxy())
         // protected.Any("/prodes/*proxyPath", proxy.ReverseProxy())
         // protected.Any("/results/*proxyPath", proxy.ReverseProxy())
         protected.Any("/sessions/*proxyPath", proxy.ReverseProxy())

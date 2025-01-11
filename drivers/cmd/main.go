@@ -8,6 +8,7 @@ import (
 	"drivers/internal/service"
 	"drivers/pkg/utils"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/gin-gonic/gin"
@@ -45,8 +46,9 @@ func main() {
 	// Mapear URLs
 	router.MapUrls(ginRouter, driverController)
 
-	// Iniciar el servidor usando el puerto obtenido de la variable de entorno
-	// if err := ginRouter.Run(":" + port); err != nil {
-	// 	log.Fatalf("Failed to run server on port %s: %v", port, err)
-	// }
+	// Iniciar servidor usando el puerto obtenido de la variable de entorno
+	fmt.Printf("Users service listening on port %s...\n", port)
+	if err := ginRouter.Run(":" + port); err != nil {
+		log.Fatalf("Failed to run server on port %s: %v", port, err)
+	}
 }
