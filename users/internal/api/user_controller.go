@@ -243,3 +243,28 @@ func (ctrl *UserController) DeleteUserByUsername(c *gin.Context) {
     }
     c.JSON(http.StatusNoContent, nil)
 }
+
+func (ctrl *UserController) UpdateRoleByUserId(c *gin.Context) {
+    id := c.Param("id")
+    intID, err := strconv.Atoi(id)
+    if err != nil {
+        apiErr := e.NewBadRequestApiError("invalid user ID")
+        c.JSON(apiErr.Status(), apiErr)
+        return
+    }
+
+    var request dto.UserUpdateRoleRequestDTO
+    if err := c.ShouldBindJSON(&request); err != nil {
+        apiErr := e.NewBadRequestApiError("invalid request")
+        c.JSON(apiErr.Status(), apiErr)
+        return
+    }
+
+    user, apiErr := ctrl.userService.UpdateRoleByUserId(c.Request.Context(), intID, request)
+    if apiErr != nil {
+        c.JSON(apiErr.Status(), apiErr)
+        return
+    }
+
+    c.JSON(http.StatusOK, user)
+}

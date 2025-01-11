@@ -83,7 +83,12 @@ type UserUpdateRequestDTO struct {
     LastName    string `json:"last_name,omitempty"`
     Username    string `json:"username,omitempty"`
     Email       string `json:"email,omitempty"`
+    Role        string `json:"role,omitempty"`
     Password    string `json:"password,omitempty"`
     PhoneNumber string `json:"phone_number,omitempty"`
     IsActive    bool   `json:"is_active,omitempty"`
+}
+
+type UserUpdateRoleRequestDTO struct {
+    Role string `json:"role" binding:"required"`
 }

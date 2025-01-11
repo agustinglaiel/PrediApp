@@ -26,6 +26,7 @@ type UserServiceInterface interface {
     UpdateUserByUsername(ctx context.Context, username string, request dto.UserUpdateRequestDTO) (dto.UserResponseDTO, e.ApiError)
     DeleteUserById(ctx context.Context, id int) e.ApiError
     DeleteUserByUsername(ctx context.Context, username string) e.ApiError
+    UpdateRoleByUserId(ctx context.Context, id int, request dto.UserUpdateRoleRequestDTO) (dto.UserResponseDTO, e.ApiError)
 }
 
 func NewUserService(userRepo repository.UserRepository) UserServiceInterface {
@@ -249,16 +250,45 @@ func (s *userService) UpdateUserById(ctx context.Context, id int, request dto.Us
         return dto.UserResponseDTO{}, apiErr
     }
 
-    user.FirstName = request.FirstName
-    user.LastName = request.LastName
-    user.Username = request.Username
-    user.Email = request.Email
+    // Actualizar solo los campos enviados en el request
+    if request.FirstName != "" {
+        user.FirstName = request.FirstName
+    }
+    if request.LastName != "" {
+        user.LastName = request.LastName
+    }
+    if request.Username != "" {
+        user.Username = request.Username
+    }
+    if request.Email != "" {
+        user.Email = request.Email
+    }
+    if request.Role != "" {
+        user.Role = request.Role
+    }
+    validRoles := map[string]bool{"user": true, "admin": true}
+    if request.Role != "" && !validRoles[request.Role] {
+        return dto.UserResponseDTO{}, e.NewBadRequestApiError("invalid role")
+    }
+    if request.Password != "" {
+        hashedPassword, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
+        if err != nil {
+            return dto.UserResponseDTO{}, e.NewInternalServerApiError("failed to hash password", err)
+        }
+        user.Password = string(hashedPassword)
+    }
+    if request.PhoneNumber != "" {
+        user.PhoneNumber = request.PhoneNumber
+    }
+    // Manejar booleanos como `IsActive` explícitamente
     user.IsActive = request.IsActive
 
+    // Actualizar el usuario en la base de datos
     if apiErr := s.userRepo.UpdateUserByID(ctx, id, user); apiErr != nil {
         return dto.UserResponseDTO{}, apiErr
     }
 
+    // Crear la respuesta
     response := dto.UserResponseDTO{
         ID:        user.ID,
         FirstName: user.FirstName,
@@ -280,10 +310,37 @@ func (s *userService) UpdateUserByUsername(ctx context.Context, username string,
         return dto.UserResponseDTO{}, apiErr
     }
 
-    user.FirstName = request.FirstName
-    user.LastName = request.LastName
-    user.Username = request.Username
-    user.Email = request.Email
+    // Actualizar solo los campos enviados en el request
+    if request.FirstName != "" {
+        user.FirstName = request.FirstName
+    }
+    if request.LastName != "" {
+        user.LastName = request.LastName
+    }
+    if request.Username != "" {
+        user.Username = request.Username
+    }
+    if request.Email != "" {
+        user.Email = request.Email
+    }
+    if request.Role != "" {
+        user.Role = request.Role
+    }
+    validRoles := map[string]bool{"user": true, "admin": true}
+    if request.Role != "" && !validRoles[request.Role] {
+        return dto.UserResponseDTO{}, e.NewBadRequestApiError("invalid role")
+    }
+    if request.Password != "" {
+        hashedPassword, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
+        if err != nil {
+            return dto.UserResponseDTO{}, e.NewInternalServerApiError("failed to hash password", err)
+        }
+        user.Password = string(hashedPassword)
+    }
+    if request.PhoneNumber != "" {
+        user.PhoneNumber = request.PhoneNumber
+    }
+    // Manejar booleanos como `IsActive` explícitamente
     user.IsActive = request.IsActive
 
     if apiErr := s.userRepo.UpdateUserByUsername(ctx, username, user); apiErr != nil {
@@ -325,4 +382,31 @@ func (s *userService) DeleteUserByUsername(ctx context.Context, username string)
     }
 
     return nil
+}
+
+func (s *userService) UpdateRoleByUserId(ctx context.Context, id int, request dto.UserUpdateRoleRequestDTO) (dto.UserResponseDTO, e.ApiError) {
+    user, apiErr := s.userRepo.GetUserByID(ctx, id)
+    if apiErr != nil {
+        return dto.UserResponseDTO{}, apiErr
+    }
+
+    // Solo actualiza el rol, los demás campos permanecen iguales
+    user.Role = request.Role
+    if apiErr := s.userRepo.UpdateUserByID(ctx, id, user); apiErr != nil {
+        return dto.UserResponseDTO{}, apiErr
+    }
+
+    response := dto.UserResponseDTO{
+        ID:        user.ID,
+        FirstName: user.FirstName,
+        LastName:  user.LastName,
+        Username:  user.Username,
+        Email:     user.Email,
+        Role:      user.Role,
+        Score:     user.Score,
+        CreatedAt: user.CreatedAt.Format(time.RFC3339),
+        IsActive:  user.IsActive,
+    }
+
+    return response, nil
 }
