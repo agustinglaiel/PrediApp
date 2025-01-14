@@ -54,8 +54,6 @@ func (s *resultService) FetchResultsFromExternalAPI(ctx context.Context, session
         return nil, e.NewInternalServerApiError("Error obteniendo session key", err)
     }
 
-    fmt.Println("Service: sessionKey obtenido:", sessionKey)
-
     // 2. Usar la sessionKey para hacer la solicitud a la API externa y obtener las posiciones
     positions, err := s.client.GetPositions(sessionKey)
     if err != nil {
@@ -67,23 +65,25 @@ func (s *resultService) FetchResultsFromExternalAPI(ctx context.Context, session
     var responseResults []dto.ResponseResultDTO
 
     // 4. Crear un mapa para eliminar duplicados y quedarnos con la última posición registrada para cada piloto
-    finalPositions := make(map[int]dto.Position)
+    finalPositions := make(map[int]int)
     for _, pos := range positions {
-        finalPositions[pos.DriverNumber] = pos
+        finalPositions[pos.DriverNumber] = pos.Position
     }
 
-    // 5. Obtener las vueltas más rápidas de los pilotos y guardarlas en la base de datos
-    for _, pos := range finalPositions {
-        // Obtener las vueltas del piloto usando sessionKey y driver_number
-        laps, err := s.client.GetLaps(int(sessionKey), pos.DriverNumber)
+    // fmt.Printf("Service: Posiciones finales: %+v\n", finalPositions)
+
+    // Obtener las vueltas más rápidas de los pilotos y guardarlas en la base de datos
+    for driverNumber, position := range finalPositions {
+        // Obtener las vueltas del piloto usando sessionKey y driverNumber
+        laps, err := s.client.GetLaps(sessionKey, driverNumber)
         if err != nil {
-            fmt.Printf("Error obteniendo vueltas para el piloto %d: %v\n", pos.DriverNumber, err)
+            fmt.Printf("Error obteniendo vueltas para el piloto %d: %v\n", driverNumber, err)
             continue
         }
 
         // Si no hay vueltas válidas, saltar al siguiente piloto
         if len(laps) == 0 {
-            fmt.Printf("No valid laps found for driver %d\n", pos.DriverNumber)
+            fmt.Printf("No valid laps found for driver %d\n", driverNumber)
             continue
         }
 
@@ -96,10 +96,10 @@ func (s *resultService) FetchResultsFromExternalAPI(ctx context.Context, session
         }
 
         // Llamar al microservicio de drivers para obtener la información completa del piloto
-        fmt.Printf("Verificando pos.DriverNumber: %d\n", pos.DriverNumber)
-        driverInfo, err := s.client.GetDriverByNumber(pos.DriverNumber)
+        fmt.Printf("Verificando driverNumber: %d\n", driverNumber)
+        driverInfo, err := s.client.GetDriverByNumber(driverNumber)
         if err != nil {
-            fmt.Printf("Error obteniendo piloto para el driver_number %d: %v\n", pos.DriverNumber, err)
+            fmt.Printf("Error obteniendo piloto para el driver_number %d: %v\n", driverNumber, err)
             continue
         }
 
@@ -108,9 +108,9 @@ func (s *resultService) FetchResultsFromExternalAPI(ctx context.Context, session
 
         // Crear el nuevo resultado o actualizar si ya existe
         newResult := &model.Result{
-            SessionID:      sessionID, 
+            SessionID:      sessionID,
             DriverID:       driverInfo.ID,
-            Position:       pos.Position,
+            Position:       position,
             FastestLapTime: fastestLap,
         }
 
@@ -121,7 +121,7 @@ func (s *resultService) FetchResultsFromExternalAPI(ctx context.Context, session
             }
         } else {
             // Actualizar el resultado si ya existe
-            newResult.Position = pos.Position
+            newResult.Position = position
             newResult.FastestLapTime = fastestLap
             if err := s.resultRepo.UpdateResult(ctx, newResult); err != nil {
                 return nil, e.NewInternalServerApiError("Error updating existing result", err)

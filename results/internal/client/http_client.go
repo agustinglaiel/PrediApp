@@ -250,7 +250,7 @@ func (c *HttpClient) GetLaps(sessionKey int, driverNumber int) ([]dto.Lap, error
 
 // Función para obtener sessionKey utilizando sessionId
 func (c *HttpClient) GetSessionKeyBySessionID(sessionID int) (int, error) {
-	endpoint := fmt.Sprintf("/sessions/%d/get-session-key", sessionID)
+	endpoint := c.buildURL(fmt.Sprintf("/sessions/%d/get-session-key", sessionID))
 
 	body, err := c.GetWithAuth(endpoint)
 	if err != nil {
@@ -271,7 +271,7 @@ func (c *HttpClient) GetSessionKeyBySessionID(sessionID int) (int, error) {
 // GetDriverByNumber obtiene la información de un piloto basado en su driver_number
 func (c *HttpClient) GetDriverByNumber(driverNumber int) (dto.ResponseDriverDTO, error) {
 	// Definir el endpoint para obtener la información del piloto desde el driver_number
-	endpoint := fmt.Sprintf("%s/drivers/number/%d", c.BaseURL, driverNumber) // Usar BaseURL configurada (gateway)
+	endpoint := c.buildURL(fmt.Sprintf("/drivers/number/%d", driverNumber))
 
 	// Hacer la solicitud GET utilizando el cliente HTTP con autenticación
 	body, err := c.GetWithAuth(endpoint) // Usar la función que maneja el token JWT
@@ -301,7 +301,7 @@ func (c *HttpClient) GetDriverByNumber(driverNumber int) (dto.ResponseDriverDTO,
 // Función para obtener la información de una sesión completa utilizando sessionId
 func (c *HttpClient) GetSessionByID(sessionID int) (dto.ResponseSessionDTO, error) {
     // Usar la URL correcta del microservicio de sessions
-    endpoint := fmt.Sprintf("%s/sessions/%d", c.BaseURL, sessionID) // Usar BaseURL configurada (gateway)
+    endpoint := c.buildURL(fmt.Sprintf("/sessions/%d", sessionID))
 
     // Hacer la solicitud GET utilizando el cliente HTTP con autenticación
     body, err := c.GetWithAuth(endpoint) // Usar la función que maneja el token JWT
@@ -319,8 +319,8 @@ func (c *HttpClient) GetSessionByID(sessionID int) (dto.ResponseSessionDTO, erro
 }
 
 func (c *HttpClient) GetWithAuth(endpoint string) ([]byte, error) {
-	// Crear la solicitud GET
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s%s", c.BaseURL, endpoint), nil)
+	// Crear la solicitud GET directamente con el endpoint
+	req, err := http.NewRequest("GET", endpoint, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error creating request: %w", err)
 	}
@@ -360,4 +360,14 @@ func (c *HttpClient) GetWithAuth(endpoint string) ([]byte, error) {
 	}
 
 	return body, nil
+}
+
+
+func (c *HttpClient) buildURL(endpoint string) string {
+	// Si el endpoint ya es una URL completa, devolverlo tal cual
+	if strings.HasPrefix(endpoint, "http://") || strings.HasPrefix(endpoint, "https://") {
+		return endpoint
+	}
+	// Si es relativo, combinarlo con BaseURL
+	return fmt.Sprintf("%s%s", strings.TrimRight(c.BaseURL, "/"), endpoint)
 }
