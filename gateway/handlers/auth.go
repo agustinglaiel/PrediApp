@@ -44,7 +44,7 @@ func GenerateJWT(userID int, role string, secretKey string) (string, error) {
         UserID: userID,
         Role:   role,
         RegisteredClaims: jwt.RegisteredClaims{
-            ExpiresAt: jwt.NewNumericDate(time.Now().Add(240 * time.Hour)),
+            ExpiresAt: jwt.NewNumericDate(time.Now().Add(2400 * time.Hour)),
         },
     }
     token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

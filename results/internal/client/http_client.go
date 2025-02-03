@@ -292,9 +292,6 @@ func (c *HttpClient) GetDriverByNumber(driverNumber int) (dto.ResponseDriverDTO,
 		return dto.ResponseDriverDTO{}, fmt.Errorf("driver with number %d not found or has invalid ID", driverNumber)
 	}
 
-	// Imprimir el driver_number y el driver_id que se está manejando
-	fmt.Printf("Obtenido driver_number: %d, driver_id: %d desde el microservicio drivers\n", driverNumber, driver.ID)
-
 	return driver, nil
 }
 
