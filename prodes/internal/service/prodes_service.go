@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	client "prodes/internal/client"
 	prodes "prodes/internal/dto"
 	model "prodes/internal/model"
@@ -47,25 +46,10 @@ func NewPrediService(prodeRepo repository.ProdeRepository, httpClient *client.Ht
 }
 
 func (s *prodeService) CreateProdeCarrera(ctx context.Context, request prodes.CreateProdeCarreraDTO) (prodes.ResponseProdeCarreraDTO, e.ApiError) {
-    // Generar la clave de caché para esta sesión
-    cacheKey := fmt.Sprintf("session_info_%d", request.SessionID)
-
-    // Verificar si los detalles de la sesión están en la caché
-    cachedSession, found := s.cache.Get(cacheKey)
-
-    var sessionInfo prodes.SessionNameAndTypeDTO
-    if found {
-        // Si encontramos la sesión en la caché, la usamos
-        sessionInfo = cachedSession.(prodes.SessionNameAndTypeDTO)
-    } else {
-        // Si no está en la caché, hacemos la llamada al cliente HTTP
-        sessionInfo, err := s.httpClient.GetSessionNameAndType(request.SessionID)
-        if err != nil {
-            return prodes.ResponseProdeCarreraDTO{}, e.NewInternalServerApiError("Error fetching session name and type from sessions service", err)
-        }
-
-        // Almacenar los detalles de la sesión en la caché por 10 minutos
-        s.cache.Set(cacheKey, sessionInfo, 10*time.Minute)
+    // Hacer la llamada al cliente HTTP para obtener la información de la sesión
+    sessionInfo, err := s.httpClient.GetSessionNameAndType(request.SessionID)
+    if err != nil {
+        return prodes.ResponseProdeCarreraDTO{}, e.NewInternalServerApiError("Error fetching session name and type from sessions service", err)
     }
 
     // Validar tanto el session_name como el session_type
@@ -89,7 +73,7 @@ func (s *prodeService) CreateProdeCarrera(ctx context.Context, request prodes.Cr
     }
 
     // Crear el pronóstico de carrera en la base de datos
-    err := s.prodeRepo.CreateProdeCarrera(ctx, &prode)
+    err = s.prodeRepo.CreateProdeCarrera(ctx, &prode)
     if err != nil {
         return prodes.ResponseProdeCarreraDTO{}, e.NewInternalServerApiError("Error creando el pronóstico de carrera", err)
     }
@@ -114,25 +98,10 @@ func (s *prodeService) CreateProdeCarrera(ctx context.Context, request prodes.Cr
 }
 
 func (s *prodeService) CreateProdeSession(ctx context.Context, request prodes.CreateProdeSessionDTO) (prodes.ResponseProdeSessionDTO, e.ApiError) {
-    // Generar la clave de caché para esta sesión
-    cacheKey := fmt.Sprintf("session_info_%d", request.SessionID)
-
-    // Verificar si los detalles de la sesión están en la caché
-    cachedSession, found := s.cache.Get(cacheKey)
-
-    var sessionInfo prodes.SessionNameAndTypeDTO
-    if found {
-        // Si encontramos la sesión en la caché, la usamos
-        sessionInfo = cachedSession.(prodes.SessionNameAndTypeDTO)
-    } else {
-        // Si no está en la caché, hacemos la llamada al cliente HTTP
-        sessionInfo, err := s.httpClient.GetSessionNameAndType(request.SessionID)
-        if err != nil {
-            return prodes.ResponseProdeSessionDTO{}, e.NewInternalServerApiError("Error fetching session name and type from sessions service", err)
-        }
-
-        // Almacenar los detalles de la sesión en la caché por 10 minutos
-        s.cache.Set(cacheKey, sessionInfo, 10*time.Minute)
+    // Obtener la información de la sesión desde el microservicio de sesiones
+    sessionInfo, err := s.httpClient.GetSessionNameAndType(request.SessionID)
+    if err != nil {
+        return prodes.ResponseProdeSessionDTO{}, e.NewInternalServerApiError("Error fetching session name and type from sessions service", err)
     }
 
     // Verificar si la sesión es de tipo "Race"
@@ -142,27 +111,27 @@ func (s *prodeService) CreateProdeSession(ctx context.Context, request prodes.Cr
 
     // Convertir DTO a modelo
     prode := model.ProdeSession{
-        UserID:  request.UserID,
+        UserID:    request.UserID,
         SessionID: request.SessionID,
-        P1:      request.P1,
-        P2:      request.P2,
-        P3:      request.P3,
+        P1:        request.P1,
+        P2:        request.P2,
+        P3:        request.P3,
     }
 
     // Crear el pronóstico de sesión en la base de datos
-    err := s.prodeRepo.CreateProdeSession(ctx, &prode)
+    err = s.prodeRepo.CreateProdeSession(ctx, &prode)
     if err != nil {
         return prodes.ResponseProdeSessionDTO{}, e.NewInternalServerApiError("Error creando el pronóstico de sesión", err)
     }
 
     // Convertir el modelo a DTO de respuesta
     response := prodes.ResponseProdeSessionDTO{
-        ID:      prode.ID,
-        UserID:  prode.UserID,
+        ID:        prode.ID,
+        UserID:    prode.UserID,
         SessionID: prode.SessionID,
-        P1:      prode.P1,
-        P2:      prode.P2,
-        P3:      prode.P3,
+        P1:        prode.P1,
+        P2:        prode.P2,
+        P3:        prode.P3,
     }
 
     return response, nil
@@ -175,21 +144,10 @@ func (s *prodeService) UpdateProdeCarrera(ctx context.Context, request prodes.Up
         return prodes.ResponseProdeCarreraDTO{}, e.NewNotFoundApiError("El pronóstico de carrera no fue encontrado")
     }
 
-    // Verificar si la sesión está en la caché
-    cacheKey := fmt.Sprintf("session_%d", existingProde.SessionID)
-    cachedSession, found := s.cache.Get(cacheKey)
-
-    var sessionDetails prodes.SessionDetailsDTO
-    if found {
-        sessionDetails = cachedSession.(prodes.SessionDetailsDTO)  // Convertir el valor en el tipo adecuado
-    } else {
-        // Llamar al cliente HTTP para obtener los detalles completos de la sesión
-        sessionDetails, httpErr := s.httpClient.GetSessionByID(existingProde.SessionID)
-        if httpErr != nil {
-            return prodes.ResponseProdeCarreraDTO{}, e.NewInternalServerApiError("Error fetching session details", httpErr)
-        }
-        // Almacenar en la caché por 10 minutos
-        s.cache.Set(cacheKey, sessionDetails, 10*time.Minute)
+    // Obtener los detalles de la sesión directamente del microservicio de sesiones
+    sessionDetails, httpErr := s.httpClient.GetSessionByID(existingProde.SessionID)
+    if httpErr != nil {
+        return prodes.ResponseProdeCarreraDTO{}, e.NewInternalServerApiError("Error fetching session details", httpErr)
     }
 
     // Validar si la sesión ya ha comenzado
@@ -212,6 +170,8 @@ func (s *prodeService) UpdateProdeCarrera(ctx context.Context, request prodes.Up
         VSC:        request.VSC,
         SC:         request.SC,
         DNF:        request.DNF,
+        CreatedAt:  existingProde.CreatedAt,
+        UpdatedAt:  time.Now(),
     }
 
     err = s.prodeRepo.UpdateProdeCarrera(ctx, &prode)
@@ -244,26 +204,10 @@ func (s *prodeService) UpdateProdeSession(ctx context.Context, request prodes.Up
         return prodes.ResponseProdeSessionDTO{}, e.NewNotFoundApiError("El pronóstico de sesión no fue encontrado")
     }
 
-    // Generar la clave de caché para esta sesión
-    cacheKey := fmt.Sprintf("session_%d", existingProde.SessionID)
-    
-    // Verificar si los detalles de la sesión están en la caché
-    cachedSession, found := s.cache.Get(cacheKey)
-
-    var sessionDetails prodes.SessionDetailsDTO
-    if found {
-        // Si encontramos la sesión en la caché, la usamos
-        sessionDetails = cachedSession.(prodes.SessionDetailsDTO)
-    } else {
-        // Si no está en la caché, hacemos la llamada al cliente HTTP
-        sessionDetails, httpErr := s.httpClient.GetSessionByID(existingProde.SessionID)
-        if httpErr != nil {
-            // Envolver el error estándar en un ApiError
-            return prodes.ResponseProdeSessionDTO{}, e.NewInternalServerApiError("Error fetching session details", httpErr)
-        }
-
-        // Almacenar los detalles de la sesión en la caché por 10 minutos
-        s.cache.Set(cacheKey, sessionDetails, 10*time.Minute)
+    // Obtener los detalles de la sesión directamente desde el microservicio de sesiones
+    sessionDetails, httpErr := s.httpClient.GetSessionByID(existingProde.SessionID)
+    if httpErr != nil {
+        return prodes.ResponseProdeSessionDTO{}, e.NewInternalServerApiError("Error fetching session details", httpErr)
     }
 
     // Validar si la sesión ya ha comenzado
@@ -274,12 +218,12 @@ func (s *prodeService) UpdateProdeSession(ctx context.Context, request prodes.Up
     // Proceder con la actualización del ProdeSession
 	// Usar los valores originales de SessionID y UserID
     prode := model.ProdeSession{
-        ID:      existingProde.ID,
-        UserID:  existingProde.UserID,  // Mantener el UserID original
+        ID:        existingProde.ID,
+        UserID:    existingProde.UserID,  // Mantener el UserID original
         SessionID: existingProde.SessionID,  // Mantener el SessionID original
-        P1:      request.P1,
-        P2:      request.P2,
-        P3:      request.P3,
+        P1:        request.P1,
+        P2:        request.P2,
+        P3:        request.P3,
     }
 
     err = s.prodeRepo.UpdateProdeSession(ctx, &prode)
@@ -288,12 +232,12 @@ func (s *prodeService) UpdateProdeSession(ctx context.Context, request prodes.Up
     }
 
     response := prodes.ResponseProdeSessionDTO{
-        ID:      prode.ID,
-        UserID:  prode.UserID,
+        ID:        prode.ID,
+        UserID:    prode.UserID,
         SessionID: prode.SessionID,
-        P1:      prode.P1,
-        P2:      prode.P2,
-        P3:      prode.P3,
+        P1:        prode.P1,
+        P2:        prode.P2,
+        P3:        prode.P3,
     }
 
     return response, nil
@@ -330,25 +274,10 @@ func (s *prodeService) DeleteProdeSession(ctx context.Context, prodeID int) e.Ap
 }
 
 func (s *prodeService) DeleteProdeById(ctx context.Context, prodeID int) e.ApiError {
-    // Definir la clave de caché basada en el prodeID
-    cacheKey := fmt.Sprintf("session_info_%d", prodeID)
-
-    // Intentar obtener los datos de la caché
-    cachedSessionInfo, found := s.cache.Get(cacheKey)
-    var sessionInfo prodes.SessionNameAndTypeDTO
-    if found {
-        // Si los datos están en la caché, usarlos
-        sessionInfo = cachedSessionInfo.(prodes.SessionNameAndTypeDTO)
-    } else {
-        // Si no está en la caché, hacer la solicitud HTTP al microservicio de sessions
-        fetchedSessionInfo, err := s.httpClient.GetSessionNameAndType(prodeID)
-        if err != nil {
-            return e.NewInternalServerApiError("Error fetching session name and type from sessions service", err)
-        }
-        sessionInfo = fetchedSessionInfo
-
-        // Guardar los datos en la caché con una expiración de 10 minutos
-        s.cache.Set(cacheKey, sessionInfo, 10*time.Minute)
+    // Obtener los datos de la sesión directamente desde el microservicio de sessions
+    sessionInfo, err := s.httpClient.GetSessionNameAndType(prodeID)
+    if err != nil {
+        return e.NewInternalServerApiError("Error fetching session name and type from sessions service", err)
     }
 
     // Verificar si la sesión es de tipo "Race" tanto en session_name como en session_type
@@ -407,21 +336,10 @@ func (s *prodeService) GetProdesByUserId(ctx context.Context, userID int) ([]pro
 }
 
 func (s *prodeService) GetRaceProdeByUserAndSession(ctx context.Context, userID, sessionID int) (prodes.ResponseProdeCarreraDTO, e.ApiError) {
-    cacheKey := fmt.Sprintf("session_info_%d", sessionID)
-
-    // Intentar obtener los datos de la caché
-    cachedSessionInfo, found := s.cache.Get(cacheKey)
-    var sessionInfo prodes.SessionNameAndTypeDTO
-    if found {
-        sessionInfo = cachedSessionInfo.(prodes.SessionNameAndTypeDTO)
-    } else {
-        // Llamar al cliente HTTP para obtener el nombre y tipo de sesión
-        fetchedSessionInfo, err := s.httpClient.GetSessionNameAndType(sessionID)
-        if err != nil {
-            return prodes.ResponseProdeCarreraDTO{}, e.NewInternalServerApiError("Error fetching session name and type from sessions service", err)
-        }
-        sessionInfo = fetchedSessionInfo
-        s.cache.Set(cacheKey, sessionInfo, 10*time.Minute)
+    // Obtener los datos de la sesión directamente desde el microservicio de sessions
+    sessionInfo, err := s.httpClient.GetSessionNameAndType(sessionID)
+    if err != nil {
+        return prodes.ResponseProdeCarreraDTO{}, e.NewInternalServerApiError("Error fetching session name and type from sessions service", err)
     }
 
     // Verificar que la sesión es de tipo Race
@@ -458,21 +376,10 @@ func (s *prodeService) GetRaceProdeByUserAndSession(ctx context.Context, userID,
 }
 
 func (s *prodeService) GetSessionProdeByUserAndSession(ctx context.Context, userID, sessionID int) (prodes.ResponseProdeSessionDTO, e.ApiError) {
-    cacheKey := fmt.Sprintf("session_info_%d", sessionID)
-
-    // Intentar obtener los datos de la caché
-    cachedSessionInfo, found := s.cache.Get(cacheKey)
-    var sessionInfo prodes.SessionNameAndTypeDTO
-    if found {
-        sessionInfo = cachedSessionInfo.(prodes.SessionNameAndTypeDTO)
-    } else {
-        // Llamar al cliente HTTP para obtener el nombre y tipo de sesión
-        fetchedSessionInfo, err := s.httpClient.GetSessionNameAndType(sessionID)
-        if err != nil {
-            return prodes.ResponseProdeSessionDTO{}, e.NewInternalServerApiError("Error fetching session name and type from sessions service", err)
-        }
-        sessionInfo = fetchedSessionInfo
-        s.cache.Set(cacheKey, sessionInfo, 10*time.Minute)
+    // Obtener los datos de la sesión directamente desde el microservicio de sessions
+    sessionInfo, err := s.httpClient.GetSessionNameAndType(sessionID)
+    if err != nil {
+        return prodes.ResponseProdeSessionDTO{}, e.NewInternalServerApiError("Error fetching session name and type from sessions service", err)
     }
 
     // Verificar que la sesión **no** es de tipo Race
@@ -503,21 +410,10 @@ func (s *prodeService) GetSessionProdeByUserAndSession(ctx context.Context, user
 }
 
 func (s *prodeService) GetRaceProdesBySession(ctx context.Context, sessionID int) ([]prodes.ResponseProdeCarreraDTO, e.ApiError) {
-    cacheKey := fmt.Sprintf("session_info_%d", sessionID)
-
-    // Intentar obtener los datos de la caché
-    cachedSessionInfo, found := s.cache.Get(cacheKey)
-    var sessionInfo prodes.SessionNameAndTypeDTO
-    if found {
-        sessionInfo = cachedSessionInfo.(prodes.SessionNameAndTypeDTO)
-    } else {
-        // Llamar al cliente HTTP para obtener el nombre y tipo de la sesión
-        fetchedSessionInfo, err := s.httpClient.GetSessionNameAndType(sessionID)
-        if err != nil {
-            return nil, e.NewInternalServerApiError("Error fetching session name and type from sessions service", err)
-        }
-        sessionInfo = fetchedSessionInfo
-        s.cache.Set(cacheKey, sessionInfo, 10*time.Minute)
+    // Obtener los datos de la sesión directamente desde el microservicio de sessions
+    sessionInfo, err := s.httpClient.GetSessionNameAndType(sessionID)
+    if err != nil {
+        return nil, e.NewInternalServerApiError("Error fetching session name and type from sessions service", err)
     }
 
     // Verificar que la sesión sea de tipo "Race"
@@ -555,21 +451,10 @@ func (s *prodeService) GetRaceProdesBySession(ctx context.Context, sessionID int
 }
 
 func (s *prodeService) UpdateRaceProdeForUserBySessionId(ctx context.Context, userID int, sessionID int, updatedProde prodes.UpdateProdeCarreraDTO) (prodes.ResponseProdeCarreraDTO, e.ApiError) {
-    cacheKey := fmt.Sprintf("session_details_%d", sessionID)
-
-    // Intentar obtener los detalles de la sesión de la caché
-    cachedSessionDetails, found := s.cache.Get(cacheKey)
-    var sessionDetails prodes.SessionDetailsDTO
-    if found {
-        sessionDetails = cachedSessionDetails.(prodes.SessionDetailsDTO)
-    } else {
-        // Obtener detalles de la sesión para verificar la fecha de inicio
-        fetchedSessionDetails, err := s.httpClient.GetSessionByID(sessionID)
-        if err != nil {
-            return prodes.ResponseProdeCarreraDTO{}, e.NewInternalServerApiError("Error fetching session details", err)
-        }
-        sessionDetails = fetchedSessionDetails
-        s.cache.Set(cacheKey, sessionDetails, 10*time.Minute) // Guardar en la caché
+    // Obtener detalles de la sesión directamente desde el microservicio de sessions
+    sessionDetails, err := s.httpClient.GetSessionByID(sessionID)
+    if err != nil {
+        return prodes.ResponseProdeCarreraDTO{}, e.NewInternalServerApiError("Error fetching session details", err)
     }
 
     // Validar si la sesión es una carrera (Race)
@@ -599,7 +484,7 @@ func (s *prodeService) UpdateRaceProdeForUserBySessionId(ctx context.Context, us
     }
 
     // Llamar al repositorio para actualizar el ProdeCarrera
-    err := s.prodeRepo.UpdateProdeCarrera(ctx, &prode)
+    err = s.prodeRepo.UpdateProdeCarrera(ctx, &prode)
     if err != nil {
         return prodes.ResponseProdeCarreraDTO{}, e.NewInternalServerApiError("Error actualizando el pronóstico de carrera", err)
     }
@@ -624,21 +509,10 @@ func (s *prodeService) UpdateRaceProdeForUserBySessionId(ctx context.Context, us
 }
 
 func (s *prodeService) GetSessionProdeBySession(ctx context.Context, sessionID int) ([]prodes.ResponseProdeSessionDTO, e.ApiError) {
-    cacheKey := fmt.Sprintf("session_info_%d", sessionID)
-
-    // Intentar obtener los datos de la caché
-    cachedSessionInfo, found := s.cache.Get(cacheKey)
-    var sessionInfo prodes.SessionNameAndTypeDTO
-    if found {
-        sessionInfo = cachedSessionInfo.(prodes.SessionNameAndTypeDTO)
-    } else {
-        // Llamar al cliente HTTP para obtener el nombre y tipo de la sesión
-        fetchedSessionInfo, err := s.httpClient.GetSessionNameAndType(sessionID)
-        if err != nil {
-            return nil, e.NewInternalServerApiError("Error fetching session name and type from sessions service", err)
-        }
-        sessionInfo = fetchedSessionInfo
-        s.cache.Set(cacheKey, sessionInfo, 10*time.Minute)
+    // Obtener detalles de la sesión directamente desde el microservicio de sessions
+    sessionInfo, err := s.httpClient.GetSessionNameAndType(sessionID)
+    if err != nil {
+        return nil, e.NewInternalServerApiError("Error fetching session name and type from sessions service", err)
     }
 
     // Verificar que la sesión NO sea de tipo "Race"
@@ -718,12 +592,6 @@ func (s *prodeService) GetUserProdes(ctx context.Context, userID int) ([]prodes.
 }
 
 func (s *prodeService) GetDriverDetails(ctx context.Context, driverID int) (prodes.DriverDTO, e.ApiError) {
-    // Verificar si los detalles del piloto están en caché
-    cacheKey := fmt.Sprintf("driver_details_%d", driverID)
-    if cachedData, found := s.cache.Get(cacheKey); found {
-        return cachedData.(prodes.DriverDTO), nil
-    }
-
     // Llamar al microservicio de drivers para obtener los detalles del piloto
     driverDetails, err := s.httpClient.GetDriverByID(driverID)
     if err != nil {
@@ -740,19 +608,10 @@ func (s *prodeService) GetDriverDetails(ctx context.Context, driverID int) (prod
         TeamName:    driverDetails.TeamName,
     }
 
-    // Guardar en caché los detalles del piloto
-    s.cache.Set(cacheKey, response, 10*time.Minute)
-
     return response, nil
 }
 
 func (s *prodeService) GetAllDrivers(ctx context.Context) ([]prodes.DriverDTO, e.ApiError) {
-    // Verificar si todos los pilotos están en caché
-    cacheKey := "all_drivers"
-    if cachedData, found := s.cache.Get(cacheKey); found {
-        return cachedData.([]prodes.DriverDTO), nil
-    }
-
     // Llamar al microservicio de drivers para obtener todos los pilotos
     drivers, err := s.httpClient.GetAllDrivers()
     if err != nil {
@@ -772,27 +631,15 @@ func (s *prodeService) GetAllDrivers(ctx context.Context) ([]prodes.DriverDTO, e
         })
     }
 
-    // Guardar en caché todos los pilotos
-    s.cache.Set(cacheKey, driverResponses, 30*time.Minute)
-
     return driverResponses, nil
 }
 
 func (s *prodeService) GetTopDriversBySessionId(ctx context.Context, sessionID, n int) ([]prodes.DriverDTO, e.ApiError) {
-    // Verificar si los mejores pilotos por sesión están en caché
-    cacheKey := fmt.Sprintf("top_drivers_session_%d_n_%d", sessionID, n)
-    if cachedData, found := s.cache.Get(cacheKey); found {
-        return cachedData.([]prodes.DriverDTO), nil
-    }
-
     // Llamar al cliente HTTP para obtener los mejores pilotos de la sesión
     topDrivers, err := s.httpClient.GetTopDriversBySession(sessionID, n)
     if err != nil {
         return nil, e.NewInternalServerApiError("Error fetching top drivers from results service", err)
     }
-
-    // Guardar en caché los mejores pilotos de la sesión
-    s.cache.Set(cacheKey, topDrivers, 10*time.Minute)
 
     // Retornar los pilotos obtenidos
     return topDrivers, nil

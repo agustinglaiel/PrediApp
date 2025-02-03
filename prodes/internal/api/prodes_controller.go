@@ -58,15 +58,35 @@ func (c *ProdeController) CreateProdeSession(ctx *gin.Context) {
 }
 
 func (c *ProdeController) UpdateProdeCarrera(ctx *gin.Context) {
+	// Capturar el prode_id desde la URL
+	prodeIDParam := ctx.Param("prode_id")
+
+	// Convertir el prode_id de string a int
+	prodeID, err := strconv.Atoi(prodeIDParam)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Invalid prode_id in URL"))
+		return
+	}
+
+	// Parsear el JSON del request body a un DTO
 	var request dto.UpdateProdeCarreraDTO
 	if err := ctx.ShouldBindJSON(&request); err != nil {
 		ctx.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Invalid JSON data"))
 		return
 	}
 
+	// Asignar el prodeID capturado al DTO antes de enviarlo al servicio
+	request.ProdeID = prodeID
+
+	// Llamar al servicio para actualizar el ProdeCarrera
 	response, err := c.prodeService.UpdateProdeCarrera(ctx.Request.Context(), request)
 	if err != nil {
-		ctx.JSON(err.Status(), err)
+		if apiErr, ok := err.(e.ApiError); ok {
+			ctx.JSON(apiErr.Status(), apiErr)
+		} else {
+			// Si no lo es, retornamos un error interno genérico
+			ctx.JSON(http.StatusInternalServerError, e.NewInternalServerApiError("Unexpected error", err))
+		}
 		return
 	}
 
@@ -74,15 +94,30 @@ func (c *ProdeController) UpdateProdeCarrera(ctx *gin.Context) {
 }
 
 func (c *ProdeController) UpdateProdeSession(ctx *gin.Context) {
+	// Obtener `session_id` desde los parámetros de la URL
+	sessionID, err := strconv.Atoi(ctx.Param("session_id"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Invalid session_id parameter"))
+		return
+	}
+
 	var request dto.UpdateProdeSessionDTO
 	if err := ctx.ShouldBindJSON(&request); err != nil {
 		ctx.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Invalid JSON data"))
 		return
 	}
 
+	// Asignar `sessionID` obtenido de la URL al DTO
+	request.SessionID = sessionID
+
 	response, err := c.prodeService.UpdateProdeSession(ctx.Request.Context(), request)
 	if err != nil {
-		ctx.JSON(err.Status(), err)
+		// Hacer type assertion para verificar si `err` es del tipo `ApiError`
+		if apiErr, ok := err.(e.ApiError); ok {
+			ctx.JSON(apiErr.Status(), apiErr)
+		} else {
+			ctx.JSON(http.StatusInternalServerError, e.NewInternalServerApiError("Unexpected error", err))
+		}
 		return
 	}
 

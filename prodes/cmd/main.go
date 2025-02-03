@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"prodes/internal/api"
 	client "prodes/internal/client"
@@ -17,7 +18,7 @@ func main() {
 	// Obtener el puerto de la variable de entorno PORT
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8081" // Valor por defecto en caso de que no esté configurado
+		port = "8054" // Valor por defecto en caso de que no esté configurado
 	}
 
 	// Inicializar la base de datos
@@ -60,8 +61,9 @@ func main() {
 	// Llamar a MapUrls para configurar las rutas
 	router.MapUrls(ginRouter, prodeController)
 
-	// Iniciar el servidor usando el puerto obtenido de la variable de entorno
-	// if err := ginRouter.Run(":" + port); err != nil {
-	// 	log.Fatalf("Failed to run server on port %s: %v", port, err)
-	// }
+	// Iniciar servidor usando el puerto obtenido de la variable de entorno
+	fmt.Printf("Users service listening on port %s...\n", port)
+	if err := ginRouter.Run(":" + port); err != nil {
+		log.Fatalf("Failed to run server on port %s: %v", port, err)
+	}
 }
