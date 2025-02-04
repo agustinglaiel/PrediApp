@@ -46,6 +46,32 @@ func NewPrediService(prodeRepo repository.ProdeRepository, httpClient *client.Ht
 }
 
 func (s *prodeService) CreateProdeCarrera(ctx context.Context, request prodes.CreateProdeCarreraDTO) (prodes.ResponseProdeCarreraDTO, e.ApiError) {
+    existingProde, err := s.prodeRepo.GetProdeCarreraBySessionIdAndUserId(ctx, request.UserID, request.SessionID)
+
+    if err == nil {
+        // Si ya existe un ProdeCarrera, actualizarlo en lugar de crear uno nuevo
+        updateRequest := prodes.UpdateProdeCarreraDTO{
+            ProdeID:    existingProde.ID,
+            UserID:     existingProde.UserID,
+            SessionID:  existingProde.SessionID,
+            P1:         request.P1,
+            P2:         request.P2,
+            P3:         request.P3,
+            P4:         request.P4,
+            P5:         request.P5,
+            FastestLap: request.FastestLap,
+            VSC:        request.VSC,
+            SC:         request.SC,
+            DNF:        request.DNF,
+        }
+        return s.UpdateProdeCarrera(ctx, updateRequest)
+    }
+
+    if err != e.NewNotFoundApiError("No prode found for this user and session") {
+        // Si ocurrió un error diferente a "registro no encontrado", devolver el error
+        return prodes.ResponseProdeCarreraDTO{}, e.NewInternalServerApiError("Error checking existing prode", err)
+    }
+
     // Hacer la llamada al cliente HTTP para obtener la información de la sesión
     sessionInfo, err := s.httpClient.GetSessionNameAndType(request.SessionID)
     if err != nil {
@@ -98,6 +124,26 @@ func (s *prodeService) CreateProdeCarrera(ctx context.Context, request prodes.Cr
 }
 
 func (s *prodeService) CreateProdeSession(ctx context.Context, request prodes.CreateProdeSessionDTO) (prodes.ResponseProdeSessionDTO, e.ApiError) {
+    existingProde, err := s.prodeRepo.GetProdeSessionBySessionIdAndUserId(ctx, request.UserID, request.SessionID)
+
+    if err == nil {
+        // Si ya existe un ProdeSession, actualizarlo en lugar de crear uno nuevo
+        updateRequest := prodes.UpdateProdeSessionDTO{
+            ProdeID:    existingProde.ID,
+            UserID:     existingProde.UserID,
+            SessionID:  existingProde.SessionID,
+            P1:         request.P1,
+            P2:         request.P2,
+            P3:         request.P3,
+        }
+        return s.UpdateProdeSession(ctx, updateRequest)
+    }
+
+    if err != e.NewNotFoundApiError("No prode found for this user and session") {
+        // Si ocurrió un error diferente a "registro no encontrado", devolver el error
+        return prodes.ResponseProdeSessionDTO{}, e.NewInternalServerApiError("Error checking existing prode", err)
+    }
+    
     // Obtener la información de la sesión desde el microservicio de sesiones
     sessionInfo, err := s.httpClient.GetSessionNameAndType(request.SessionID)
     if err != nil {
@@ -224,6 +270,8 @@ func (s *prodeService) UpdateProdeSession(ctx context.Context, request prodes.Up
         P1:        request.P1,
         P2:        request.P2,
         P3:        request.P3,
+        CreatedAt:  existingProde.CreatedAt,
+        UpdatedAt:  time.Now(),
     }
 
     err = s.prodeRepo.UpdateProdeSession(ctx, &prode)
