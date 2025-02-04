@@ -101,6 +101,8 @@ func getTargetURL(path string) (string, string) {
         return os.Getenv("RESULTS_SERVICE_URL"), proxyPath
     case "sessions":
         return os.Getenv("SESSIONS_SERVICE_URL"), proxyPath
+    case "groups":
+        return os.Getenv("GROUPS_SERVICE_URL"), proxyPath
     default:
         return "", ""
     }

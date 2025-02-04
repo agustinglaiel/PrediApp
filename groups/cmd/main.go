@@ -7,6 +7,7 @@ import (
 	"groups/internal/router"
 	"groups/internal/service"
 	"groups/pkg/utils"
+	"log"
 	"os"
 
 	"github.com/gin-gonic/gin"
@@ -19,9 +20,11 @@ func main() {
 		port = "8053"
 	}
 
+	// Inicializar la base de datos
 	db, err := utils.InitDB()
 	if err != nil {
-		fmt.Println("Error al conectar la Base de Datos")
+		fmt.Println("Error al conectar con la Base de Datos")
+		panic(err)
 	}
 	defer utils.DisconnectDB()
 
@@ -35,7 +38,9 @@ func main() {
 
 	router.MapUrls(ginRouter, groupController)
 
-	// if err := ginRouter.Run(":" + port); err != nil {
-	// 	fmt.Printf("Failed to run server on port %s: %v", port, err)
-	// }
+	// Iniciar servidor usando el puerto obtenido de la variable de entorno
+	fmt.Printf("Users service listening on port %s...\n", port)
+	if err := ginRouter.Run(":" + port); err != nil {
+		log.Fatalf("Failed to run server on port %s: %v", port, err)
+	}
 }
