@@ -8,23 +8,22 @@ type Group struct {
 	GroupName   string        `gorm:"size:255;not null" json:"group_name"`
 	Description string        `gorm:"size:255" json:"description"`
 	GroupCode   string        `gorm:"size:8;uniqueIndex;not null" json:"group_code"` // Código único del grupo
-	GroupXUsers []GroupXUsers `gorm:"foreignKey:GroupID" json:"group_x_users"`
+	GroupUsers  []GroupXUsers `gorm:"foreignKey:GroupID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"group_users"`
 	CreatedAt   time.Time     `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt   time.Time     `gorm:"autoUpdateTime" json:"updated_at"`
 	DeletedAt   *time.Time    `gorm:"index" json:"deleted_at,omitempty"`
 }
 
-
 // GroupXUsers representa la relación entre grupos y usuarios
 type GroupXUsers struct {
-	ID         int       `gorm:"primaryKey" json:"id"`
-	GroupID    int       `gorm:"index;not null" json:"group_id"`   // Clave foránea hacia groups.id
-	UserID     int       `gorm:"index;not null" json:"user_id"`    // Clave foránea hacia users.id
-	GroupRole  string    `gorm:"size:50;not null" json:"group_role"` // Rol en el grupo: "creator" o "invited"
-	Group      Group     `gorm:"foreignKey:GroupID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"group"`
-	User       User      `gorm:"foreignKey:UserID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"user"`
-	CreatedAt  time.Time `gorm:"autoCreateTime" json:"created_at"`
-	UpdatedAt  time.Time `gorm:"autoUpdateTime" json:"updated_at"`
+	ID        int       `gorm:"primaryKey" json:"id"`
+	GroupID   int       `gorm:"index;not null" json:"group_id"`  // Clave foránea hacia groups.id
+	UserID    int       `gorm:"index;not null" json:"user_id"`   // Clave foránea hacia users.id
+	GroupRole string    `gorm:"size:50;not null" json:"group_role"` // Rol en el grupo: "creator" o "invited"`
+	Group     *Group    `gorm:"foreignKey:GroupID" json:"-"` // Eliminamos la carga circular
+	User      *User     `gorm:"foreignKey:UserID" json:"-"` // Eliminamos la carga circular
+	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 }
 
 // User representa un usuario en el sistema

@@ -25,7 +25,7 @@ func (ctrl *GroupController) CreateGroup(c *gin.Context) {
 	var request dto.CreateGroupRequestDTO
 	if err := c.ShouldBindJSON(&request); err != nil {
 		log.Printf("Error binding JSON: %v", err)
-		apiErr := e.NewBadRequestApiError("invalid request")
+		apiErr := e.NewBadRequestApiError("Invalid request")
 		c.JSON(apiErr.Status(), apiErr)
 		return
 	}
@@ -43,7 +43,7 @@ func (ctrl *GroupController) CreateGroup(c *gin.Context) {
 func (ctrl *GroupController) GetGroupByID(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		apiErr := e.NewBadRequestApiError("invalid id")
+		apiErr := e.NewBadRequestApiError("Invalid group ID")
 		c.JSON(apiErr.Status(), apiErr)
 		return
 	}
@@ -70,7 +70,7 @@ func (ctrl *GroupController) GetGroups(c *gin.Context) {
 func (ctrl *GroupController) DeleteGroupByID(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		apiErr := e.NewBadRequestApiError("invalid id")
+		apiErr := e.NewBadRequestApiError("Invalid group ID")
 		c.JSON(apiErr.Status(), apiErr)
 		return
 	}
@@ -84,14 +84,36 @@ func (ctrl *GroupController) DeleteGroupByID(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
 }
 
-func (ctrl *GroupController) DeleteGroupByGroupName(c *gin.Context) {
-	groupName := c.Param("group_name")
+func (ctrl *GroupController) JoinGroup(c *gin.Context) {
+	var request dto.RequestJoinGroupDTO
+	if err := c.ShouldBindJSON(&request); err != nil {
+		apiErr := e.NewBadRequestApiError("Invalid request")
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
 
-	apiErr := ctrl.groupService.DeleteGroupByGroupName(c.Request.Context(), groupName)
+	apiErr := ctrl.groupService.JoinGroup(c.Request.Context(), request)
 	if apiErr != nil {
 		c.JSON(apiErr.Status(), apiErr)
 		return
 	}
 
-	c.JSON(http.StatusNoContent, nil)
+	c.JSON(http.StatusOK, gin.H{"message": "User successfully joined the group"})
+}
+
+func (ctrl *GroupController) ManageGroupInvitation(c *gin.Context) {
+	var request dto.ManageGroupInvitationDTO
+	if err := c.ShouldBindJSON(&request); err != nil {
+		apiErr := e.NewBadRequestApiError("Invalid request")
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	apiErr := ctrl.groupService.ManageGroupInvitation(c.Request.Context(), request)
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Invitation managed successfully"})
 }
