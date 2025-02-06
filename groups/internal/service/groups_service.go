@@ -136,15 +136,18 @@ func (s *groupService) JoinGroup(ctx context.Context, request dto.RequestJoinGro
 	}
 
 	// Verificar si el usuario ya está en el grupo
-	exists, err := s.groupRepo.UserExistsInGroup(ctx, group.ID, request.UserID)
+	role, err := s.groupRepo.GetUserRoleInGroup(ctx, group.ID, request.UserID)
 	if err != nil {
 		return err
 	}
-	if exists {
-		return e.NewBadRequestApiError("User is already in the group")
+	if role == "member" {
+		return e.NewBadRequestApiError("User is already a member of the group")
+	}
+	if role == "invited" {
+		return e.NewBadRequestApiError("User has already requested to join the group and is awaiting approval")
 	}
 
-	// Agregar al usuario como `invited`
+	// Agregar al usuario como "invited"
 	if err := s.groupRepo.AddUserToGroup(ctx, group.ID, request.UserID, "invited"); err != nil {
 		return e.NewInternalServerApiError("Error adding user to group", err)
 	}
@@ -152,33 +155,50 @@ func (s *groupService) JoinGroup(ctx context.Context, request dto.RequestJoinGro
 	return nil
 }
 
+
+//Un usuario solicita unirse a un grupo mediante la ruta POST /groups/join. 
+///En este momento, su estado en la tabla group_x_users queda como "invited".
+// Luego, el creador del grupo debe aceptar o rechazar la invitación usando POST /groups/manage-invitation.
+//Si la acción es "accept", el usuario pasa a "member".
+//Si la acción es "reject", el usuario es eliminado del grupo.
 func (s *groupService) ManageGroupInvitation(ctx context.Context, request dto.ManageGroupInvitationDTO) e.ApiError {
 	group, err := s.groupRepo.GetGroupByID(ctx, request.GroupID)
 	if err != nil {
 		return err
 	}
 
-	// Verificar si el usuario que realiza la acción es el creador del grupo
-	isCreator, err := s.groupRepo.UserExistsInGroup(ctx, group.ID, request.UserID)
+	// Verificar si el usuario que realiza la acción (CreatorID) es el creator del grupo
+	creatorRole, err := s.groupRepo.GetUserRoleInGroup(ctx, group.ID, request.CreatorID)
 	if err != nil {
 		return err
 	}
-	if !isCreator {
+	if creatorRole != "creator" {
 		return e.NewForbiddenApiError("Only the group creator can manage invitations")
 	}
 
-	// Aceptar o rechazar la invitación
+	// Verificar si el usuario a gestionar está en el grupo y es "invited"
+	targetRole, err := s.groupRepo.GetUserRoleInGroup(ctx, group.ID, request.TargetUserID)
+	if err != nil {
+		return err
+	}
+	if targetRole != "invited" {
+		return e.NewBadRequestApiError("User is not in invited status")
+	}
+
+	// Si la acción es "accept", cambiamos el rol a "member"
 	if request.Action == "accept" {
-		if err := s.groupRepo.AddUserToGroup(ctx, group.ID, request.UserID, "member"); err != nil {
+		if err := s.groupRepo.UpdateUserRoleInGroup(ctx, group.ID, request.TargetUserID, "member"); err != nil {
 			return e.NewInternalServerApiError("Error accepting user into group", err)
 		}
-	} else if request.Action == "reject" {
-		if err := s.groupRepo.RemoveUserFromGroup(ctx, group.ID, request.UserID); err != nil {
+	}
+
+	// Si la acción es "reject", eliminamos al usuario del grupo
+	if request.Action == "reject" {
+		if err := s.groupRepo.RemoveUserFromGroup(ctx, group.ID, request.TargetUserID); err != nil {
 			return e.NewInternalServerApiError("Error rejecting user from group", err)
 		}
-	} else {
-		return e.NewBadRequestApiError("Invalid action")
 	}
 
 	return nil
 }
+

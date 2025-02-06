@@ -37,7 +37,7 @@ func DisconnectDB() {
 
 func StartDbEngine() {
     DB.AutoMigrate(&model.Group{})
-    // Add other migrations here if needed
+    DB.AutoMigrate(&model.GroupXUsers{})
     fmt.Println("Finishing Migration Database Tables")
 }
 

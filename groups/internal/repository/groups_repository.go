@@ -26,7 +26,9 @@ type GroupRepository interface {
 	// Manejo de `groups_users`
 	AddUserToGroup(ctx context.Context, groupID int, userID int, role string) e.ApiError 
 	RemoveUserFromGroup(ctx context.Context, groupID int, userID int) e.ApiError         
-	UserExistsInGroup(ctx context.Context, groupID int, userID int) (bool, e.ApiError)   
+	UserExistsInGroup(ctx context.Context, groupID int, userID int) (bool, e.ApiError)
+	GetUserRoleInGroup(ctx context.Context, groupID int, userID int) (string, e.ApiError)
+	UpdateUserRoleInGroup(ctx context.Context, groupID int, userID int, newRole string) e.ApiError
 }
 
 func NewGroupRepository(db *gorm.DB) GroupRepository {
@@ -79,7 +81,7 @@ func (r *groupRepository) GetGroupByGroupName(ctx context.Context, groupName str
 func (r *groupRepository) GetGroupByCode(ctx context.Context, code string) (*model.Group, e.ApiError) {
 	var group model.Group
 	if err := r.db.WithContext(ctx).
-		Preload("Users").
+		Preload("GroupUsers").
 		Where("group_code = ?", code).
 		First(&group).Error; err != nil {
 
@@ -94,7 +96,7 @@ func (r *groupRepository) GetGroupByCode(ctx context.Context, code string) (*mod
 func (r *groupRepository) GetGroups(ctx context.Context) ([]*model.Group, e.ApiError) {
 	var groups []*model.Group
 	if err := r.db.WithContext(ctx).
-		Preload("Users").
+		Preload("GroupUsers.User").
 		Find(&groups).Error; err != nil {
 		return nil, e.NewInternalServerApiError("Error getting groups", err)
 	}
@@ -163,6 +165,36 @@ func (r *groupRepository) UserExistsInGroup(ctx context.Context, groupID int, us
 		return false, e.NewInternalServerApiError("Error checking user in group", err)
 	}
 	return count > 0, nil
+}
+
+// Obtener el rol actual de un usuario en un grupo
+func (r *groupRepository) GetUserRoleInGroup(ctx context.Context, groupID int, userID int) (string, e.ApiError) {
+	var role string
+	err := r.db.WithContext(ctx).
+		Table("group_x_users").
+		Select("group_role").
+		Where("group_id = ? AND user_id = ?", groupID, userID).
+		Scan(&role).Error
+
+	if err != nil {
+		return "", e.NewInternalServerApiError("Error getting user role in group", err)
+	}
+
+	return role, nil
+}
+
+// Actualizar el rol de un usuario en un grupo
+func (r *groupRepository) UpdateUserRoleInGroup(ctx context.Context, groupID int, userID int, newRole string) e.ApiError {
+	err := r.db.WithContext(ctx).
+		Model(&model.GroupXUsers{}).
+		Where("group_id = ? AND user_id = ?", groupID, userID).
+		Update("group_role", newRole).Error
+
+	if err != nil {
+		return e.NewInternalServerApiError("Error updating user role in group", err)
+	}
+
+	return nil
 }
 
 func generateGroupCode() string {

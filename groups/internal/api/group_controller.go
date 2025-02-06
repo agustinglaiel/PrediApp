@@ -98,7 +98,7 @@ func (ctrl *GroupController) JoinGroup(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "User successfully joined the group"})
+	c.JSON(http.StatusOK, gin.H{"message": "User successfully sent the request to join the group"})
 }
 
 func (ctrl *GroupController) ManageGroupInvitation(c *gin.Context) {

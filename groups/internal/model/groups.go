@@ -20,7 +20,7 @@ type GroupXUsers struct {
 	GroupID   int       `gorm:"index;not null" json:"group_id"`  // Clave foránea hacia groups.id
 	UserID    int       `gorm:"index;not null" json:"user_id"`   // Clave foránea hacia users.id
 	GroupRole string    `gorm:"size:50;not null" json:"group_role"` // Rol en el grupo: "creator" o "invited"`
-	Group     *Group    `gorm:"foreignKey:GroupID" json:"-"` // Eliminamos la carga circular
+	Group 	  *Group `gorm:"foreignKey:GroupID;references:ID" json:"group"`
 	User      *User     `gorm:"foreignKey:UserID" json:"-"` // Eliminamos la carga circular
 	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"`
@@ -32,7 +32,7 @@ type User struct {
 	FirstName string        `gorm:"size:255" json:"first_name"`
 	LastName  string        `gorm:"size:255" json:"last_name"`
 	Email     string        `gorm:"size:255;unique;not null" json:"email"`
-	Groups    []GroupXUsers `gorm:"foreignKey:UserID" json:"groups"` // Relación con la tabla intermedia
+	Groups    []Group `gorm:"many2many:group_x_users;foreignKey:ID;joinForeignKey:UserID;References:ID;joinReferences:GroupID" json:"groups"`
 	CreatedAt time.Time     `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt time.Time     `gorm:"autoUpdateTime" json:"updated_at"`
 }

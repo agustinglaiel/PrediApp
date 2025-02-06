@@ -40,7 +40,8 @@ type RequestJoinGroupDTO struct {
 }
 
 type ManageGroupInvitationDTO struct {
-	GroupID  int    `json:"group_id" binding:"required"`  // ID del grupo
-	UserID   int    `json:"user_id" binding:"required"`   // ID del usuario a aceptar/rechazar
-	Action   string `json:"action" binding:"required"`    // Acción: "accept" o "reject"
+	GroupID      int    `json:"group_id" binding:"required"`       // ID del grupo
+	CreatorID    int    `json:"creator_id" binding:"required"`     // ID del creador (quien acepta/rechaza)
+	TargetUserID int    `json:"target_user_id" binding:"required"` // ID del usuario a aceptar/rechazar
+	Action       string `json:"action" binding:"required"`         // Acción: "accept" o "reject"
 }

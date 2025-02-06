@@ -77,6 +77,7 @@ func main() {
         "./results/cmd":   "",
         "./sessions/cmd":  "",
         "./users/cmd":     "",
+        "./groups/cmd":    "",
         // "./gateway":       "8080",
     }
 
