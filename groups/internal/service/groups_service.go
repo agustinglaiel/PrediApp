@@ -2,10 +2,12 @@ package service
 
 import (
 	"context"
+	"groups/internal/client"
 	"groups/internal/dto"
 	"groups/internal/model"
 	"groups/internal/repository"
 	e "groups/pkg/utils"
+	"time"
 )
 
 
@@ -47,13 +49,21 @@ func (s *groupService) CreateGroup(ctx context.Context, request dto.CreateGroupR
 		return dto.GroupResponseDTO{}, e.NewInternalServerApiError("Error adding creator to group", err)
 	}
 
-	// Construir la respuesta con el código único
+	// Construir la respuesta con la lista de usuarios
 	response := dto.GroupResponseDTO{
 		ID:          newGroup.ID,
 		GroupName:   newGroup.GroupName,
 		Description: newGroup.Description,
 		GroupCode:   newGroup.GroupCode,
-		Users:       []dto.GroupUserResponseDTO{}, // No necesitamos cargar los usuarios aquí
+		Users: []dto.GroupUserResponseDTO{
+			{
+				UserID: request.UserID,
+				Role:   "creator",
+				Score:  nil, // Se traerá desde el microservicio de `users` en otra función
+			},
+		},
+		CreatedAt:   newGroup.CreatedAt.Format(time.RFC3339), // ✅ Convertimos a string ISO 8601
+		UpdatedAt:   newGroup.UpdatedAt.Format(time.RFC3339),
 	}
 
 	return response, nil
@@ -65,13 +75,20 @@ func (s *groupService) GetGroupByID(ctx context.Context, id int) (dto.GroupRespo
 		return dto.GroupResponseDTO{}, err
 	}
 
-	// Mapear usuarios del grupo
+	usersClient := client.NewUsersClient()
+
+	// Mapear usuarios del grupo con sus puntajes
 	var users []dto.GroupUserResponseDTO
-	for _, groupUser := range group.GroupUsers { 
+	for _, groupUser := range group.GroupUsers {
+		score, err := usersClient.GetUserScore(groupUser.UserID)
+		if err != nil {
+			score = 0 // Si falla, asignamos 0 por defecto
+		}
+
 		users = append(users, dto.GroupUserResponseDTO{
 			UserID: groupUser.UserID,
 			Role:   groupUser.GroupRole,
-			Score:  nil, // Se traerá desde el microservicio de `users` en otra función
+			Score:  &score,
 		})
 	}
 
@@ -81,6 +98,8 @@ func (s *groupService) GetGroupByID(ctx context.Context, id int) (dto.GroupRespo
 		Description: group.Description,
 		GroupCode:   group.GroupCode,
 		Users:       users,
+		CreatedAt:   group.CreatedAt.Format(time.RFC3339), // Convertimos a string ISO 8601
+		UpdatedAt:   group.UpdatedAt.Format(time.RFC3339),
 	}
 
 	return response, nil
