@@ -18,6 +18,11 @@ import (
 func ReverseProxy() gin.HandlerFunc {
     return func(c *gin.Context) {
         // log.Printf("Incoming request: %s %s", c.Request.Method, c.Request.URL.Path)
+        // Manejar las solicitudes preflight directamente
+		if c.Request.Method == http.MethodOptions {
+			c.AbortWithStatus(http.StatusOK)
+			return
+		}
 
         target, proxyPath := getTargetURL(c.Request.URL.Path)
         if target == "" {
@@ -42,9 +47,9 @@ func ReverseProxy() gin.HandlerFunc {
         proxy := httputil.NewSingleHostReverseProxy(targetURL)
 
         proxy.Director = func(req *http.Request) {
-            // log.Printf("Original Request Path: %s", req.URL.Path)
-            // log.Printf("Resolved Target URL: %s", targetURL.String())
-            // log.Printf("Proxy Path: %s", proxyPath)
+            log.Printf("Original Request Path: %s", req.URL.Path)
+            log.Printf("Resolved Target URL: %s", targetURL.String())
+            log.Printf("Proxy Path: %s", proxyPath)
         
             req.URL.Scheme = targetURL.Scheme
             req.URL.Host = targetURL.Host
@@ -57,7 +62,7 @@ func ReverseProxy() gin.HandlerFunc {
             }
         
             req.Host = targetURL.Host
-            // log.Printf("Forwarding final request to: %s", req.URL.String())
+            log.Printf("Forwarding final request to: %s", req.URL.String())
         }
 
         proxy.ModifyResponse = func(res *http.Response) error {

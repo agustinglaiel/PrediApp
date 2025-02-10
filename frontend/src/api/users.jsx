@@ -23,7 +23,7 @@ const setRefreshToken = (refreshToken) => {
 // Función de registro que guarda el token en localStorage
 export const signUp = async (userData) => {
   try {
-    const response = await axios.post(`${API_URL}/users/signup`, userData);
+    const response = await axios.post(`${API_URL}/api/signup`, userData);
     const { token } = response.data;
     console.log(token);
 
@@ -42,7 +42,7 @@ export const signUp = async (userData) => {
 // Función de inicio de sesión que guarda el token en localStorage
 export const login = async (userData) => {
   try {
-    const response = await axios.post(`${API_URL}/users/login`, userData);
+    const response = await axios.post(`${API_URL}/api/login`, userData);
     const { token, id: userId } = response.data;
 
     // Almacenar el token y establecerlo en las solicitudes
@@ -102,7 +102,7 @@ export const deleteUserById = async (id) => {
 // Obtener todos los usuarios (requiere token en el encabezado)
 export const getUsers = async () => {
   try {
-    const response = await axios.get(`${API_URL}/users`);
+    const response = await axios.get(`${API_URL}/users/`);
     return response.data;
   } catch (error) {
     throw new Error(error.response.data.message || "Error fetching users.");
