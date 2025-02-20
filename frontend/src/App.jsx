@@ -1,3 +1,5 @@
+// src/App.jsx
+import "./index.css"; // Asegúrate de que esta línea esté presente
 import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import SignUp from "./pages/Signup";
@@ -9,8 +11,7 @@ import RaceWeekendPage from "./pages/RaceWeekendPage";
 import { SessionsProvider } from "./contexts/SessionsContext"; // Importamos el proveedor del contexto
 import RacePredictionForm from "./pages/RacePredictionForm";
 import SessionPredictionForm from "./pages/SessionPredictionForm";
-import Home from "./pages/Home";
-
+import Home from "./pages/HomePage";
 const App = () => {
   return (
     <SessionsProvider>
@@ -37,5 +38,4 @@ const App = () => {
     </SessionsProvider>
   );
 };
-
 export default App;
