@@ -1,38 +1,30 @@
+// frontendnuevo/src/pages/HomePage.jsx
 import React from "react";
-import "../styles/HomePage.css"; // Agrega esto
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 
 const HomePage = () => {
   const navigate = useNavigate();
+
   return (
-    <div>
+    <div className="flex flex-col min-h-screen bg-white">
       <Header />
-      <main>
-        <div>
-          <div>
-            <h1>¡Bienvenido a PrediApp!</h1>
-            <p>
-              Predice los resultados de la Fórmula 1 y compite con tus amigos.
-            </p>
-            <button onClick={() => navigate("/prodesPage")}>
-              ¡Haz tu Pronóstico!
-            </button>
-          </div>
-
-          <div>
-            <h2>Próximos Eventos</h2>
-            {/* Aquí va la lista de próximos eventos */}
-          </div>
-
-          <div>
-            <h2>Últimos Resultados</h2>
-            {/* Aquí va el carrusel de los últimos resultados */}
-          </div>
-        </div>
+      <main className="flex-grow container mx-auto px-4 py-6 text-center">
+        <h1 className="text-2xl font-bold text-gray-900 mb-4 md:text-4xl">
+          ¡Bienvenido a PrediApp!
+        </h1>
+        <p className="text-base text-gray-700 mb-6 md:text-lg">
+          Predice los resultados de la Fórmula 1 y compite con tus amigos.
+        </p>
+        <button
+          onClick={() => navigate("/prodesPage")}
+          className="bg-red-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-600 transition-colors duration-300 md:py-2 md:px-6"
+        >
+          ¡Haz tu Pronóstico!
+        </button>
       </main>
-      <footer>
-        <p>© 2024 PrediApp</p>
+      <footer className="bg-gray-200 text-gray-700 text-center py-3 text-sm md:text-base">
+        <p>© 2025 PrediApp</p>
       </footer>
     </div>
   );

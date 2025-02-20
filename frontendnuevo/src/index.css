@@ -1,7 +1,13 @@
-/* src/index.css */
+/* frontendnuevo/src/index.css */
+@import url("https://fonts.googleapis.com/css2?family=Pacifico&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.cursive {
+  font-family: "Pacifico", cursive;
+}
 
 body {
   margin: 0;
@@ -15,4 +21,8 @@ body {
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
     monospace;
+}
+
+a {
+  @apply no-underline;
 }
