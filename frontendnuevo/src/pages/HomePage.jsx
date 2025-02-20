@@ -4,22 +4,17 @@ import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 
 const HomePage = () => {
-  const navigate = useNavigate();
-
   return (
     <div className="flex flex-col min-h-screen bg-white">
       <Header />
       <main className="flex-grow container mx-auto px-4 py-6 text-center">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4 md:text-4xl">
+        <h1 className="text-3xl font-bold text-gray-900 mb-4 md:text-4xl">
           ¡Bienvenido a PrediApp!
         </h1>
         <p className="text-base text-gray-700 mb-6 md:text-lg">
           Predice los resultados de la Fórmula 1 y compite con tus amigos.
         </p>
-        <button
-          onClick={() => navigate("/prodesPage")}
-          className="bg-red-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-600 transition-colors duration-300 md:py-2 md:px-6"
-        >
+        <button className="bg-red-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-red-600 transition duration-300">
           ¡Haz tu Pronóstico!
         </button>
       </main>

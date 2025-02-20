@@ -43,14 +43,11 @@ export const signUp = async (userData) => {
 export const login = async (userData) => {
   try {
     const response = await axios.post(`${API_URL}/api/login`, userData);
-    const { token, id: userId } = response.data;
-
-    // Almacenar el token y establecerlo en las solicitudes
+    const { token, refreshToken, id: userId } = response.data;
     if (token) {
       localStorage.setItem("jwtToken", token);
-      localStorage.setItem("refresToken", refreshToken);
+      localStorage.setItem("refreshToken", refreshToken); // Corregido "refresToken"
       localStorage.setItem("userId", userId);
-
       setAuthToken(token);
       setRefreshToken(refreshToken);
 

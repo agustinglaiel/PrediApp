@@ -1,20 +1,20 @@
-// frontendnuevo/src/components/Header.jsx
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { FaUserCircle } from "react-icons/fa"; // Ya instalado con `npm install react-icons`
+import { Link } from "react-router-dom";
+import viteLogo from "../../public/vite.svg";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const navigate = useNavigate();
 
-  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+  const toggleMenu = () => {
+    setIsMenuOpen((prev) => !prev);
+  };
 
   return (
-    <header className="bg-white text-black py-3 sticky top-0 z-50 shadow-md rounded-t-lg">
-      <div className="container mx-auto px-4 flex items-center justify-between">
-        {/* Botón hamburguesa (visible solo en móviles) */}
+    <header className="bg-red-600 text-white fixed w-full top-0 left-0 z-50 shadow-md">
+      <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        {/* Botón hamburguesa (left) - visible solo en mobile */}
         <button
-          className="md:hidden text-gray-800 hover:text-red-500 focus:outline-none"
+          className="md:hidden text-white hover:text-gray-200 focus:outline-none"
           onClick={toggleMenu}
         >
           <svg
@@ -28,74 +28,62 @@ const Header = () => {
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth="2"
-              d="M4 6h16M4 12h16m-7 6h7"
+              d="M4 6h16M4 12h16M4 18h16"
             />
           </svg>
         </button>
 
-        {/* Logo "predi" */}
+        {/* Logo/Texto “PREDI” (center) */}
         <Link
           to="/"
-          className="text-xl font-bold text-red-500 hover:text-red-600 transition-colors duration-300 cursive"
+          className="text-2xl md:text-3xl font-bold tracking-wide flex-1 text-center"
         >
-          predi
+          PREDI
         </Link>
 
-        {/* Ícono circular punteado (avatar, visible solo en escritorio) */}
-        <div className="md:flex items-center space-x-2 hidden">
-          <svg
-            className="w-6 h-6 text-gray-600 hover:text-gray-800"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <circle
-              cx="12"
-              cy="12"
-              r="10"
-              strokeWidth="2"
-              strokeDasharray="5 5"
-            />
-          </svg>
+        {/* Logo vite (right) - visible solo en escritorio */}
+        <div className="hidden md:block">
+          <img
+            src={viteLogo}
+            alt="Vite Logo"
+            className="w-8 h-8 rounded-full border-2 border-white"
+          />
         </div>
+      </div>
 
-        {/* Menú de navegación (oculto en móviles por defecto, visible en md) */}
-        <nav
-          className={`${
-            isMenuOpen ? "flex" : "hidden"
-          } md:flex flex-col md:flex-row absolute md:static top-12 left-0 w-full md:w-auto bg-white md:bg-transparent p-4 md:p-0 space-y-4 md:space-y-0 md:space-x-6`}
-        >
+      {/* Menú móvil (hamburger) */}
+      {isMenuOpen && (
+        <nav className="md:hidden bg-red-600 px-4 pb-4 flex flex-col space-y-2 text-center shadow-md">
           <Link
             to="/"
-            className="text-gray-800 hover:text-red-500 transition-colors duration-200 no-underline"
+            className="hover:text-gray-200"
             onClick={() => setIsMenuOpen(false)}
           >
-            inicio
+            Inicio
           </Link>
           <Link
             to="/prodesPage"
-            className="text-gray-800 hover:text-red-500 transition-colors duration-200 no-underline"
+            className="hover:text-gray-200"
             onClick={() => setIsMenuOpen(false)}
           >
-            prónosticos
+            Prónosticos
           </Link>
           <Link
             to="/groups"
-            className="text-gray-800 hover:text-red-500 transition-colors duration-200 no-underline"
+            className="hover:text-gray-200"
             onClick={() => setIsMenuOpen(false)}
           >
-            grupos
+            Grupos
           </Link>
           <Link
             to="/results"
-            className="text-gray-800 hover:text-red-500 transition-colors duration-200 no-underline"
+            className="hover:text-gray-200"
             onClick={() => setIsMenuOpen(false)}
           >
-            resultados
+            Resultados
           </Link>
         </nav>
-      </div>
+      )}
     </header>
   );
 };
