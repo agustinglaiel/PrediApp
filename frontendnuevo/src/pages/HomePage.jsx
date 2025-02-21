@@ -5,7 +5,7 @@ import Header from "../components/Header";
 
 const HomePage = () => {
   return (
-    <div className="flex flex-col min-h-screen bg-white">
+    <div className="flex flex-col min-h-screen bg-white ">
       <Header />
       <main className="flex-grow container mx-auto px-4 py-6 text-center">
         <h1 className="text-3xl font-bold text-gray-900 mb-4 md:text-4xl">
