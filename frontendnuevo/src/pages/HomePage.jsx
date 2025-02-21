@@ -2,12 +2,23 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
+import NavigationBar from "../components/NavigationBar";
+import foto1 from "../images/foto1.png"; // Importa la imagen
 
 const HomePage = () => {
   return (
-    <div className="flex flex-col min-h-screen bg-white ">
+    <div className="flex flex-col min-h-screen bg-white">
       <Header />
-      <main className="flex-grow container mx-auto px-4 py-6 text-center">
+      <NavigationBar />
+      {/* Agrega la imagen aquí */}
+      <div className="w-full flex justify-center py-4 bg-white">
+        <img
+          src={foto1}
+          alt="Foto de bienvenida"
+          className="max-w-full h-auto"
+        />
+      </div>
+      <main className="flex-grow container mx-auto px-4 py-4 text-center">
         <h1 className="text-3xl font-bold text-gray-900 mb-4 md:text-4xl">
           ¡Bienvenido a PrediApp!
         </h1>

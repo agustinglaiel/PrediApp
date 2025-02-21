@@ -1,3 +1,4 @@
+// src/components/Header.jsx
 import React, { useState } from "react";
 
 const Header = () => {
@@ -15,7 +16,9 @@ const Header = () => {
   );
 
   return (
-    <div className="relative h-96 bg-gray-100">
+    <div className="relative bg-gray-100">
+      {" "}
+      {/* Remove h-96 */}
       <header className="bg-red-600 text-white w-full z-50 shadow-md">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           {/* Botón hamburguesa (left) - visible solo en mobile */}
@@ -68,21 +71,21 @@ const Header = () => {
               Inicio
             </Link>
             <Link
-              to="/prodesPage"
+              to="/pronosticos"
               className="hover:text-gray-200"
               onClick={() => setIsMenuOpen(false)}
             >
               Prónosticos
             </Link>
             <Link
-              to="/groups"
+              to="/grupos"
               className="hover:text-gray-200"
               onClick={() => setIsMenuOpen(false)}
             >
               Grupos
             </Link>
             <Link
-              to="/results"
+              to="/resultados"
               className="hover:text-gray-200"
               onClick={() => setIsMenuOpen(false)}
             >
