@@ -1,35 +1,114 @@
-// frontendnuevo/src/pages/HomePage.jsx
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import NavigationBar from "../components/NavigationBar";
-import foto1 from "../images/foto1.png"; // Importa la imagen
+import UpcomingEvents from "../components/UpcomingEvents";
+import { getUpcomingSessions } from "../api/sessions";
 
 const HomePage = () => {
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchUpcomingSessions = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem("jwtToken");
+        if (!token) {
+          navigate("/login", { replace: true });
+          return;
+        }
+
+        const data = await getUpcomingSessions();
+        const groupedEvents = processSessions(data);
+        setEvents(groupedEvents);
+      } catch (err) {
+        if (err.response && err.response.status === 403) {
+          setError(
+            "Acceso denegado (403). Verifica tu rol o token. Redirigiendo al login..."
+          );
+          console.error("Detalles del error 403:", {
+            status: err.response.status,
+            data: err.response.data,
+            headers: err.response.headers,
+          });
+          setTimeout(() => navigate("/login", { replace: true }), 2000);
+        } else if (err.response && err.response.status === 401) {
+          setError("No autorizado (401). Redirigiendo al login...");
+          console.error("Detalles del error 401:", err.response);
+          setTimeout(() => navigate("/login", { replace: true }), 2000);
+        } else {
+          setError(`No se pudieron cargar los eventos: ${err.message}`);
+        }
+        console.error("Error fetching sessions:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUpcomingSessions();
+  }, [navigate]);
+
+  const processSessions = (sessions) => {
+    const eventsMap = {};
+
+    sessions.forEach((session) => {
+      const key = `${session.country_name}-${session.circuit_short_name}`;
+      if (!eventsMap[key]) {
+        eventsMap[key] = {
+          country: session.country_name,
+          circuit: session.circuit_short_name,
+          flagUrl: `/images/flags/${session.country_code.toLowerCase()}.jpg`,
+          sessions: [],
+        };
+      }
+
+      const [date, time] = session.date_start.split("T")[0].split("-");
+      const [startTime] = session.date_start
+        .split("T")[1]
+        .split("-")[0]
+        .split(":");
+      const [endTime] = session.date_end.split("T")[1].split("-")[0].split(":");
+
+      eventsMap[key].sessions.push({
+        date: date.split("-")[2],
+        month: date.split("-")[1].toUpperCase().padStart(3, "0"),
+        type: session.session_type,
+        startTime: `${startTime}:00`,
+        endTime: `${endTime}:00`,
+        hasPronostico: true,
+      });
+    });
+
+    return Object.values(eventsMap);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-gray-50">
+        <p className="text-gray-600">Cargando eventos...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-gray-50">
+        <p className="text-red-600">{error}</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col min-h-screen bg-white">
+    <div className="flex flex-col min-h-screen bg-gray-50">
       <Header />
       <NavigationBar />
-      {/* Agrega la imagen aquí */}
-      <div className="w-full flex justify-center py-4 bg-white">
-        <img
-          src={foto1}
-          alt="Foto de bienvenida"
-          className="max-w-full h-auto"
-        />
-      </div>
-      <main className="flex-grow container mx-auto px-4 py-4 text-center">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4 md:text-4xl">
-          ¡Bienvenido a PrediApp!
-        </h1>
-        <p className="text-base text-gray-700 mb-6 md:text-lg">
-          Predice los resultados de la Fórmula 1 y compite con tus amigos.
-        </p>
-        <button className="bg-red-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-red-600 transition duration-300">
-          ¡Haz tu Pronóstico!
-        </button>
+      <main className="flex-grow pt-24">
+        <UpcomingEvents events={events} />
       </main>
-      <footer className="bg-gray-200 text-gray-700 text-center py-3 text-sm md:text-base">
+      <footer className="bg-gray-200 text-gray-700 text-center py-3 text-sm">
         <p>© 2025 PrediApp</p>
       </footer>
     </div>

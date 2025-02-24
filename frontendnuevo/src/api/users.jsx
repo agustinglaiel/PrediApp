@@ -11,21 +11,11 @@ const setAuthToken = (token) => {
   }
 };
 
-// Función para establecer el RefreshToken en el encabezado de autorización
-const setRefreshToken = (refreshToken) => {
-  if (refreshToken) {
-    axios.defaults.headers.common["Refresh-Token"] = refreshToken;
-  } else {
-    delete axios.defaults.headers.common["Refresh-Token"];
-  }
-};
-
 // Función de registro que guarda el token en localStorage
 export const signUp = async (userData) => {
   try {
     const response = await axios.post(`${API_URL}/api/signup`, userData);
     const { token } = response.data;
-    console.log(token);
 
     // Almacenar el token y establecerlo en las solicitudes
     if (token) {
@@ -35,7 +25,7 @@ export const signUp = async (userData) => {
 
     return response.data;
   } catch (error) {
-    throw new Error(error.response.data.message || "Error signing up.");
+    throw new Error(error.response?.data?.message || "Error signing up.");
   }
 };
 
@@ -43,22 +33,45 @@ export const signUp = async (userData) => {
 export const login = async (userData) => {
   try {
     const response = await axios.post(`${API_URL}/api/login`, userData);
-    const { token, refreshToken, id: userId } = response.data;
-    if (token) {
-      localStorage.setItem("jwtToken", token);
-      localStorage.setItem("refreshToken", refreshToken); // Corregido "refresToken"
-      localStorage.setItem("userId", userId);
-      setAuthToken(token);
-      setRefreshToken(refreshToken);
+    const data = response.data; // Accedemos a response.data directamente
 
-      console.log("Token:", token);
-      console.log("Refresh Token:", refreshToken);
-      console.log("User ID:", userId); // Imprimir el userId para verificar
+    // Verificamos si data existe y es un objeto
+    if (!data || typeof data !== "object") {
+      throw new Error("Respuesta del servidor inválida.");
     }
 
-    return response.data;
+    // Extraemos token e id de la respuesta
+    const token = data.token;
+    const userId = data.id;
+
+    // Verificamos si los campos necesarios existen
+    if (!token || !userId) {
+      throw new Error(
+        "Faltan datos necesarios en la respuesta del servidor. Verifica que el backend devuelva 'token' e 'id'."
+      );
+    }
+
+    if (token) {
+      localStorage.setItem("jwtToken", token);
+      localStorage.setItem("userId", userId);
+      setAuthToken(token);
+
+      console.log("Token:", token);
+      console.log("User ID:", userId);
+    }
+
+    return data;
   } catch (error) {
-    throw new Error(error.response.data.message || "Error logging in.");
+    // Mostrar más detalles del error para depuración
+    console.error("Error en login:", {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+    });
+    throw new Error(
+      error.response?.data?.message ||
+        "Error logging in. Verifica tus credenciales o contacta al soporte."
+    );
   }
 };
 
@@ -73,7 +86,7 @@ export const getUserById = async (id) => {
     });
     return response.data;
   } catch (error) {
-    throw new Error(error.response.data.message || "Error fetching user.");
+    throw new Error(error.response?.data?.message || "Error fetching user.");
   }
 };
 
@@ -83,7 +96,7 @@ export const updateUserById = async (id, userData) => {
     const response = await axios.put(`${API_URL}/users/${id}`, userData);
     return response.data;
   } catch (error) {
-    throw new Error(error.response.data.message || "Error updating user.");
+    throw new Error(error.response?.data?.message || "Error updating user.");
   }
 };
 
@@ -92,7 +105,7 @@ export const deleteUserById = async (id) => {
   try {
     await axios.delete(`${API_URL}/users/${id}`);
   } catch (error) {
-    throw new Error(error.response.data.message || "Error deleting user.");
+    throw new Error(error.response?.data?.message || "Error deleting user.");
   }
 };
 
@@ -102,7 +115,7 @@ export const getUsers = async () => {
     const response = await axios.get(`${API_URL}/users/`);
     return response.data;
   } catch (error) {
-    throw new Error(error.response.data.message || "Error fetching users.");
+    throw new Error(error.response?.data?.message || "Error fetching users.");
   }
 };
 
@@ -113,12 +126,4 @@ if (token) {
   console.log("JWT Token establecido desde almacenamiento local");
 } else {
   console.warn("No se encontró un JWT Token almacenado");
-}
-
-const refreshToken = localStorage.getItem("refreshToken");
-if (refreshToken) {
-  setRefreshToken(refreshToken);
-  console.log("Refresh Token establecido desde almacenamiento local");
-} else {
-  console.warn("No se encontró un Refresh Token almacenado");
 }
