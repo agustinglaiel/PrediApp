@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"errors"
+	"fmt"
 	"prodes/internal/model"
 
 	// prodes "prodes/internal/model"
@@ -233,15 +234,20 @@ func (r *prodeRepository) GetProdeCarreraByUserAndSession(ctx context.Context, u
     var prode model.ProdeCarrera
 
     // Buscar un único prode para el usuario y la sesión dados
-    if err := r.db.WithContext(ctx).Where("user_id = ? AND session_id = ?", userID, sessionID).First(&prode).Error; err != nil {
-        if err == gorm.ErrRecordNotFound {
-            // fmt.Printf("No prode carrera found for userID %d and sessionID %d\n", userID, sessionID)
+    result := r.db.WithContext(ctx).Where("user_id = ? AND session_id = ?", userID, sessionID).First(&prode)
+    if result.Error != nil {
+        if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+            fmt.Printf("No prode carrera found for userID %d and sessionID %d\n", userID, sessionID)
             return nil, e.NewNotFoundApiError("prode carrera not found")
         }
-        // fmt.Printf("Database error for userID %d and sessionID %d: %v\n", userID, sessionID, err)
-        return nil, e.NewInternalServerApiError("error finding prode carrera", err)
+        fmt.Printf("Database error for userID %d and sessionID %d: %v\n", userID, sessionID, result.Error)
+        fmt.Printf("SQL query for userID %d and sessionID %d: %s\n", userID, sessionID, r.db.ToSQL(func(tx *gorm.DB) *gorm.DB {
+            return tx.Where("user_id = ? AND session_id = ?", userID, sessionID).First(&model.ProdeCarrera{})
+        }))
+        return nil, e.NewInternalServerApiError("error finding prode carrera", result.Error)
     }
 
+    fmt.Printf("Found prode carrera for userID %d and sessionID %d: %+v\n", userID, sessionID, prode)
     return &prode, nil
 }
 
@@ -249,15 +255,20 @@ func (r *prodeRepository) GetProdeSessionByUserAndSession(ctx context.Context, u
     var prode model.ProdeSession
 
     // Buscar un único prode de sesión para el usuario y la sesión dados
-    if err := r.db.WithContext(ctx).Where("user_id = ? AND session_id = ?", userID, sessionID).First(&prode).Error; err != nil {
-        if err == gorm.ErrRecordNotFound {
-            // fmt.Printf("No prode session found for userID %d and sessionID %d\n", userID, sessionID)
+    result := r.db.WithContext(ctx).Where("user_id = ? AND session_id = ?", userID, sessionID).First(&prode)
+    if result.Error != nil {
+        if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+            fmt.Printf("No prode session found for userID %d and sessionID %d\n", userID, sessionID)
             return nil, e.NewNotFoundApiError("prode session not found")
         }
-        // fmt.Printf("Database error for userID %d and sessionID %d: %v\n", userID, sessionID, err)
-        return nil, e.NewInternalServerApiError("error finding prode session", err)
+        fmt.Printf("Database error for userID %d and sessionID %d: %v\n", userID, sessionID, result.Error)
+        fmt.Printf("SQL query for userID %d and sessionID %d: %s\n", userID, sessionID, r.db.ToSQL(func(tx *gorm.DB) *gorm.DB {
+            return tx.Where("user_id = ? AND session_id = ?", userID, sessionID).First(&model.ProdeSession{})
+        }))
+        return nil, e.NewInternalServerApiError("error finding prode session", result.Error)
     }
 
+    fmt.Printf("Found prode session for userID %d and sessionID %d: %+v\n", userID, sessionID, prode)
     return &prode, nil
 }
 

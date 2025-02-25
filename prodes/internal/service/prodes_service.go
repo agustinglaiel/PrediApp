@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	client "prodes/internal/client"
 	prodes "prodes/internal/dto"
 	model "prodes/internal/model"
@@ -384,38 +386,31 @@ func (s *prodeService) GetProdesByUserId(ctx context.Context, userID int) ([]pro
 }
 
 func (s *prodeService) GetRaceProdeByUserAndSession(ctx context.Context, userID, sessionID int) (prodes.ResponseProdeCarreraDTO, e.ApiError) {
-    // Depuración: Imprimir los parámetros de entrada
-    // fmt.Printf("Fetching race prode for userID: %d, sessionID: %d\n", userID, sessionID)
+    fmt.Printf("Fetching race prode for userID: %d, sessionID: %d\n", userID, sessionID)
 
-    // Obtener los datos de la sesión directamente desde el microservicio de sessions
     sessionInfo, err := s.httpClient.GetSessionNameAndType(sessionID)
     if err != nil {
-        // fmt.Printf("Error fetching session info: %v\n", err)
+        fmt.Printf("Error fetching session info: %v\n", err)
         return prodes.ResponseProdeCarreraDTO{}, e.NewInternalServerApiError("Error fetching session name and type from sessions service", err)
     }
 
-    // Depuración: Imprimir los datos de la sesión
-    // fmt.Printf("Session info for sessionID %d: %+v\n", sessionID, sessionInfo)
+    fmt.Printf("Session info for sessionID %d: %+v\n", sessionID, sessionInfo)
 
-    // Verificar que la sesión es de tipo Race
     if !isRaceSession(sessionInfo.SessionName, sessionInfo.SessionType) {
-        // fmt.Printf("Session %d is not a Race session: Name=%s, Type=%s\n", sessionID, sessionInfo.SessionName, sessionInfo.SessionType)
-        return prodes.ResponseProdeCarreraDTO{}, e.NewBadRequestApiError("La sesión no es una carrera (Race)")
+        fmt.Printf("Session %d is not a Race session: Name=%s, Type=%s\n", sessionID, sessionInfo.SessionName, sessionInfo.SessionType)
+        return prodes.ResponseProdeCarreraDTO{}, nil // 200 OK con null (sin pronóstico)
     }
 
-    // Obtener el prode de carrera para este usuario y esta sesión
     prode, err := s.prodeRepo.GetProdeCarreraByUserAndSession(ctx, userID, sessionID)
     if err != nil {
-        if err == gorm.ErrRecordNotFound {
-            // fmt.Printf("No prode carrera found for userID %d and sessionID %d\n", userID, sessionID)
-            return prodes.ResponseProdeCarreraDTO{}, e.NewNotFoundApiError("No se encontró un prode de carrera para el usuario en esta sesión")
+        if errors.Is(err, gorm.ErrRecordNotFound) {
+            fmt.Printf("No prode carrera found for userID %d and sessionID %d\n", userID, sessionID)
+            return prodes.ResponseProdeCarreraDTO{}, nil // 200 OK con null (sin pronóstico)
         }
-        // fmt.Printf("Database error for userID %d and sessionID %d: %v\n", userID, sessionID, err)
-        // No envolver en e.NewInternalServerApiError, devolver el error directamente
-        return prodes.ResponseProdeCarreraDTO{}, err.(e.ApiError)
+        fmt.Printf("Database error for userID %d and sessionID %d: %v\n", userID, sessionID, err)
+        return prodes.ResponseProdeCarreraDTO{}, err
     }
 
-    // Convertir el prode a DTO de respuesta
     response := prodes.ResponseProdeCarreraDTO{
         ID:         prode.ID,
         UserID:     prode.UserID,
@@ -431,35 +426,36 @@ func (s *prodeService) GetRaceProdeByUserAndSession(ctx context.Context, userID,
         DNF:        prode.DNF,
     }
 
-    // fmt.Printf("Found prode carrera for userID %d and sessionID %d: %+v\n", userID, sessionID, response)
+    fmt.Printf("Found prode carrera for userID %d and sessionID %d: %+v\n", userID, sessionID, response)
     return response, nil
 }
 
 func (s *prodeService) GetSessionProdeByUserAndSession(ctx context.Context, userID, sessionID int) (prodes.ResponseProdeSessionDTO, e.ApiError) {
-    // Obtener los datos de la sesión directamente desde el microservicio de sessions
+    fmt.Printf("Fetching session prode for userID: %d, sessionID: %d\n", userID, sessionID)
+
     sessionInfo, err := s.httpClient.GetSessionNameAndType(sessionID)
     if err != nil {
+        fmt.Printf("Error fetching session info: %v\n", err)
         return prodes.ResponseProdeSessionDTO{}, e.NewInternalServerApiError("Error fetching session name and type from sessions service", err)
     }
 
-    // Verificar que la sesión **no** es de tipo Race
+    fmt.Printf("Session info for sessionID %d: %+v\n", sessionID, sessionInfo)
+
     if isRaceSession(sessionInfo.SessionName, sessionInfo.SessionType) {
-        return prodes.ResponseProdeSessionDTO{}, e.NewBadRequestApiError("La sesión no es válida, es una carrera (Race), no se puede buscar un ProdeSession")
+        fmt.Printf("Session %d is a Race session: Name=%s, Type=%s\n", sessionID, sessionInfo.SessionName, sessionInfo.SessionType)
+        return prodes.ResponseProdeSessionDTO{}, nil // 200 OK con null (sin pronóstico)
     }
 
-    // Obtener el prode de sesión para este usuario y esta sesión
     prode, err := s.prodeRepo.GetProdeSessionByUserAndSession(ctx, userID, sessionID)
     if err != nil {
-        if err == gorm.ErrRecordNotFound {
-            // fmt.Printf("No prode session found for userID %d and sessionID %d\n", userID, sessionID)
-            return prodes.ResponseProdeSessionDTO{}, e.NewNotFoundApiError("No se encontró un prode de sesión para el usuario en esta sesión")
+        if errors.Is(err, gorm.ErrRecordNotFound) {
+            fmt.Printf("No prode session found for userID %d and sessionID %d\n", userID, sessionID)
+            return prodes.ResponseProdeSessionDTO{}, nil // 200 OK con null (sin pronóstico)
         }
-        // fmt.Printf("Database error for userID %d and sessionID %d: %v\n", userID, sessionID, err)
-        // No envolver en e.NewInternalServerApiError, devolver el error directamente
-        return prodes.ResponseProdeSessionDTO{}, err.(e.ApiError) // Asumimos que err ya es e.ApiError
+        fmt.Printf("Database error for userID %d and sessionID %d: %v\n", userID, sessionID, err)
+        return prodes.ResponseProdeSessionDTO{}, err
     }
 
-    // Convertir el prode de sesión a DTO de respuesta
     response := prodes.ResponseProdeSessionDTO{
         ID:        prode.ID,
         UserID:    prode.UserID,
@@ -469,6 +465,7 @@ func (s *prodeService) GetSessionProdeByUserAndSession(ctx context.Context, user
         P3:        prode.P3,
     }
 
+    fmt.Printf("Found prode session for userID %d and sessionID %d: %+v\n", userID, sessionID, response)
     return response, nil
 }
 

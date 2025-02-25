@@ -5,6 +5,7 @@ import AuthModal from "./AuthModal"; // Importamos el nuevo componente (si decid
 const SessionItem = ({
   date,
   month,
+  sessionId, // Añadimos sessionId como prop para depuración
   sessionType,
   startTime,
   endTime,
@@ -20,6 +21,15 @@ const SessionItem = ({
   const hasProde =
     (sessionType !== "Race" && prodeSession) ||
     (sessionType === "Race" && prodeRace);
+
+  // Depuración: Imprimir si hay un pronóstico para session_id = 6
+  if (sessionId === 6) {
+    console.log(
+      `Session 6 - ProdeSession: ${prodeSession ? "Yes" : "No"}, ProdeRace: ${
+        prodeRace ? "Yes" : "No"
+      }`
+    );
+  }
 
   return (
     <div className="flex items-center p-3 border-b border-gray-100 last:border-b-0">

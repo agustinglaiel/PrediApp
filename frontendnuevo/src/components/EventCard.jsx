@@ -43,6 +43,7 @@ const EventCard = ({
         {sessions.map((session, index) => (
           <SessionItem
             key={index}
+            sessionId={session.id} // Pasamos sessionId
             date={session.date}
             month={session.month}
             sessionType={session.type}

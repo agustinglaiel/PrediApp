@@ -135,30 +135,33 @@ export const getRaceProdeByUserAndSession = async (userId, sessionId) => {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        validateStatus: (status) => status >= 200 && status < 600, // Aceptar todos los códigos de estado para manejarlos manualmente
+        // Aceptar todos los códigos 200 para manejar manualmente
+        validateStatus: (status) => status === 200,
       }
     );
 
-    if (response.status === 200) {
-      console.log(
-        `Successfully fetched race prode for user ${userId}, session ${sessionId}:`,
-        response.data
-      );
-      return response.data;
-    } else if (response.status === 404 || response.status === 400) {
-      return null; // Devolver null silenciosamente para 404/400
-    } else {
-      console.log(
-        `Unexpected status fetching race prode for user ${userId}, session ${sessionId}: Status ${
-          response.status
-        }, Message: ${response.data?.message || "Unknown error"}`
-      );
-      throw new Error(
-        response.data?.message ||
-          `Error fetching race prediction (status ${response.status})`
-      );
+    // Verificar si la respuesta está vacía, null, o un objeto vacío
+    if (
+      !response.data ||
+      Object.keys(response.data).length === 0 ||
+      (typeof response.data === "object" &&
+        Object.values(response.data).every((v) => v === null || v === ""))
+    ) {
+      return null; // Devolver null silenciosamente si no hay datos
     }
+    console.log(
+      `Successfully fetched race prode for user ${userId}, session ${sessionId}:`,
+      response.data
+    );
+    return response.data;
   } catch (error) {
+    // Silenciar errores 404/400 si los hubiera (aunque el backend ahora devuelve 200)
+    if (
+      error.response &&
+      (error.response.status === 404 || error.response.status === 400)
+    ) {
+      return null; // Devolver null silenciosamente para 404/400 (por si acaso)
+    }
     console.log(
       `Unexpected error fetching race prode for user ${userId}, session ${sessionId}:`,
       error.message
@@ -182,30 +185,33 @@ export const getSessionProdeByUserAndSession = async (userId, sessionId) => {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        validateStatus: (status) => status >= 200 && status < 600, // Aceptar todos los códigos de estado para manejarlos manualmente
+        // Aceptar todos los códigos 200 para manejar manualmente
+        validateStatus: (status) => status === 200,
       }
     );
 
-    if (response.status === 200) {
-      console.log(
-        `Successfully fetched session prode for user ${userId}, session ${sessionId}:`,
-        response.data
-      );
-      return response.data;
-    } else if (response.status === 404 || response.status === 400) {
-      return null; // Devolver null silenciosamente para 404/400
-    } else {
-      console.log(
-        `Unexpected status fetching session prode for user ${userId}, session ${sessionId}: Status ${
-          response.status
-        }, Message: ${response.data?.message || "Unknown error"}`
-      );
-      throw new Error(
-        response.data?.message ||
-          `Error fetching session prediction (status ${response.status})`
-      );
+    // Verificar si la respuesta está vacía, null, o un objeto vacío
+    if (
+      !response.data ||
+      Object.keys(response.data).length === 0 ||
+      (typeof response.data === "object" &&
+        Object.values(response.data).every((v) => v === null || v === ""))
+    ) {
+      return null; // Devolver null silenciosamente si no hay datos
     }
+    console.log(
+      `Successfully fetched session prode for user ${userId}, session ${sessionId}:`,
+      response.data
+    );
+    return response.data;
   } catch (error) {
+    // Silenciar errores 404/400 si los hubiera (aunque el backend ahora devuelve 200)
+    if (
+      error.response &&
+      (error.response.status === 404 || error.response.status === 400)
+    ) {
+      return null; // Devolver null silenciosamente para 404/400 (por si acaso)
+    }
     console.log(
       `Unexpected error fetching session prode for user ${userId}, session ${sessionId}:`,
       error.message
