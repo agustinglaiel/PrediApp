@@ -13,7 +13,14 @@ const SessionItem = ({
   isModalOpen,
   onCloseModal,
   onContinueToLogin,
+  prodeSession,
+  prodeRace,
 }) => {
+  // Determinar si hay un pronóstico (ya sea de sesión o carrera)
+  const hasProde =
+    (sessionType !== "Race" && prodeSession) ||
+    (sessionType === "Race" && prodeRace);
+
   return (
     <div className="flex items-center p-3 border-b border-gray-100 last:border-b-0">
       <DateDisplay date={date} month={month} />
@@ -23,41 +30,34 @@ const SessionItem = ({
           {startTime}
           {endTime ? ` - ${endTime}` : ""}
         </div>
+        {prodeSession && (
+          <div className="text-xs text-gray-500">
+            Pronóstico: {prodeSession.P1}, {prodeSession.P2}, {prodeSession.P3}
+          </div>
+        )}
+        {prodeRace && (
+          <div className="text-xs text-gray-500">
+            Pronóstico Carrera: {prodeRace.P1}, {prodeRace.P2}, {prodeRace.P3}
+          </div>
+        )}
       </div>
       {hasPronostico !== undefined && (
         <button
-          onClick={onPronosticoClick} // Llamamos a la función pasada como prop
-          className="bg-orange-300 text-white px-4 py-1 rounded-full text-sm font-medium hover:bg-orange-400"
+          onClick={onPronosticoClick}
+          className={`px-4 py-1 rounded-full text-sm font-medium transition-colors duration-200 ${
+            hasProde
+              ? "bg-green-500 text-white hover:bg-green-600"
+              : "bg-orange-300 text-white hover:bg-orange-400"
+          }`}
         >
-          Completar pronóstico
+          {hasProde ? "Actualizar pronóstico" : "Completar pronóstico"}
         </button>
       )}
-      {/* Modal para autenticación (inline) */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4 md:mx-8 lg:mx-16">
-            {" "}
-            {/* Añadimos márgenes laterales */}
-            <p className="text-center text-gray-800 mb-4">
-              Para poder realizar esa acción es necesario que inicie sesión.
-            </p>
-            <div className="flex justify-center space-x-4">
-              <button
-                onClick={onCloseModal}
-                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 focus:outline-none"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={onContinueToLogin}
-                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 focus:outline-none"
-              >
-                Continuar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AuthModal
+        isOpen={isModalOpen}
+        onClose={onCloseModal}
+        onContinueToLogin={onContinueToLogin}
+      />
     </div>
   );
 };

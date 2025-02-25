@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	dto "prodes/internal/dto"
@@ -173,7 +174,12 @@ func (c *ProdeController) GetRaceProdeByUserAndSession(ctx *gin.Context) {
 
     response, apiErr := c.prodeService.GetRaceProdeByUserAndSession(ctx.Request.Context(), userID, sessionID)
     if apiErr != nil {
-        ctx.JSON(apiErr.Status(), apiErr)
+        fmt.Printf("API error for userID %d and sessionID %d: Status=%d, Message=%s\n", userID, sessionID, apiErr.Status(), apiErr.Error())
+        if apiErr.Status() == http.StatusNotFound { // Verificar si es un error 404
+            ctx.JSON(http.StatusNotFound, apiErr)
+        } else {
+            ctx.JSON(apiErr.Status(), apiErr)
+        }
         return
     }
 
@@ -195,7 +201,11 @@ func (c *ProdeController) GetSessionProdeByUserAndSession(ctx *gin.Context) {
 
     response, apiErr := c.prodeService.GetSessionProdeByUserAndSession(ctx.Request.Context(), userID, sessionID)
     if apiErr != nil {
-        ctx.JSON(apiErr.Status(), apiErr)
+        if apiErr.Status() == http.StatusNotFound { // Verificar si es un error 404
+            ctx.JSON(http.StatusNotFound, apiErr)
+        } else {
+            ctx.JSON(apiErr.Status(), apiErr)
+        }
         return
     }
 

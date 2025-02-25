@@ -33,7 +33,7 @@ const EventCard = ({
             <img
               src={circuitLayoutUrl}
               alt={`${circuit} layout`}
-              className="w-24 h-24 rounded-lg object-contain" // Cambiamos object-cover a object-contain
+              className="w-24 h-24 rounded-lg object-contain"
             />
           )}
         </div>
@@ -53,6 +53,8 @@ const EventCard = ({
             isModalOpen={isModalOpen}
             onCloseModal={onCloseModal}
             onContinueToLogin={onContinueToLogin}
+            prodeSession={session.prodeSession}
+            prodeRace={session.prodeRace}
           />
         ))}
       </div>

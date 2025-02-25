@@ -3,6 +3,10 @@ import Header from "../components/Header";
 import NavigationBar from "../components/NavigationBar";
 import UpcomingEvents from "../components/UpcomingEvents";
 import { getUpcomingSessions } from "../api/sessions";
+import {
+  getSessionProdeByUserAndSession,
+  getRaceProdeByUserAndSession,
+} from "../api/prodes";
 
 const HomePage = () => {
   const [events, setEvents] = useState([]);
@@ -10,7 +14,7 @@ const HomePage = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchUpcomingSessions = async () => {
+    const fetchUpcomingSessionsAndProdes = async () => {
       try {
         setLoading(true);
         const data = await getUpcomingSessions();
@@ -35,16 +39,15 @@ const HomePage = () => {
       }
     };
 
-    fetchUpcomingSessions();
+    fetchUpcomingSessionsAndProdes();
   }, []);
 
   const processSessions = (sessions) => {
     const eventsMap = {};
 
     sessions.forEach((session) => {
-      const weekendId = session.weekend_id; // Usamos weekend_id como clave principal
+      const weekendId = session.weekend_id;
       if (!eventsMap[weekendId]) {
-        // Tomamos la primera sesión del weekend_id para determinar country, circuit, etc.
         eventsMap[weekendId] = {
           country: session.country_name,
           circuit: session.circuit_short_name,
@@ -58,16 +61,14 @@ const HomePage = () => {
         };
       }
 
-      // Depuración y manejo robusto de date_start para cada sesión
-      let day = "1"; // Fallback por defecto si date_start es inválido
-      let month = "JAN"; // Fallback por defecto si date_start es inválido
+      let day = "1";
+      let month = "JAN";
       if (session.date_start && typeof session.date_start === "string") {
         try {
-          const [datePart] = session.date_start.split("T"); // Obtener solo la parte de la fecha (e.g., "2025-12-03")
+          const [datePart] = session.date_start.split("T");
           if (datePart) {
             const [year, monthNum, dayNum] = datePart.split("-");
-            day = dayNum; // Día (e.g., "03" → "3")
-            // Convertir el número del mes (e.g., "12") a mes en 3 letras (e.g., "DEC")
+            day = dayNum;
             const months = [
               "JAN",
               "FEB",
@@ -85,22 +86,9 @@ const HomePage = () => {
             month = months[parseInt(monthNum, 10) - 1] || "JAN";
           }
         } catch (error) {
-          console.error(
-            "Error parsing date_start for session:",
-            session,
-            error
-          );
+          console.error("Error parsing date_start:", session.date_start, error);
         }
-      } else {
-        console.warn(
-          "date_start is invalid or undefined for session:",
-          session
-        );
       }
-
-      console.log(
-        `Session date for ${session.session_type} (weekend_id: ${weekendId}): day=${day}, month=${month}`
-      );
 
       const [startTime] = session.date_start
         .split("T")[1]
@@ -109,14 +97,101 @@ const HomePage = () => {
       const [endTime] = session.date_end.split("T")[1].split("-")[0].split(":");
 
       eventsMap[weekendId].sessions.push({
-        date: day, // Día como número (e.g., "3")
-        month: month, // Mes en formato "DEC"
+        id: session.id,
+        date: day,
+        month: month,
         type: session.session_type,
         startTime: `${startTime}:00`,
         endTime: `${endTime}:00`,
         hasPronostico: true,
+        prodeSession: null,
+        prodeRace: null,
       });
     });
+
+    // Fetch prodes para cada sesión usando Promise.all para optimizar
+    const userId = localStorage.getItem("userId");
+    if (userId) {
+      const updatedEventsMap = { ...eventsMap }; // Copia para evitar mutaciones directas
+      Object.values(eventsMap).forEach((event) => {
+        const prodePromises = event.sessions.map((session) => {
+          // Crear una promesa que siempre resuelve, manejando 404 y 400 como null sin logs
+          if (session.type !== "Race") {
+            return getSessionProdeByUserAndSession(
+              parseInt(userId, 10),
+              session.id
+            )
+              .then((prodeSession) => ({ prode: prodeSession, error: null }))
+              .catch((error) => {
+                if (
+                  error.response &&
+                  (error.response.status === 404 ||
+                    error.response.status === 400)
+                ) {
+                  return { prode: null, error }; // Resolver con null silenciosamente para 404/400
+                }
+                console.error(
+                  `Unexpected error fetching prode for session ${session.id}:`,
+                  error
+                );
+                return { prode: null, error }; // Resolver con null para otros errores
+              });
+          } else {
+            return getRaceProdeByUserAndSession(
+              parseInt(userId, 10),
+              session.id
+            )
+              .then((prodeRace) => ({ prode: prodeRace, error: null }))
+              .catch((error) => {
+                if (
+                  error.response &&
+                  (error.response.status === 404 ||
+                    error.response.status === 400)
+                ) {
+                  return { prode: null, error }; // Resolver con null silenciosamente para 404/400
+                }
+                console.error(
+                  `Unexpected error fetching prode for session ${session.id}:`,
+                  error
+                );
+                return { prode: null, error }; // Resolver con null para otros errores
+              });
+          }
+        });
+
+        Promise.all(prodePromises)
+          .then((results) => {
+            results.forEach((result, index) => {
+              const session = event.sessions[index];
+              if (session.type !== "Race") {
+                session.prodeSession = result.prode;
+              } else {
+                session.prodeRace = result.prode;
+              }
+            });
+            setEvents(
+              Object.values(updatedEventsMap).sort((a, b) => {
+                const dateA = new Date(
+                  a.sessions[0].date_start || "2025-01-01"
+                );
+                const dateB = new Date(
+                  b.sessions[0].date_start || "2025-01-01"
+                );
+                return dateA - dateB;
+              })
+            );
+          })
+          .catch((error) =>
+            console.error("Error fetching prodes in batch:", error)
+          );
+      });
+    } else {
+      return Object.values(eventsMap).sort((a, b) => {
+        const dateA = new Date(a.sessions[0].date_start || "2025-01-01");
+        const dateB = new Date(b.sessions[0].date_start || "2025-01-01");
+        return dateA - dateB;
+      });
+    }
 
     return Object.values(eventsMap).sort((a, b) => {
       const dateA = new Date(a.sessions[0].date_start || "2025-01-01");

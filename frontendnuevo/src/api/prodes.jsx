@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:8054";
+const API_URL = "http://localhost:8080";
 
 // Crear un prode de carrera
 export const createProdeCarrera = async (prodeData) => {
@@ -117,5 +117,99 @@ export const deleteProdeByID = async (id, userID) => {
     throw new Error(
       error.response.data.message || "Error deleting prediction."
     );
+  }
+};
+
+// Obtener un prode de carrera por user_id y session_id
+export const getRaceProdeByUserAndSession = async (userId, sessionId) => {
+  try {
+    const token = localStorage.getItem("jwtToken");
+    if (!token) {
+      throw new Error("Authentication token not found. Please log in.");
+    }
+
+    const response = await axios.get(
+      `${API_URL}/prodes/carrera/user/${userId}/session/${sessionId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        validateStatus: (status) => status >= 200 && status < 600, // Aceptar todos los códigos de estado para manejarlos manualmente
+      }
+    );
+
+    if (response.status === 200) {
+      console.log(
+        `Successfully fetched race prode for user ${userId}, session ${sessionId}:`,
+        response.data
+      );
+      return response.data;
+    } else if (response.status === 404 || response.status === 400) {
+      return null; // Devolver null silenciosamente para 404/400
+    } else {
+      console.log(
+        `Unexpected status fetching race prode for user ${userId}, session ${sessionId}: Status ${
+          response.status
+        }, Message: ${response.data?.message || "Unknown error"}`
+      );
+      throw new Error(
+        response.data?.message ||
+          `Error fetching race prediction (status ${response.status})`
+      );
+    }
+  } catch (error) {
+    console.log(
+      `Unexpected error fetching race prode for user ${userId}, session ${sessionId}:`,
+      error.message
+    );
+    throw new Error(error.message || "Error fetching race prediction.");
+  }
+};
+
+// Obtener un prode de sesión por user_id y session_id
+export const getSessionProdeByUserAndSession = async (userId, sessionId) => {
+  try {
+    const token = localStorage.getItem("jwtToken");
+    if (!token) {
+      throw new Error("Authentication token not found. Please log in.");
+    }
+
+    const response = await axios.get(
+      `${API_URL}/prodes/session/user/${userId}/session/${sessionId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        validateStatus: (status) => status >= 200 && status < 600, // Aceptar todos los códigos de estado para manejarlos manualmente
+      }
+    );
+
+    if (response.status === 200) {
+      console.log(
+        `Successfully fetched session prode for user ${userId}, session ${sessionId}:`,
+        response.data
+      );
+      return response.data;
+    } else if (response.status === 404 || response.status === 400) {
+      return null; // Devolver null silenciosamente para 404/400
+    } else {
+      console.log(
+        `Unexpected status fetching session prode for user ${userId}, session ${sessionId}: Status ${
+          response.status
+        }, Message: ${response.data?.message || "Unknown error"}`
+      );
+      throw new Error(
+        response.data?.message ||
+          `Error fetching session prediction (status ${response.status})`
+      );
+    }
+  } catch (error) {
+    console.log(
+      `Unexpected error fetching session prode for user ${userId}, session ${sessionId}:`,
+      error.message
+    );
+    throw new Error(error.message || "Error fetching session prediction.");
   }
 };

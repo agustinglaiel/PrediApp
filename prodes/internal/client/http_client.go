@@ -215,7 +215,7 @@ func (c *HttpClient) Delete(endpoint string) error {
 // GetSessionNameAndType realiza una solicitud GET para obtener el nombre y tipo de una sesión desde el microservicio de sessions
 func (c *HttpClient) GetSessionNameAndType(eventID int) (dto.SessionNameAndTypeDTO, utils.ApiError) {
     // Definir el endpoint para la solicitud GET
-    endpoint := fmt.Sprintf("8056/sessions/%d/name-type", eventID)
+    endpoint := fmt.Sprintf("8080/sessions/%d/name-type", eventID)
 
     // Hacer la solicitud GET utilizando el cliente HTTP
     body, err := c.Get(endpoint)
@@ -228,6 +228,8 @@ func (c *HttpClient) GetSessionNameAndType(eventID int) (dto.SessionNameAndTypeD
     if err := json.Unmarshal(body, &sessionNameAndType); err != nil {
         return dto.SessionNameAndTypeDTO{}, utils.NewInternalServerApiError("Error decoding session name and type response", err)
     }
+
+	// fmt.Println("Session Name and Type: ", sessionNameAndType)
 
     return sessionNameAndType, nil
 }

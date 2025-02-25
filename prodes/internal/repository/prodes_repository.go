@@ -235,8 +235,10 @@ func (r *prodeRepository) GetProdeCarreraByUserAndSession(ctx context.Context, u
     // Buscar un único prode para el usuario y la sesión dados
     if err := r.db.WithContext(ctx).Where("user_id = ? AND session_id = ?", userID, sessionID).First(&prode).Error; err != nil {
         if err == gorm.ErrRecordNotFound {
+            // fmt.Printf("No prode carrera found for userID %d and sessionID %d\n", userID, sessionID)
             return nil, e.NewNotFoundApiError("prode carrera not found")
         }
+        // fmt.Printf("Database error for userID %d and sessionID %d: %v\n", userID, sessionID, err)
         return nil, e.NewInternalServerApiError("error finding prode carrera", err)
     }
 
@@ -249,8 +251,10 @@ func (r *prodeRepository) GetProdeSessionByUserAndSession(ctx context.Context, u
     // Buscar un único prode de sesión para el usuario y la sesión dados
     if err := r.db.WithContext(ctx).Where("user_id = ? AND session_id = ?", userID, sessionID).First(&prode).Error; err != nil {
         if err == gorm.ErrRecordNotFound {
+            // fmt.Printf("No prode session found for userID %d and sessionID %d\n", userID, sessionID)
             return nil, e.NewNotFoundApiError("prode session not found")
         }
+        // fmt.Printf("Database error for userID %d and sessionID %d: %v\n", userID, sessionID, err)
         return nil, e.NewInternalServerApiError("error finding prode session", err)
     }
 

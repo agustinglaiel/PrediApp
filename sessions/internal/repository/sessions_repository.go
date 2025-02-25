@@ -114,7 +114,12 @@ func (s *sessionRepository) GetSessionsByCountryCode(ctx context.Context, countr
 func (s *sessionRepository) GetUpcomingSessions(ctx context.Context) ([]*model.Session, e.ApiError) {
     var sessions []*model.Session
     currentTime := time.Now()
-    if err := s.db.WithContext(ctx).Where("date_start > ?", currentTime).Find(&sessions).Error; err != nil {
+    currentYear := currentTime.Year() // Obtiene el año actual (por ejemplo, 2025)
+
+    if err := s.db.WithContext(ctx).
+        Where("date_start > ?", currentTime).
+        Where("YEAR(date_start) = ?", currentYear).
+        Find(&sessions).Error; err != nil {
         return nil, e.NewInternalServerApiError("Error encontrando próximas sesiones", err)
     }
     return sessions, nil

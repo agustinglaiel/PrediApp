@@ -77,13 +77,13 @@ func (s *sessionService) CreateSession(ctx context.Context, request dto.CreateSe
         dFastLap = nil
     }
 
-    // Validar que no exista ya una combinación idéntica para el mismo fin de semana (mismo circuito y año)
+    // Validar que no exista ya una combinación idéntica para el mismo fin de semana (mismo location, year, session_name y session_type)
     existingSessions, err := s.sessionsRepo.GetSessionsByLocationAndYear(ctx, request.Location, request.Year)
     if err != nil {
         return dto.ResponseSessionDTO{}, e.NewInternalServerApiError("Error validando sesiones existentes", err)
     }
 
-    // I want to print the existing sessions information as JSON
+    // // Imprimir información de las sesiones existentes como JSON para depuración
     // for _, session := range existingSessions {
     //     sessionJSON, err := json.Marshal(session)
     //     if err != nil {
@@ -93,9 +93,15 @@ func (s *sessionService) CreateSession(ctx context.Context, request dto.CreateSe
     //     fmt.Printf("Existing Session: %s\n", sessionJSON)
     // }
     
+    // Verificar si ya existe una sesión con el mismo SessionName, SessionType y Year para este location
     for _, session := range existingSessions {
-        if session.SessionName == request.SessionName && session.SessionType == request.SessionType {
-            return dto.ResponseSessionDTO{}, e.NewBadRequestApiError("Ya existe una sesión con el mismo nombre y tipo para este fin de semana")
+        if session.SessionName == request.SessionName &&
+           session.SessionType == request.SessionType &&
+           session.Year == request.Year { // Añadimos la validación por Year
+            return dto.ResponseSessionDTO{}, e.NewBadRequestApiError(
+                fmt.Sprintf("Ya existe una sesión con el mismo nombre (%s), tipo (%s) y año (%d) para este fin de semana",
+                    request.SessionName, request.SessionType, request.Year),
+            )
         }
     }
 
@@ -124,9 +130,6 @@ func (s *sessionService) CreateSession(ctx context.Context, request dto.CreateSe
     if err := s.sessionsRepo.CreateSession(ctx, newSession); err != nil {
         return dto.ResponseSessionDTO{}, e.NewInternalServerApiError("Error creando la sesión", err)
     }
-
-    // Verificar el ID después de la creación
-    fmt.Printf("Session ID after creation: %d\n", newSession.ID)
 
     // Convertir el modelo en un DTO de respuesta
     response := dto.ResponseSessionDTO{
