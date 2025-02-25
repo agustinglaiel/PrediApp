@@ -3,6 +3,7 @@ package dto
 import "time"
 
 type CreateSessionDTO struct {
+    WeekendID         int       `json:"weekend_id" binding:"required"`
     CircuitKey        int       `json:"circuit_key" binding:"required"`
     CircuitShortName  string    `json:"circuit_short_name" binding:"required"`
     CountryCode       string    `json:"country_code" binding:"required"`
@@ -45,6 +46,7 @@ type UpdateSessionDTO struct {
 
 type ResponseSessionDTO struct {
     ID               int       `json:"id"`  // Identificador único en la base de datos
+    WeekendID        int       `json:"weekend_id"`
     CircuitKey       int       `json:"circuit_key"`
     CircuitShortName string    `json:"circuit_short_name"`
     CountryCode      string    `json:"country_code"`

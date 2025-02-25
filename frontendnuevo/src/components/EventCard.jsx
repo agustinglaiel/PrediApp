@@ -33,7 +33,7 @@ const EventCard = ({
             <img
               src={circuitLayoutUrl}
               alt={`${circuit} layout`}
-              className="w-24 h-24 rounded-lg object-cover"
+              className="w-24 h-24 rounded-lg object-contain" // Cambiamos object-cover a object-contain
             />
           )}
         </div>
@@ -49,10 +49,10 @@ const EventCard = ({
             startTime={session.startTime}
             endTime={session.endTime}
             hasPronostico={session.hasPronostico}
-            onPronosticoClick={onPronosticoClick} // Pasamos la función como prop
+            onPronosticoClick={onPronosticoClick}
             isModalOpen={isModalOpen}
             onCloseModal={onCloseModal}
-            onContinueToLogin={onContinueToLogin} // Pasamos las funciones al modal
+            onContinueToLogin={onContinueToLogin}
           />
         ))}
       </div>

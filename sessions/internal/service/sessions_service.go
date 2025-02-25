@@ -48,13 +48,6 @@ func NewSessionService(sessionsRepo repository.SessionRepository, client *client
 }
 
 func (s *sessionService) CreateSession(ctx context.Context, request dto.CreateSessionDTO) (dto.ResponseSessionDTO, e.ApiError) {
-    /* ESTO LO ELIMINO PORQUE DEJAMOS DE PASAR EL SESSION_KEY SINO QUE AHORA LO OBTENEMOS A PARTIR DE LA API
-	// Validar que session_key sea único
-    existingSession, _ := s.sessionsRepo.GetSessionBySessionKey(ctx, request.SessionKey)
-    if existingSession != nil {
-        return dto.ResponseSessionDTO{}, e.NewBadRequestApiError("session_key ya está en uso")
-    }
-	*/
 
     // Validar que la combinación de session_name y session_type sea válida
     validCombinations := map[string]string{
@@ -108,6 +101,7 @@ func (s *sessionService) CreateSession(ctx context.Context, request dto.CreateSe
 
     // Convertir el DTO en un modelo para guardarlo en la base de datos
     newSession := &model.Session{
+        WeekendID:         request.WeekendID,
         CircuitKey:        request.CircuitKey,
         CircuitShortName:  request.CircuitShortName,
         CountryCode:       request.CountryCode,
@@ -137,6 +131,7 @@ func (s *sessionService) CreateSession(ctx context.Context, request dto.CreateSe
     // Convertir el modelo en un DTO de respuesta
     response := dto.ResponseSessionDTO{
         ID:               newSession.ID,
+        WeekendID:        newSession.WeekendID,
         CircuitKey:       newSession.CircuitKey,
         CircuitShortName: newSession.CircuitShortName,
         CountryCode:      newSession.CountryCode,
@@ -181,6 +176,7 @@ func (s *sessionService) GetSessionById(ctx context.Context, sessionID int) (dto
 	// Convert Model to Response DTO
 	response := dto.ResponseSessionDTO{
 		ID:               session.ID,
+        WeekendID:        session.WeekendID,
 		CircuitKey:       session.CircuitKey,
 		CircuitShortName: session.CircuitShortName,
 		CountryCode:      session.CountryCode,
@@ -324,6 +320,7 @@ func (s *sessionService) UpdateSessionById(ctx context.Context, sessionID int, r
     // Construye el DTO de respuesta utilizando los valores actualizados del modelo
     response := dto.ResponseSessionDTO{
         ID:               session.ID,
+        WeekendID:        session.WeekendID,
         CircuitKey:       session.CircuitKey,
         CircuitShortName: session.CircuitShortName,
         CountryCode:      session.CountryCode,
@@ -374,6 +371,7 @@ func (s *sessionService) ListSessionsByYear(ctx context.Context, year int) ([]dt
     for _, session := range sessions {
         response = append(response, dto.ResponseSessionDTO{
             ID:               session.ID,  // Usamos el ID como identificador principal
+            WeekendID:        session.WeekendID,
             CircuitKey:       session.CircuitKey,
             CircuitShortName: session.CircuitShortName,
             CountryCode:      session.CountryCode,
@@ -424,6 +422,7 @@ func (s *sessionService) ListSessionsByCircuitKey(ctx context.Context, circuitKe
     for _, session := range sessions {
         response = append(response, dto.ResponseSessionDTO{
             ID:               session.ID,
+            WeekendID:        session.WeekendID,
             CircuitKey:       session.CircuitKey,
             CircuitShortName: session.CircuitShortName,
             CountryCode:      session.CountryCode,
@@ -453,6 +452,7 @@ func (s *sessionService) ListSessionsByCountryCode(ctx context.Context, countryC
     for _, session := range sessions {
         response = append(response, dto.ResponseSessionDTO{
             ID:               session.ID,
+            WeekendID:        session.WeekendID,
             CircuitKey:       session.CircuitKey,
             CircuitShortName: session.CircuitShortName,
             CountryCode:      session.CountryCode,
@@ -482,6 +482,7 @@ func (s *sessionService) ListUpcomingSessions(ctx context.Context) ([]dto.Respon
     for _, session := range sessions {
         response = append(response, dto.ResponseSessionDTO{
             ID:               session.ID,
+            WeekendID:        session.WeekendID,
             CircuitKey:       session.CircuitKey,
             CircuitShortName: session.CircuitShortName,
             CountryCode:      session.CountryCode,
@@ -521,6 +522,7 @@ func (s *sessionService) ListSessionsBetweenDates(ctx context.Context, startDate
 	for _, session := range sessions {
 		response = append(response, dto.ResponseSessionDTO{
 			ID:               session.ID,
+            WeekendID:        session.WeekendID,
 			CircuitKey:       session.CircuitKey,
 			CircuitShortName: session.CircuitShortName,
 			CountryCode:      session.CountryCode,
@@ -560,6 +562,7 @@ func (s *sessionService) FindSessionsByNameAndType(ctx context.Context, sessionN
     for _, session := range sessions {
         response = append(response, dto.ResponseSessionDTO{
             ID:               session.ID,
+            WeekendID:        session.WeekendID,
             CircuitKey:       session.CircuitKey,
             CircuitShortName: session.CircuitShortName,
             CountryCode:      session.CountryCode,
@@ -594,6 +597,7 @@ func (s *sessionService) GetAllSessions(ctx context.Context) ([]dto.ResponseSess
     for _, session := range sessions {
         response = append(response, dto.ResponseSessionDTO{
             ID:               session.ID,
+            WeekendID:        session.WeekendID,
             CircuitKey:       session.CircuitKey,
             CircuitShortName: session.CircuitShortName,
             CountryCode:      session.CountryCode,

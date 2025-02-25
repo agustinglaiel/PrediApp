@@ -19,10 +19,10 @@ const UpcomingEvents = ({
           sessions={event.sessions}
           flagUrl={event.flagUrl}
           circuitLayoutUrl={event.circuitLayoutUrl}
-          onPronosticoClick={onPronosticoClick} // Pasamos la función como prop
+          onPronosticoClick={onPronosticoClick}
           isModalOpen={isModalOpen}
           onCloseModal={onCloseModal}
-          onContinueToLogin={onContinueToLogin} // Pasamos las funciones al modal
+          onContinueToLogin={onContinueToLogin}
         />
       ))}
     </div>

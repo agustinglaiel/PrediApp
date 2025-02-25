@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; // Importamos useNavigate para redirigir
 import Header from "../components/Header";
 import NavigationBar from "../components/NavigationBar";
 import UpcomingEvents from "../components/UpcomingEvents";
@@ -9,14 +8,13 @@ const HomePage = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false); // Estado para controlar el modal
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUpcomingSessions = async () => {
       try {
         setLoading(true);
         const data = await getUpcomingSessions();
+        console.log("Upcoming sessions:", data);
         const groupedEvents = processSessions(data);
         setEvents(groupedEvents);
       } catch (err) {
@@ -44,22 +42,23 @@ const HomePage = () => {
     const eventsMap = {};
 
     sessions.forEach((session) => {
-      const key = `${session.country_name}-${session.circuit_short_name}`;
-      if (!eventsMap[key]) {
-        eventsMap[key] = {
+      const weekendId = session.weekend_id; // Usamos weekend_id como clave principal
+      if (!eventsMap[weekendId]) {
+        // Tomamos la primera sesión del weekend_id para determinar country, circuit, etc.
+        eventsMap[weekendId] = {
           country: session.country_name,
           circuit: session.circuit_short_name,
           flagUrl: session.country_name
             ? `/images/flags/${session.country_name.toLowerCase()}.jpg`
-            : "/images/flags/default.jpg", // Placeholder por defecto si country_name es undefined o vacío
+            : "/images/flags/default.jpg",
           circuitLayoutUrl: session.country_name
             ? `/images/circuitLayouts/${session.country_name.toLowerCase()}.png`
-            : "/images/circuitLayouts/default.png", // Placeholder por defecto para circuitLayout
+            : "/images/circuitLayouts/default.png",
           sessions: [],
         };
       }
 
-      // Depuración y manejo robusto de date_start
+      // Depuración y manejo robusto de date_start para cada sesión
       let day = "1"; // Fallback por defecto si date_start es inválido
       let month = "JAN"; // Fallback por defecto si date_start es inválido
       if (session.date_start && typeof session.date_start === "string") {
@@ -83,14 +82,25 @@ const HomePage = () => {
               "NOV",
               "DEC",
             ];
-            month = months[parseInt(monthNum, 10) - 1];
+            month = months[parseInt(monthNum, 10) - 1] || "JAN";
           }
         } catch (error) {
-          console.error("Error parsing date_start:", session.date_start, error);
+          console.error(
+            "Error parsing date_start for session:",
+            session,
+            error
+          );
         }
       } else {
-        console.warn("date_start is invalid or undefined:", session.date_start);
+        console.warn(
+          "date_start is invalid or undefined for session:",
+          session
+        );
       }
+
+      console.log(
+        `Session date for ${session.session_type} (weekend_id: ${weekendId}): day=${day}, month=${month}`
+      );
 
       const [startTime] = session.date_start
         .split("T")[1]
@@ -98,7 +108,7 @@ const HomePage = () => {
         .split(":");
       const [endTime] = session.date_end.split("T")[1].split("-")[0].split(":");
 
-      eventsMap[key].sessions.push({
+      eventsMap[weekendId].sessions.push({
         date: day, // Día como número (e.g., "3")
         month: month, // Mes en formato "DEC"
         type: session.session_type,
@@ -108,30 +118,11 @@ const HomePage = () => {
       });
     });
 
-    return Object.values(eventsMap);
-  };
-
-  // Función para manejar el clic en "Completar pronóstico"
-  const handlePronosticoClick = () => {
-    const token = localStorage.getItem("jwtToken");
-    if (token) {
-      // Si hay token, redirige a la página de pronósticos (puedes ajustar la ruta)
-      navigate("/pronosticos"); // Placeholder, ajusta según necesites
-    } else {
-      // Si no hay token, muestra el modal
-      setIsModalOpen(true);
-    }
-  };
-
-  // Función para cerrar el modal
-  const closeModal = () => {
-    setIsModalOpen(false);
-  };
-
-  // Función para redirigir al login y cerrar el modal
-  const handleContinueToLogin = () => {
-    navigate("/login", { replace: true });
-    setIsModalOpen(false);
+    return Object.values(eventsMap).sort((a, b) => {
+      const dateA = new Date(a.sessions[0].date_start || "2025-01-01");
+      const dateB = new Date(b.sessions[0].date_start || "2025-01-01");
+      return dateA - dateB;
+    });
   };
 
   if (loading) {
@@ -155,13 +146,7 @@ const HomePage = () => {
       <Header />
       <NavigationBar />
       <main className="flex-grow pt-24">
-        <UpcomingEvents
-          events={events}
-          onPronosticoClick={handlePronosticoClick} // Pasamos la función como prop
-          isModalOpen={isModalOpen}
-          onCloseModal={closeModal}
-          onContinueToLogin={handleContinueToLogin} // Pasamos las funciones al modal
-        />
+        <UpcomingEvents events={events} />
       </main>
       <footer className="bg-gray-200 text-gray-700 text-center py-3 text-sm">
         <p>© 2025 PrediApp</p>
