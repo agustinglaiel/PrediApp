@@ -1,5 +1,5 @@
-// src/components/SessionItem.jsx
 import React from "react";
+import DateDisplay from "./DateDisplay"; // Importamos el nuevo componente
 
 const SessionItem = ({
   date,
@@ -9,13 +9,10 @@ const SessionItem = ({
   endTime,
   hasPronostico,
 }) => {
+  console.log(`Rendering SessionItem: date=${date}, month=${month}`); // Depuración
   return (
     <div className="flex items-center p-3 border-b border-gray-100 last:border-b-0">
-      <div className="bg-gray-200 rounded-lg p-2 text-center w-16">
-        <div className="font-bold text-lg">{date}</div>
-        <div className="text-xs uppercase text-gray-500">{month}</div>
-      </div>
-
+      <DateDisplay date={date} month={month} /> {/* Usamos DateDisplay aquí */}
       <div className="ml-6 flex-grow">
         <div className="font-semibold">{sessionType}</div>
         <div className="text-sm text-gray-600">
@@ -23,7 +20,6 @@ const SessionItem = ({
           {endTime ? ` - ${endTime}` : ""}
         </div>
       </div>
-
       {hasPronostico !== undefined && (
         <button className="bg-orange-300 text-white px-4 py-1 rounded-full text-sm font-medium">
           Completar pronóstico

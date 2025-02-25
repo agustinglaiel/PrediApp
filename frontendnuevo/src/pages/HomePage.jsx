@@ -66,8 +66,8 @@ const HomePage = () => {
             ? `/images/flags/${session.country_name.toLowerCase()}.jpg`
             : "/images/flags/default.jpg", // Placeholder por defecto si country_name es undefined o vacío
           circuitLayoutUrl: session.country_name
-            ? `/images/circuitLayouts/${session.country_name.toLowerCase()}.png`
-            : "/images/circuitLayout/default.jpg", // Placeholder por defecto para circuitLayout
+            ? `/images/circuitLayouts/${session.country_name.toLowerCase()}.png` // Usamos .jpg, no .png, según tu corrección
+            : "/images/circuitLayouts/default.png", // Placeholder por defecto para circuitLayout
           sessions: [],
         };
         console.log(
@@ -80,7 +80,43 @@ const HomePage = () => {
         );
       }
 
-      const [date, time] = session.date_start.split("T")[0].split("-");
+      // Depuración y manejo robusto de date_start
+      let day = "1"; // Fallback por defecto si date_start es inválido
+      let month = "JAN"; // Fallback por defecto si date_start es inválido
+      if (session.date_start && typeof session.date_start === "string") {
+        try {
+          const [datePart] = session.date_start.split("T"); // Obtener solo la parte de la fecha (e.g., "2025-12-03")
+          if (datePart) {
+            const [year, monthNum, dayNum] = datePart.split("-");
+            day = dayNum; // Día (e.g., "03" → "3")
+            // Convertir el número del mes (e.g., "12") a mes en 3 letras (e.g., "DEC")
+            const months = [
+              "JAN",
+              "FEB",
+              "MAR",
+              "APR",
+              "MAY",
+              "JUN",
+              "JUL",
+              "AUG",
+              "SEP",
+              "OCT",
+              "NOV",
+              "DEC",
+            ];
+            month = months[parseInt(monthNum, 10) - 1];
+          }
+        } catch (error) {
+          console.error("Error parsing date_start:", session.date_start, error);
+        }
+      } else {
+        console.warn("date_start is invalid or undefined:", session.date_start);
+      }
+
+      console.log(
+        `Session date for ${session.session_type}: day=${day}, month=${month}`
+      );
+
       const [startTime] = session.date_start
         .split("T")[1]
         .split("-")[0]
@@ -88,8 +124,8 @@ const HomePage = () => {
       const [endTime] = session.date_end.split("T")[1].split("-")[0].split(":");
 
       eventsMap[key].sessions.push({
-        date: date.split("-")[2],
-        month: date.split("-")[1]?.toUpperCase().padStart(3, "0"),
+        date: day, // Día como número (e.g., "3")
+        month: month, // Mes en formato "DEC"
         type: session.session_type,
         startTime: `${startTime}:00`,
         endTime: `${endTime}:00`,
