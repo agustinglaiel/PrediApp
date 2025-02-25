@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom"; // Importamos useNavigate para redirigir
 import Header from "../components/Header";
 import NavigationBar from "../components/NavigationBar";
 import UpcomingEvents from "../components/UpcomingEvents";
@@ -9,37 +9,25 @@ const HomePage = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false); // Estado para controlar el modal
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUpcomingSessions = async () => {
       try {
         setLoading(true);
-        const token = localStorage.getItem("jwtToken");
-        if (!token) {
-          navigate("/login", { replace: true });
-          return;
-        }
-
         const data = await getUpcomingSessions();
-        console.log("Upcoming sessions:", data);
         const groupedEvents = processSessions(data);
         setEvents(groupedEvents);
       } catch (err) {
         if (err.response && err.response.status === 403) {
           setError(
-            "Acceso denegado (403). Verifica tu rol o token. Redirigiendo al login..."
+            "Acceso denegado (403). Verifica los permisos o contacta al soporte."
           );
-          console.error("Detalles del error 403:", {
-            status: err.response.status,
-            data: err.response.data,
-            headers: err.response.headers,
-          });
-          setTimeout(() => navigate("/login", { replace: true }), 2000);
         } else if (err.response && err.response.status === 401) {
-          setError("No autorizado (401). Redirigiendo al login...");
-          console.error("Detalles del error 401:", err.response);
-          setTimeout(() => navigate("/login", { replace: true }), 2000);
+          setError(
+            "No autorizado (401). Verifica los permisos o contacta al soporte."
+          );
         } else {
           setError(`No se pudieron cargar los eventos: ${err.message}`);
         }
@@ -50,11 +38,10 @@ const HomePage = () => {
     };
 
     fetchUpcomingSessions();
-  }, [navigate]);
+  }, []);
 
   const processSessions = (sessions) => {
     const eventsMap = {};
-    console.log("Processing sessions:", sessions);
 
     sessions.forEach((session) => {
       const key = `${session.country_name}-${session.circuit_short_name}`;
@@ -66,18 +53,10 @@ const HomePage = () => {
             ? `/images/flags/${session.country_name.toLowerCase()}.jpg`
             : "/images/flags/default.jpg", // Placeholder por defecto si country_name es undefined o vacío
           circuitLayoutUrl: session.country_name
-            ? `/images/circuitLayouts/${session.country_name.toLowerCase()}.png` // Usamos .jpg, no .png, según tu corrección
+            ? `/images/circuitLayouts/${session.country_name.toLowerCase()}.png`
             : "/images/circuitLayouts/default.png", // Placeholder por defecto para circuitLayout
           sessions: [],
         };
-        console.log(
-          `Generated flagUrl for ${session.country_name}:`,
-          eventsMap[key].flagUrl
-        );
-        console.log(
-          `Generated circuitLayoutUrl for ${session.country_name}:`,
-          eventsMap[key].circuitLayoutUrl
-        );
       }
 
       // Depuración y manejo robusto de date_start
@@ -113,10 +92,6 @@ const HomePage = () => {
         console.warn("date_start is invalid or undefined:", session.date_start);
       }
 
-      console.log(
-        `Session date for ${session.session_type}: day=${day}, month=${month}`
-      );
-
       const [startTime] = session.date_start
         .split("T")[1]
         .split("-")[0]
@@ -134,6 +109,29 @@ const HomePage = () => {
     });
 
     return Object.values(eventsMap);
+  };
+
+  // Función para manejar el clic en "Completar pronóstico"
+  const handlePronosticoClick = () => {
+    const token = localStorage.getItem("jwtToken");
+    if (token) {
+      // Si hay token, redirige a la página de pronósticos (puedes ajustar la ruta)
+      navigate("/pronosticos"); // Placeholder, ajusta según necesites
+    } else {
+      // Si no hay token, muestra el modal
+      setIsModalOpen(true);
+    }
+  };
+
+  // Función para cerrar el modal
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
+
+  // Función para redirigir al login y cerrar el modal
+  const handleContinueToLogin = () => {
+    navigate("/login", { replace: true });
+    setIsModalOpen(false);
   };
 
   if (loading) {
@@ -157,7 +155,13 @@ const HomePage = () => {
       <Header />
       <NavigationBar />
       <main className="flex-grow pt-24">
-        <UpcomingEvents events={events} />
+        <UpcomingEvents
+          events={events}
+          onPronosticoClick={handlePronosticoClick} // Pasamos la función como prop
+          isModalOpen={isModalOpen}
+          onCloseModal={closeModal}
+          onContinueToLogin={handleContinueToLogin} // Pasamos las funciones al modal
+        />
       </main>
       <footer className="bg-gray-200 text-gray-700 text-center py-3 text-sm">
         <p>© 2025 PrediApp</p>

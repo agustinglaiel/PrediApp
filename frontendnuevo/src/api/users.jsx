@@ -56,8 +56,8 @@ export const login = async (userData) => {
       localStorage.setItem("userId", userId);
       setAuthToken(token);
 
-      console.log("Token:", token);
-      console.log("User ID:", userId);
+      // console.log("Token:", token);
+      // console.log("User ID:", userId);
     }
 
     return data;
@@ -123,7 +123,7 @@ export const getUsers = async () => {
 const token = localStorage.getItem("jwtToken");
 if (token) {
   setAuthToken(token);
-  console.log("JWT Token establecido desde almacenamiento local");
+  // console.log("JWT Token establecido desde almacenamiento local");
 } else {
   console.warn("No se encontró un JWT Token almacenado");
 }

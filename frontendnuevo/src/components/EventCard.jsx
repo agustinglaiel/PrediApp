@@ -7,6 +7,10 @@ const EventCard = ({
   sessions,
   flagUrl,
   circuitLayoutUrl,
+  onPronosticoClick,
+  isModalOpen,
+  onCloseModal,
+  onContinueToLogin,
 }) => {
   return (
     <div className="bg-white rounded-xl shadow-sm mb-6 overflow-hidden">
@@ -45,6 +49,10 @@ const EventCard = ({
             startTime={session.startTime}
             endTime={session.endTime}
             hasPronostico={session.hasPronostico}
+            onPronosticoClick={onPronosticoClick} // Pasamos la función como prop
+            isModalOpen={isModalOpen}
+            onCloseModal={onCloseModal}
+            onContinueToLogin={onContinueToLogin} // Pasamos las funciones al modal
           />
         ))}
       </div>

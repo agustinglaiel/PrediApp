@@ -32,7 +32,7 @@ export const createProdeSession = async (prodeData) => {
     };
 
     // Imprimir los datos antes de enviarlos
-    console.log("Datos enviados:", prodeDataWithUserId);
+    // console.log("Datos enviados:", prodeDataWithUserId);
 
     const response = await axios.post(
       `${API_URL}/prodes/session`,
