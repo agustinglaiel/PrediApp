@@ -51,17 +51,24 @@ func main() {
     router.POST("/api/login", handlers.LoginHandler)
     router.POST("/api/signup", handlers.SignupHandler)
 
+    router.Any("/users/*proxyPath", proxy.ReverseProxy())
+	router.Any("/drivers/*proxyPath", proxy.ReverseProxy())
+	router.Any("/prodes/*proxyPath", proxy.ReverseProxy())
+	router.Any("/results/*proxyPath", proxy.ReverseProxy())
+	router.Any("/sessions/*proxyPath", proxy.ReverseProxy())
+	router.Any("/groups/*proxyPath", proxy.ReverseProxy())
+
     // Grupo de rutas que requieren autenticación
-    protected := router.Group("/")
-    protected.Use(middleware.JwtAuthentication(""))
-    {
-        protected.Any("/users/*proxyPath", proxy.ReverseProxy())
-        protected.Any("/drivers/*proxyPath", proxy.ReverseProxy())
-        protected.Any("/prodes/*proxyPath", proxy.ReverseProxy())
-        protected.Any("/results/*proxyPath", proxy.ReverseProxy())
-        protected.Any("/sessions/*proxyPath", proxy.ReverseProxy())
-        protected.Any("/groups/*proxyPath", proxy.ReverseProxy())
-    }
+    // protected := router.Group("/")
+    // protected.Use(middleware.JwtAuthentication(""))
+    // {
+    //     protected.Any("/users/*proxyPath", proxy.ReverseProxy())
+    //     protected.Any("/drivers/*proxyPath", proxy.ReverseProxy())
+    //     protected.Any("/prodes/*proxyPath", proxy.ReverseProxy())
+    //     protected.Any("/results/*proxyPath", proxy.ReverseProxy())
+    //     protected.Any("/sessions/*proxyPath", proxy.ReverseProxy())
+    //     protected.Any("/groups/*proxyPath", proxy.ReverseProxy())
+    // }
 
     // Iniciar el servidor HTTP
     fmt.Printf("Gateway listening on port %s...\n", port)

@@ -22,6 +22,7 @@ const HomePage = () => {
         }
 
         const data = await getUpcomingSessions();
+        console.log("Upcoming sessions:", data);
         const groupedEvents = processSessions(data);
         setEvents(groupedEvents);
       } catch (err) {
@@ -53,6 +54,7 @@ const HomePage = () => {
 
   const processSessions = (sessions) => {
     const eventsMap = {};
+    console.log("Processing sessions:", sessions);
 
     sessions.forEach((session) => {
       const key = `${session.country_name}-${session.circuit_short_name}`;
@@ -60,9 +62,22 @@ const HomePage = () => {
         eventsMap[key] = {
           country: session.country_name,
           circuit: session.circuit_short_name,
-          flagUrl: `/images/flags/${session.country_code.toLowerCase()}.jpg`,
+          flagUrl: session.country_name
+            ? `/images/flags/${session.country_name.toLowerCase()}.jpg`
+            : "/images/flags/default.jpg", // Placeholder por defecto si country_name es undefined o vacío
+          circuitLayoutUrl: session.country_name
+            ? `/images/circuitLayouts/${session.country_name.toLowerCase()}.png`
+            : "/images/circuitLayout/default.jpg", // Placeholder por defecto para circuitLayout
           sessions: [],
         };
+        console.log(
+          `Generated flagUrl for ${session.country_name}:`,
+          eventsMap[key].flagUrl
+        );
+        console.log(
+          `Generated circuitLayoutUrl for ${session.country_name}:`,
+          eventsMap[key].circuitLayoutUrl
+        );
       }
 
       const [date, time] = session.date_start.split("T")[0].split("-");
@@ -74,7 +89,7 @@ const HomePage = () => {
 
       eventsMap[key].sessions.push({
         date: date.split("-")[2],
-        month: date.split("-")[1].toUpperCase().padStart(3, "0"),
+        month: date.split("-")[1]?.toUpperCase().padStart(3, "0"),
         type: session.session_type,
         startTime: `${startTime}:00`,
         endTime: `${endTime}:00`,

@@ -14,6 +14,7 @@ const UpcomingEvents = ({ events }) => {
           circuit={event.circuit}
           sessions={event.sessions}
           flagUrl={event.flagUrl}
+          circuitLayoutUrl={event.circuitLayoutUrl}
         />
       ))}
     </div>

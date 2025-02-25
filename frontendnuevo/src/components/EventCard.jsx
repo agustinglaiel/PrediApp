@@ -1,8 +1,13 @@
-// src/components/EventCard.jsx
 import React from "react";
 import SessionItem from "./SessionItem";
 
-const EventCard = ({ country, circuit, sessions, flagUrl }) => {
+const EventCard = ({
+  country,
+  circuit,
+  sessions,
+  flagUrl,
+  circuitLayoutUrl,
+}) => {
   return (
     <div className="bg-white rounded-xl shadow-sm mb-6 overflow-hidden">
       <div className="p-4 flex items-center">
@@ -20,7 +25,13 @@ const EventCard = ({ country, circuit, sessions, flagUrl }) => {
           <p className="text-gray-600">{circuit}</p>
         </div>
         <div className="ml-auto">
-          <div className="w-24 h-24 bg-gray-100 rounded-lg"></div>
+          {circuitLayoutUrl && (
+            <img
+              src={circuitLayoutUrl}
+              alt={`${circuit} layout`}
+              className="w-24 h-24 rounded-lg object-cover"
+            />
+          )}
         </div>
       </div>
 
