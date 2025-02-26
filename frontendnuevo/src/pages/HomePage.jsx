@@ -3,10 +3,7 @@ import Header from "../components/Header";
 import NavigationBar from "../components/NavigationBar";
 import UpcomingEvents from "../components/UpcomingEvents";
 import { getUpcomingSessions } from "../api/sessions";
-import {
-  getSessionProdeByUserAndSession,
-  getRaceProdeByUserAndSession,
-} from "../api/prodes";
+import { getProdeByUserAndSession } from "../api/prodes"; // Usamos el nuevo endpoint
 
 // Simulamos isRaceSession desde el frontend para consistencia con el backend
 const isRaceSession = (sessionName, sessionType) => {
@@ -118,7 +115,7 @@ const HomePage = () => {
       });
     });
 
-    // Depuración: Contar cuántos pronósticos se fetch y verificar silenciosamente los 404
+    // Depuración: Contar cuántos pronósticos se fetch y manejar silenciosamente
     const userId = localStorage.getItem("userId");
     if (userId) {
       const updatedEventsMap = { ...eventsMap };
@@ -128,68 +125,66 @@ const HomePage = () => {
         const prodePromises = event.sessions.map((session) => {
           const sessionKey = `${userId}-${session.id}-${session.type}`;
           if (processedSessions.has(sessionKey)) {
-            return Promise.resolve({ prode: null, error: null }); // Evitar solicitudes duplicadas sin logs
+            return Promise.resolve({
+              prode: null,
+              error: null,
+              isRace: isRaceSession(session.sessionName, session.sessionType),
+            }); // Evitar solicitudes duplicadas sin logs
           }
           processedSessions.add(sessionKey);
 
-          if (isRaceSession(session.sessionName, session.sessionType)) {
-            return getRaceProdeByUserAndSession(
-              parseInt(userId, 10),
-              session.id
-            )
-              .then((prodeRace) => {
-                if (prodeRace) prodeCount++;
-                if (session.id === 6) {
-                  console.log(`ProdeRace for session 6:`, prodeRace);
+          return getProdeByUserAndSession(parseInt(userId, 10), session.id)
+            .then((prode) => {
+              if (prode) {
+                prodeCount++;
+                // Determinar si es un prode de carrera o sesión basado en los campos
+                if (prode.p4 && prode.p5 && prode.fastest_lap !== undefined) {
+                  return { prode: prode, error: null, isRace: true };
+                } else {
+                  return { prode: prode, error: null, isRace: false };
                 }
-                return { prode: prodeRace, error: null };
-              })
-              .catch((error) => {
-                // Silenciar 404 y devolver null sin logs
-                if (error.response && error.response.status === 404) {
-                  return { prode: null, error: null };
-                }
-                console.error(
-                  `Unexpected error fetching race prode for session ${session.id}:`,
-                  error
-                );
-                return { prode: null, error };
-              });
-          } else {
-            return getSessionProdeByUserAndSession(
-              parseInt(userId, 10),
-              session.id
-            )
-              .then((prodeSession) => {
-                if (prodeSession) prodeCount++;
-                if (session.id === 6) {
-                  console.log(`ProdeSession for session 6:`, prodeSession);
-                }
-                return { prode: prodeSession, error: null };
-              })
-              .catch((error) => {
-                // Silenciar 404 y devolver null sin logs
-                if (error.response && error.response.status === 404) {
-                  return { prode: null, error: null };
-                }
-                console.error(
-                  `Unexpected error fetching session prode for session ${session.id}:`,
-                  error
-                );
-                return { prode: null, error };
-              });
-          }
+              }
+              return {
+                prode: null,
+                error: null,
+                isRace: isRaceSession(session.sessionName, session.sessionType),
+              };
+            })
+            .catch((error) => {
+              // Silenciar 404 y devolver null sin logs (aunque ahora el backend debería devolver 200)
+              if (error.response && error.response.status === 404) {
+                return {
+                  prode: null,
+                  error: null,
+                  isRace: isRaceSession(
+                    session.sessionName,
+                    session.sessionType
+                  ),
+                };
+              }
+              console.error(
+                `Unexpected error fetching prode for session ${session.id}:`,
+                error
+              );
+              return {
+                prode: null,
+                error: null,
+                isRace: isRaceSession(session.sessionName, session.sessionType),
+              };
+            });
         });
 
         Promise.all(prodePromises)
           .then((results) => {
             results.forEach((result, index) => {
               const session = event.sessions[index];
-              if (isRaceSession(session.sessionName, session.sessionType)) {
+              if (result.isRace) {
                 session.prodeRace = result.prode === null ? null : result.prode;
+                session.prodeSession = null;
               } else {
                 session.prodeSession =
                   result.prode === null ? null : result.prode;
+                session.prodeRace = null;
               }
             });
             console.log(`Total prodes found for user ${userId}:`, prodeCount);

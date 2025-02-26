@@ -233,12 +233,11 @@ func (r *prodeRepository) GetProdesByUserID(ctx context.Context, userID int) ([]
 func (r *prodeRepository) GetProdeCarreraByUserAndSession(ctx context.Context, userID, sessionID int) (*model.ProdeCarrera, e.ApiError) {
     var prode model.ProdeCarrera
 
-    // Buscar un único prode para el usuario y la sesión dados
     result := r.db.WithContext(ctx).Where("user_id = ? AND session_id = ?", userID, sessionID).First(&prode)
     if result.Error != nil {
         if errors.Is(result.Error, gorm.ErrRecordNotFound) {
             fmt.Printf("No prode carrera found for userID %d and sessionID %d\n", userID, sessionID)
-            return nil, e.NewNotFoundApiError("prode carrera not found")
+            return nil, nil // Devolver nil, nil para indicar no encontrado sin error HTTP
         }
         fmt.Printf("Database error for userID %d and sessionID %d: %v\n", userID, sessionID, result.Error)
         fmt.Printf("SQL query for userID %d and sessionID %d: %s\n", userID, sessionID, r.db.ToSQL(func(tx *gorm.DB) *gorm.DB {
@@ -254,12 +253,11 @@ func (r *prodeRepository) GetProdeCarreraByUserAndSession(ctx context.Context, u
 func (r *prodeRepository) GetProdeSessionByUserAndSession(ctx context.Context, userID, sessionID int) (*model.ProdeSession, e.ApiError) {
     var prode model.ProdeSession
 
-    // Buscar un único prode de sesión para el usuario y la sesión dados
     result := r.db.WithContext(ctx).Where("user_id = ? AND session_id = ?", userID, sessionID).First(&prode)
     if result.Error != nil {
         if errors.Is(result.Error, gorm.ErrRecordNotFound) {
             fmt.Printf("No prode session found for userID %d and sessionID %d\n", userID, sessionID)
-            return nil, e.NewNotFoundApiError("prode session not found")
+            return nil, nil // Devolver nil, nil para indicar no encontrado sin error HTTP
         }
         fmt.Printf("Database error for userID %d and sessionID %d: %v\n", userID, sessionID, result.Error)
         fmt.Printf("SQL query for userID %d and sessionID %d: %s\n", userID, sessionID, r.db.ToSQL(func(tx *gorm.DB) *gorm.DB {

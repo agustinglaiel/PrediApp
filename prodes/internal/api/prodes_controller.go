@@ -158,7 +158,51 @@ func (c *ProdeController) GetProdesByUserId(ctx *gin.Context) {
 	})
 }
 
-func (c *ProdeController) GetRaceProdeByUserAndSession(ctx *gin.Context) {
+// func (c *ProdeController) GetRaceProdeByUserAndSession(ctx *gin.Context) {
+//     userID, err := strconv.Atoi(ctx.Param("user_id"))
+//     if err != nil {
+//         ctx.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Invalid user ID"))
+//         return
+//     }
+
+//     sessionID, err := strconv.Atoi(ctx.Param("session_id"))
+//     if err != nil {
+//         ctx.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Invalid session ID"))
+//         return
+//     }
+
+//     response, apiErr := c.prodeService.GetRaceProdeByUserAndSession(ctx.Request.Context(), userID, sessionID)
+//     if apiErr != nil {
+//         ctx.JSON(apiErr.Status(), apiErr)
+//         return
+//     }
+
+//     ctx.JSON(http.StatusOK, response)
+// }
+
+// func (c *ProdeController) GetSessionProdeByUserAndSession(ctx *gin.Context) {
+//     userID, err := strconv.Atoi(ctx.Param("user_id"))
+//     if err != nil {
+//         ctx.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Invalid user ID"))
+//         return
+//     }
+
+//     sessionID, err := strconv.Atoi(ctx.Param("session_id"))
+//     if err != nil {
+//         ctx.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Invalid session ID"))
+//         return
+//     }
+
+//     response, apiErr := c.prodeService.GetSessionProdeByUserAndSession(ctx.Request.Context(), userID, sessionID)
+//     if apiErr != nil {
+//         ctx.JSON(apiErr.Status(), apiErr)
+//         return
+//     }
+
+//     ctx.JSON(http.StatusOK, response)
+// }
+
+func (c *ProdeController) GetProdeByUserAndSession(ctx *gin.Context) {
     userID, err := strconv.Atoi(ctx.Param("user_id"))
     if err != nil {
         ctx.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Invalid user ID"))
@@ -171,34 +215,26 @@ func (c *ProdeController) GetRaceProdeByUserAndSession(ctx *gin.Context) {
         return
     }
 
-    response, apiErr := c.prodeService.GetRaceProdeByUserAndSession(ctx.Request.Context(), userID, sessionID)
+    raceProde, sessionProde, apiErr := c.prodeService.GetProdeByUserAndSession(ctx.Request.Context(), userID, sessionID)
     if apiErr != nil {
+        // Si es un error diferente a 404, devolvemos el estado del error
         ctx.JSON(apiErr.Status(), apiErr)
         return
     }
 
-    ctx.JSON(http.StatusOK, response)
-}
-
-func (c *ProdeController) GetSessionProdeByUserAndSession(ctx *gin.Context) {
-    userID, err := strconv.Atoi(ctx.Param("user_id"))
-    if err != nil {
-        ctx.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Invalid user ID"))
-        return
+    // Construir la respuesta como un array
+    var response []interface{}
+    if raceProde != nil {
+        response = append(response, *raceProde)
+    }
+    if sessionProde != nil {
+        response = append(response, *sessionProde)
+    }
+    if len(response) == 0 {
+        response = []interface{}{} // Array vacío si no hay datos
     }
 
-    sessionID, err := strconv.Atoi(ctx.Param("session_id"))
-    if err != nil {
-        ctx.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Invalid session ID"))
-        return
-    }
-
-    response, apiErr := c.prodeService.GetSessionProdeByUserAndSession(ctx.Request.Context(), userID, sessionID)
-    if apiErr != nil {
-        ctx.JSON(apiErr.Status(), apiErr)
-        return
-    }
-
+    // Devolver siempre un 200 OK con el array (vacío o con datos)
     ctx.JSON(http.StatusOK, response)
 }
 

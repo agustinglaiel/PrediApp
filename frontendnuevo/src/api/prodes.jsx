@@ -170,8 +170,59 @@ export const getRaceProdeByUserAndSession = async (userId, sessionId) => {
   }
 };
 
+// // Obtener un prode de sesión por user_id y session_id
+// export const getSessionProdeByUserAndSession = async (userId, sessionId) => {
+//   try {
+//     const token = localStorage.getItem("jwtToken");
+//     if (!token) {
+//       throw new Error("Authentication token not found. Please log in.");
+//     }
+
+//     const response = await axios.get(
+//       `${API_URL}/prodes/session/user/${userId}/session/${sessionId}`,
+//       {
+//         headers: {
+//           Authorization: `Bearer ${token}`,
+//           "Content-Type": "application/json",
+//         },
+//         // Aceptar todos los códigos 200 para manejar manualmente
+//         validateStatus: (status) => status === 200,
+//       }
+//     );
+
+//     // Verificar si la respuesta está vacía, null, o un objeto vacío
+//     if (
+//       !response.data ||
+//       Object.keys(response.data).length === 0 ||
+//       (typeof response.data === "object" &&
+//         Object.values(response.data).every((v) => v === null || v === ""))
+//     ) {
+//       return null; // Devolver null silenciosamente si no hay datos
+//     }
+//     console.log(
+//       `Successfully fetched session prode for user ${userId}, session ${sessionId}:`,
+//       response.data
+//     );
+//     return response.data;
+//   } catch (error) {
+//     // Silenciar errores 404/400 si los hubiera (aunque el backend ahora devuelve 200)
+//     if (
+//       error.response &&
+//       (error.response.status === 404 || error.response.status === 400)
+//     ) {
+//       return null; // Devolver null silenciosamente para 404/400 (por si acaso)
+//     }
+//     console.log(
+//       `Unexpected error fetching session prode for user ${userId}, session ${sessionId}:`,
+//       error.message
+//     );
+//     throw new Error(error.message || "Error fetching session prediction.");
+//   }
+// };
+
 // Obtener un prode de sesión por user_id y session_id
-export const getSessionProdeByUserAndSession = async (userId, sessionId) => {
+
+export const getProdeByUserAndSession = async (userId, sessionId) => {
   try {
     const token = localStorage.getItem("jwtToken");
     if (!token) {
@@ -179,43 +230,51 @@ export const getSessionProdeByUserAndSession = async (userId, sessionId) => {
     }
 
     const response = await axios.get(
-      `${API_URL}/prodes/session/user/${userId}/session/${sessionId}`,
+      `${API_URL}/prodes/user/${userId}/session/${sessionId}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        // Aceptar todos los códigos 200 para manejar manualmente
+        // Aceptar 200 para manejar manualmente
         validateStatus: (status) => status === 200,
       }
     );
 
-    // Verificar si la respuesta está vacía, null, o un objeto vacío
+    // Verificar si la respuesta es un array vacío o null
     if (
       !response.data ||
-      Object.keys(response.data).length === 0 ||
-      (typeof response.data === "object" &&
-        Object.values(response.data).every((v) => v === null || v === ""))
+      (Array.isArray(response.data) && response.data.length === 0)
     ) {
       return null; // Devolver null silenciosamente si no hay datos
     }
-    console.log(
-      `Successfully fetched session prode for user ${userId}, session ${sessionId}:`,
-      response.data
-    );
-    return response.data;
-  } catch (error) {
-    // Silenciar errores 404/400 si los hubiera (aunque el backend ahora devuelve 200)
+    // Asumimos que el array contiene un solo objeto (el pronóstico)
+    // Determinar si es un pronóstico de carrera o sesión basado en los campos
+    const prode = response.data[0];
     if (
-      error.response &&
-      (error.response.status === 404 || error.response.status === 400)
+      prode.p1 &&
+      prode.p2 &&
+      prode.p3 &&
+      prode.p4 &&
+      prode.p5 &&
+      prode.fastest_lap !== undefined
     ) {
-      return null; // Devolver null silenciosamente para 404/400 (por si acaso)
+      console.log(
+        `Successfully fetched race prode for user ${userId}, session ${sessionId}:`,
+        prode
+      );
+    } else {
+      console.log(
+        `Successfully fetched session prode for user ${userId}, session ${sessionId}:`,
+        prode
+      );
     }
+    return prode; // Devolver el primer (y único) elemento del array
+  } catch (error) {
     console.log(
-      `Unexpected error fetching session prode for user ${userId}, session ${sessionId}:`,
+      `Unexpected error fetching prode for user ${userId}, session ${sessionId}:`,
       error.message
     );
-    throw new Error(error.message || "Error fetching session prediction.");
+    throw new Error(error.message || "Error fetching prode prediction.");
   }
 };

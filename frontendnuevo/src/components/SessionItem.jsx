@@ -3,9 +3,9 @@ import DateDisplay from "./DateDisplay";
 import AuthModal from "./AuthModal"; // Importamos el nuevo componente (si decides usarlo)
 
 const SessionItem = ({
+  sessionId, // Pasado desde HomePage.jsx
   date,
   month,
-  sessionId, // Añadimos sessionId como prop para depuración
   sessionType,
   startTime,
   endTime,
@@ -25,9 +25,9 @@ const SessionItem = ({
   // Depuración: Imprimir si hay un pronóstico para session_id = 6
   if (sessionId === 6) {
     console.log(
-      `Session 6 - ProdeSession: ${prodeSession ? "Yes" : "No"}, ProdeRace: ${
-        prodeRace ? "Yes" : "No"
-      }`
+      `Session 6 - ProdeSession: ${
+        prodeSession ? JSON.stringify(prodeSession) : "null"
+      }, ProdeRace: ${prodeRace ? JSON.stringify(prodeRace) : "null"}`
     );
   }
 
