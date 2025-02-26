@@ -22,15 +22,6 @@ const SessionItem = ({
     (sessionType !== "Race" && prodeSession) ||
     (sessionType === "Race" && prodeRace);
 
-  // Depuración: Imprimir si hay un pronóstico para session_id = 6
-  if (sessionId === 6) {
-    console.log(
-      `Session 6 - ProdeSession: ${
-        prodeSession ? JSON.stringify(prodeSession) : "null"
-      }, ProdeRace: ${prodeRace ? JSON.stringify(prodeRace) : "null"}`
-    );
-  }
-
   return (
     <div className="flex items-center p-3 border-b border-gray-100 last:border-b-0">
       <DateDisplay date={date} month={month} />
@@ -40,11 +31,6 @@ const SessionItem = ({
           {startTime}
           {endTime ? ` - ${endTime}` : ""}
         </div>
-        {prodeSession && (
-          <div className="text-xs text-gray-500">
-            Pronóstico: {prodeSession.P1}, {prodeSession.P2}, {prodeSession.P3}
-          </div>
-        )}
         {prodeRace && (
           <div className="text-xs text-gray-500">
             Pronóstico Carrera: {prodeRace.P1}, {prodeRace.P2}, {prodeRace.P3}
@@ -56,7 +42,7 @@ const SessionItem = ({
           onClick={onPronosticoClick}
           className={`px-4 py-1 rounded-full text-sm font-medium transition-colors duration-200 ${
             hasProde
-              ? "bg-green-500 text-white hover:bg-green-600"
+              ? "bg-white text-green-500 border border-green-500 hover:bg-green-50"
               : "bg-orange-300 text-white hover:bg-orange-400"
           }`}
         >

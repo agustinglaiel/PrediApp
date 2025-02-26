@@ -251,24 +251,7 @@ export const getProdeByUserAndSession = async (userId, sessionId) => {
     // Asumimos que el array contiene un solo objeto (el pronóstico)
     // Determinar si es un pronóstico de carrera o sesión basado en los campos
     const prode = response.data[0];
-    if (
-      prode.p1 &&
-      prode.p2 &&
-      prode.p3 &&
-      prode.p4 &&
-      prode.p5 &&
-      prode.fastest_lap !== undefined
-    ) {
-      console.log(
-        `Successfully fetched race prode for user ${userId}, session ${sessionId}:`,
-        prode
-      );
-    } else {
-      console.log(
-        `Successfully fetched session prode for user ${userId}, session ${sessionId}:`,
-        prode
-      );
-    }
+
     return prode; // Devolver el primer (y único) elemento del array
   } catch (error) {
     console.log(

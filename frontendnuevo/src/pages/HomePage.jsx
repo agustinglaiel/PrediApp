@@ -21,7 +21,6 @@ const HomePage = () => {
         setLoading(true);
         setEvents([]); // Limpiar el estado antes de fetch para evitar datos cacheados
         const data = await getUpcomingSessions();
-        console.log("Upcoming sessions:", data);
         const groupedEvents = processSessions(data);
         setEvents(groupedEvents);
       } catch (err) {
@@ -187,7 +186,6 @@ const HomePage = () => {
                 session.prodeRace = null;
               }
             });
-            console.log(`Total prodes found for user ${userId}:`, prodeCount);
             setEvents(
               Object.values(updatedEventsMap).sort((a, b) => {
                 const dateA = new Date(
