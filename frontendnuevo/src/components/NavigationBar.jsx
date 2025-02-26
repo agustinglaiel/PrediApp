@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 
 const NavigationBar = () => {
-  const navigate = useNavigate();
   const location = useLocation();
   const [visible, setVisible] = useState(true);
   const [prevScrollPos, setPrevScrollPos] = useState(0);
@@ -37,17 +36,21 @@ const NavigationBar = () => {
       <nav className="bg-gray-100 rounded-lg shadow-sm max-w-md mx-auto">
         <div className="px-2 py-1 flex justify-around items-center">
           {navItems.map((item) => (
-            <button
+            <NavLink
               key={item.path}
-              onClick={() => navigate(item.path)}
-              className={`px-4 py-2 text-sm font-medium rounded-md ${
-                location.pathname === item.path
-                  ? "text-red-600 bg-gray-200"
-                  : "text-gray-700 hover:text-red-600"
-              }`}
+              to={item.path}
+              className={({ isActive }) =>
+                `px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200 ${
+                  isActive ||
+                  (item.path === "/pronosticos" &&
+                    location.pathname.startsWith("/pronosticos"))
+                    ? "text-red-600 bg-gray-200"
+                    : "text-gray-700 hover:text-red-600"
+                }`
+              }
             >
               {item.label}
-            </button>
+            </NavLink>
           ))}
         </div>
       </nav>
