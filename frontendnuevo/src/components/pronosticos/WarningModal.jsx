@@ -1,21 +1,29 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 const WarningModal = ({ isOpen, onClose }) => {
+  const navigate = useNavigate();
+
   if (!isOpen) return null;
+
+  const handleAccept = () => {
+    navigate("/"); // Redirigir al inicio (/)
+    onClose(); // Cerrar el modal
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4 md:mx-8 lg:mx-16">
-        <p className="text-center text-gray-800 mb-6">
+      <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+        <p className="text-center text-gray-800">
           El pronóstico de cada sesión cierra 5 minutos antes del comienzo de la
-          misma. ¡Tenlo en cuenta para tus próximos pronósticos!
+          misma. Tenlo en cuenta para tus próximos pronósticos!
         </p>
-        <div className="flex justify-center">
+        <div className="mt-4 flex justify-center">
           <button
-            onClick={onClose}
-            className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600 focus:outline-none"
+            onClick={handleAccept}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
           >
-            Volver al inicio
+            Aceptar
           </button>
         </div>
       </div>
