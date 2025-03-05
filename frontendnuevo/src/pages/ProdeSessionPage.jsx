@@ -122,7 +122,11 @@ const ProdeSessionPage = () => {
             <Top3FormHeader sessionType={sessionDetails.sessionType} />
 
             {/* Formulario con selectores de pilotos (deshabilitado si showWarningModal es true) */}
-            <form onSubmit={handleSubmit} disabled={showWarningModal}>
+            <form
+              onSubmit={handleSubmit}
+              disabled={showWarningModal}
+              className="flex flex-col justify-center gap-4"
+            >
               <DriverSelect
                 position="P1"
                 value={formData.P1}

@@ -13,11 +13,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// @title Users Microservice API
-// @version 1.0
-// @description API documentation for the Users microservice.
-// @host localhost:8057
-// @BasePath /api
 func main() {
 	// Obtener el puerto de la variable de entorno PORT
 	port := os.Getenv("PORT")

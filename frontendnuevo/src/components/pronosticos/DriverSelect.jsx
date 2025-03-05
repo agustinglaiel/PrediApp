@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { getAllDrivers } from "../../api/drivers";
 
-const DriverSelect = ({ position, value, onChange }) => {
+const DriverSelect = ({ position, value, onChange, disabled }) => {
   const [drivers, setDrivers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -33,6 +33,7 @@ const DriverSelect = ({ position, value, onChange }) => {
       <select
         value={value || ""}
         onChange={(e) => onChange(parseInt(e.target.value) || null)}
+        disabled={disabled}
         className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
       >
         <option value="">Selecciona un piloto</option>

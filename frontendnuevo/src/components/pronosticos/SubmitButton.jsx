@@ -1,6 +1,11 @@
 import React from "react";
 
-const SubmitButton = ({ isDisabled, onClick, label = "Enviar pronóstico" }) => {
+const SubmitButton = ({
+  isDisabled,
+  onClick,
+  label = "Enviar pronóstico",
+  className,
+}) => {
   return (
     <button
       onClick={onClick}
@@ -9,7 +14,7 @@ const SubmitButton = ({ isDisabled, onClick, label = "Enviar pronóstico" }) => 
         isDisabled
           ? "bg-gray-300 text-gray-500 cursor-not-allowed"
           : "bg-indigo-600 text-white hover:bg-indigo-700"
-      }`}
+      } ${className || ""}`}
     >
       {label}
     </button>
