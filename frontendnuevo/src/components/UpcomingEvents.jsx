@@ -1,3 +1,4 @@
+// UpcomingEvents.jsx
 import React from "react";
 import EventCard from "./EventCard";
 
@@ -19,7 +20,7 @@ const UpcomingEvents = ({
           sessions={event.sessions}
           flagUrl={event.flagUrl}
           circuitLayoutUrl={event.circuitLayoutUrl}
-          onPronosticoClick={onPronosticoClick}
+          onPronosticoClick={onPronosticoClick} // Pasamos la función
           isModalOpen={isModalOpen}
           onCloseModal={onCloseModal}
           onContinueToLogin={onContinueToLogin}

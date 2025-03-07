@@ -1,3 +1,4 @@
+// SessionItem.jsx
 import React from "react";
 import DateDisplay from "./DateDisplay";
 import AuthModal from "./AuthModal"; // Importamos el nuevo componente (si decides usarlo)

@@ -1,3 +1,4 @@
+// EventCard.jsx
 import React from "react";
 import SessionItem from "./SessionItem";
 
@@ -12,6 +13,28 @@ const EventCard = ({
   onCloseModal,
   onContinueToLogin,
 }) => {
+  // Función local para combinar datos del evento y la sesión
+  const handlePronosticoClickLocal = (session) => {
+    if (!onPronosticoClick) return;
+
+    // Empaquetamos la info
+    const sessionData = {
+      id: session.id,
+      sessionName: session.sessionName || session.session_name,
+      sessionType: session.sessionType || session.type,
+      dateStart: session.date_start || null,
+      countryName: country,
+      flagUrl,
+      circuitName: circuit,
+    };
+
+    console.log(
+      "EventCard: Llamando onPronosticoClick con sessionData:",
+      sessionData
+    );
+    onPronosticoClick(sessionData);
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-sm mb-6 overflow-hidden">
       <div className="p-4 flex items-center">
@@ -50,12 +73,20 @@ const EventCard = ({
             startTime={session.startTime}
             endTime={session.endTime}
             hasPronostico={session.hasPronostico}
-            onPronosticoClick={onPronosticoClick}
             isModalOpen={isModalOpen}
             onCloseModal={onCloseModal}
             onContinueToLogin={onContinueToLogin}
             prodeSession={session.prodeSession}
             prodeRace={session.prodeRace}
+            // Importante: cuando se hace clic, armamos la data final y llamamos la función
+            onPronosticoClick={() =>
+              handlePronosticoClickLocal({
+                ...session,
+                // si tu backend la guardó como session_name en lugar de sessionName
+                sessionName: session.sessionName || session.session_name,
+                sessionType: session.sessionType || session.type,
+              })
+            }
           />
         ))}
       </div>

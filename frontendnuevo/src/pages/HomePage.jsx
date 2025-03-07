@@ -1,4 +1,6 @@
+// HomePage.jsx
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom"; // <--- Importante
 import Header from "../components/Header";
 import NavigationBar from "../components/NavigationBar";
 import UpcomingEvents from "../components/UpcomingEvents";
@@ -14,6 +16,9 @@ const HomePage = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Para navegación
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUpcomingSessionsAndProdes = async () => {
@@ -111,14 +116,14 @@ const HomePage = () => {
         prodeRace: null,
         sessionName: session.session_name, // Añadimos sessionName para usar en isRaceSession
         sessionType: session.session_type, // Añadimos sessionType para usar en isRaceSession
+        date_start: session.date_start, // Guardamos la fecha completa si la quieres usar luego
       });
     });
 
-    // Depuración: Contar cuántos pronósticos se fetch y manejar silenciosamente
     const userId = localStorage.getItem("userId");
     if (userId) {
       const updatedEventsMap = { ...eventsMap };
-      const processedSessions = new Set(); // Para evitar duplicados
+      const processedSessions = new Set();
 
       Object.values(eventsMap).forEach((event) => {
         const prodePromises = event.sessions.map((session) => {
@@ -128,7 +133,7 @@ const HomePage = () => {
               prode: null,
               error: null,
               isRace: isRaceSession(session.sessionName, session.sessionType),
-            }); // Evitar solicitudes duplicadas sin logs
+            });
           }
           processedSessions.add(sessionKey);
 
@@ -136,11 +141,10 @@ const HomePage = () => {
             .then((prode) => {
               if (prode) {
                 prodeCount++;
-                // Determinar si es un prode de carrera o sesión basado en los campos
                 if (prode.p4 && prode.p5 && prode.fastest_lap !== undefined) {
-                  return { prode: prode, error: null, isRace: true };
+                  return { prode, error: null, isRace: true };
                 } else {
-                  return { prode: prode, error: null, isRace: false };
+                  return { prode, error: null, isRace: false };
                 }
               }
               return {
@@ -150,7 +154,6 @@ const HomePage = () => {
               };
             })
             .catch((error) => {
-              // Silenciar 404 y devolver null sin logs (aunque ahora el backend debería devolver 200)
               if (error.response && error.response.status === 404) {
                 return {
                   prode: null,
@@ -217,6 +220,12 @@ const HomePage = () => {
     });
   };
 
+  // FUNCIÓN que llamaremos cuando hagamos click en “Completar/Actualizar pronóstico”
+  const handlePronosticoClick = (sessionData) => {
+    console.log("HomePage: handlePronosticoClick -> sessionData:", sessionData);
+    navigate(`/pronosticos/${sessionData.id}`, { state: sessionData });
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-50">
@@ -238,7 +247,12 @@ const HomePage = () => {
       <Header />
       <NavigationBar />
       <main className="flex-grow pt-24">
-        <UpcomingEvents events={events} />
+        {/* Pasamos handlePronosticoClick a UpcomingEvents */}
+        <UpcomingEvents
+          events={events}
+          onPronosticoClick={handlePronosticoClick}
+          // isModalOpen={...} onCloseModal={...} si corresponde
+        />
       </main>
       <footer className="bg-gray-200 text-gray-700 text-center py-3 text-sm">
         <p>© 2025 PrediApp</p>

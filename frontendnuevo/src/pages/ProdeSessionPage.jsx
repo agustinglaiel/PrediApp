@@ -1,6 +1,6 @@
 // ProdeSessionPage.jsx
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom"; // <--- AGREGADO useLocation
 import { getAllDrivers } from "../api/drivers"; // <--- API que ya tienes
 import SessionHeader from "../components/pronosticos/SessionHeader";
 import Top3FormHeader from "../components/pronosticos/Top3FormHeader";
@@ -19,18 +19,35 @@ const ProdeSessionPage = () => {
   const { session_id } = useParams();
   const navigate = useNavigate();
 
+  // AGREGADO: Para leer si venimos con { state: ... }
+  const { state } = useLocation();
+
   // Almacenar la lista completa de pilotos
   const [allDrivers, setAllDrivers] = useState([]);
   const [loadingDrivers, setLoadingDrivers] = useState(true);
   const [driversError, setDriversError] = useState(null);
 
-  // Estado para la sesión (dummy)
-  const [sessionDetails, setSessionDetails] = useState({
-    countryName: "Hungary",
-    flagUrl: "/images/flags/hungary.jpg",
-    sessionType: "Qualifying",
-    sessionName: "Qualifying",
-    dateStart: "2025-12-02T04:00:00-03:00",
+  // Estado para la sesión (dummy) -- MODIFICADO para usar location.state si existe
+  const [sessionDetails, setSessionDetails] = useState(() => {
+    if (state) {
+      // Si venimos de HomePage con navigate("/pronosticos/XXX", { state: { ... } })
+      return {
+        countryName: state.countryName || "Hungary",
+        flagUrl: state.flagUrl || "/images/flags/hungary.jpg",
+        sessionType: state.sessionType || "Qualifying",
+        sessionName: state.sessionName || "Qualifying",
+        dateStart: state.dateStart || "2025-12-02T04:00:00-03:00",
+      };
+    } else {
+      // Fallback si no hay state (entraron directo por URL)
+      return {
+        countryName: "Hungary",
+        flagUrl: "/images/flags/hungary.jpg",
+        sessionType: "Qualifying",
+        sessionName: "Qualifying",
+        dateStart: "2025-12-02T04:00:00-03:00",
+      };
+    }
   });
 
   // Estado para lo que el usuario selecciona en P1/P2/P3
@@ -61,7 +78,8 @@ const ProdeSessionPage = () => {
     }
     fetchDrivers();
 
-    // También aquí podría ir la lógica para getSessionById(session_id), etc.
+    // Si no tenemos state, podrías hacer un fetch con session_id
+    // Ej: getSessionById(session_id).then(resp => setSessionDetails(resp))
   }, [session_id]);
 
   // 2. Chequear el timeRemaining (dummy) para mostrar modal
