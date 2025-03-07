@@ -1,30 +1,13 @@
-import React, { useState, useEffect } from "react";
-import { getAllDrivers } from "../../api/drivers";
+// DriverSelect.jsx
+import React from "react";
 
-const DriverSelect = ({ position, value, onChange, disabled }) => {
-  const [drivers, setDrivers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const fetchDrivers = async () => {
-      try {
-        setLoading(true);
-        const driverList = await getAllDrivers();
-        setDrivers(driverList);
-      } catch (err) {
-        setError(`Error cargando pilotos: ${err.message}`);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDrivers();
-  }, []);
-
-  if (loading) return <div>Cargando pilotos...</div>;
-  if (error) return <div>{error}</div>;
-
+const DriverSelect = ({
+  position,
+  value,
+  onChange,
+  disabled,
+  drivers = [],
+}) => {
   return (
     <div className="mb-4">
       <label className="block text-sm font-medium text-gray-700">
@@ -38,8 +21,8 @@ const DriverSelect = ({ position, value, onChange, disabled }) => {
       >
         <option value="">Selecciona un piloto</option>
         {drivers.map((driver) => (
-          <option key={driver.ID} value={driver.ID}>
-            {driver.FullName} ({driver.TeamName})
+          <option key={driver.id} value={driver.id}>
+            {driver.full_name}
           </option>
         ))}
       </select>
