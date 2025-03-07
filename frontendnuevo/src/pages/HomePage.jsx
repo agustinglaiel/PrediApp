@@ -254,7 +254,7 @@ const HomePage = () => {
           // isModalOpen={...} onCloseModal={...} si corresponde
         />
       </main>
-      <footer className="bg-gray-200 text-gray-700 text-center py-3 text-sm w-full fixed bottom-0 left-0">
+      <footer className="bg-gray-200 text-gray-700 text-center py-3 text-sm">
         <p>© 2025 PrediApp</p>
       </footer>
     </div>
