@@ -11,6 +11,7 @@ import SubmitButton from "../components/pronosticos/SubmitButton";
 import Header from "../components/Header";
 import NavigationBar from "../components/NavigationBar";
 import WarningModal from "../components/pronosticos/WarningModal";
+import YesNoButton from "../components/pronosticos/YesNoButton";
 
 const isRaceSession = (sessionName, sessionType) => {
   return sessionName === "Race" && sessionType === "Race";
@@ -242,38 +243,20 @@ const ProdeRacePage = () => {
                 drivers={driversForP5}
               />
 
-              {/* Virtual Safety Car (Sí/No) */}
-              <div>
-                <label className="block text-sm font-medium text-black mb-1 ml-4">
-                  Virtual Safety Car
-                </label>
-                <select
-                  className="border border-gray-300 p-2 rounded ml-4"
+              <div className="flex flex-row gap-14 ml-4 mb-4">
+                <YesNoButton
+                  label="Virtual Safety Car"
                   value={formData.vsc}
-                  onChange={(e) => handleChange("vsc", e.target.value)}
+                  onChange={(newVal) => handleChange("vsc", newVal)}
                   disabled={showWarningModal}
-                >
-                  <option value="">Selecciona</option>
-                  <option value="yes">Sí</option>
-                  <option value="no">No</option>
-                </select>
-              </div>
+                />
 
-              {/* Safety Car (Sí/No) */}
-              <div>
-                <label className="block text-sm font-medium text-black mb-1 ml-4">
-                  Safety Car
-                </label>
-                <select
-                  className="border border-gray-300 p-2 rounded ml-4"
+                <YesNoButton
+                  label="Safety Car"
                   value={formData.sc}
-                  onChange={(e) => handleChange("sc", e.target.value)}
+                  onChange={(newVal) => handleChange("sc", newVal)}
                   disabled={showWarningModal}
-                >
-                  <option value="">Selecciona</option>
-                  <option value="yes">Sí</option>
-                  <option value="no">No</option>
-                </select>
+                />
               </div>
 
               {/* DNF (0..20) */}
