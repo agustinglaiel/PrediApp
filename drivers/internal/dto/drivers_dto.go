@@ -9,6 +9,7 @@ type CreateDriverDTO struct {
     FullName       string `json:"full_name" binding:"required"`
     NameAcronym    string `json:"name_acronym" binding:"required"`
     TeamName       string `json:"team_name" binding:"required"`
+    Activo         bool   `json:"activo" binding:"required"`
 }
 
 type UpdateDriverDTO struct {
@@ -20,6 +21,7 @@ type UpdateDriverDTO struct {
     FullName       string `json:"full_name,omitempty"`
     NameAcronym    string `json:"name_acronym,omitempty"`
     TeamName       string `json:"team_name,omitempty"`
+    Activo         *bool   `json:"activo,omitempty"`
 }
 
 type ResponseDriverDTO struct {
@@ -32,6 +34,7 @@ type ResponseDriverDTO struct {
     FullName       string `json:"full_name"`
     NameAcronym    string `json:"name_acronym"`
     TeamName       string `json:"team_name"`
+    Activo         bool   `json:"activo"`
 }
 
 type DeleteDriverDTO struct {

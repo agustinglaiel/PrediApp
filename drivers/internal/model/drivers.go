@@ -11,4 +11,5 @@ type Driver struct {
 	NameAcronym   string `json:"name_acronym"`
 	HeadshotURL   string `json:"headshot_url"` // Añadimos el campo de la foto
 	TeamName      string `json:"team_name"`
+	Activo        bool   `json:"activo"`
 }

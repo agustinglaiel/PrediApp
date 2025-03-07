@@ -60,6 +60,7 @@ func (s *driverService) CreateDriver(ctx context.Context, request dto.CreateDriv
 		FullName:       request.FullName,
 		NameAcronym:    request.NameAcronym,
 		TeamName:       request.TeamName,
+		Activo:         request.Activo,
 	}
 
 	if err := s.driverRepo.CreateDriver(ctx, newDriver); err != nil {
@@ -77,6 +78,7 @@ func (s *driverService) CreateDriver(ctx context.Context, request dto.CreateDriv
 		FullName:       newDriver.FullName,
 		NameAcronym:    newDriver.NameAcronym,
 		TeamName:       newDriver.TeamName,
+		Activo:         newDriver.Activo,
 	}
 
 	return response, nil
@@ -99,6 +101,7 @@ func (s *driverService) GetDriverByID(ctx context.Context, driverID int) (dto.Re
 		FullName:       driver.FullName,
 		NameAcronym:    driver.NameAcronym,
 		TeamName:       driver.TeamName,
+		Activo:         driver.Activo,
 	}
 
 	return response, nil
@@ -135,6 +138,9 @@ func (s *driverService) UpdateDriver(ctx context.Context, driverID int, request 
 	if request.TeamName != "" {
 		driver.TeamName = request.TeamName
 	}
+	if request.Activo != nil {
+        driver.Activo = *request.Activo
+    }
 
 	if err := s.driverRepo.UpdateDriver(ctx, driver); err != nil {
 		return dto.ResponseDriverDTO{}, e.NewInternalServerApiError("Error actualizando el piloto", err)
@@ -151,6 +157,7 @@ func (s *driverService) UpdateDriver(ctx context.Context, driverID int, request 
 		FullName:       driver.FullName,
 		NameAcronym:    driver.NameAcronym,
 		TeamName:       driver.TeamName,
+		Activo:         driver.Activo,
 	}
 
 	return response, nil
@@ -190,6 +197,7 @@ func (s *driverService) ListDrivers(ctx context.Context) ([]dto.ResponseDriverDT
 			FullName:       driver.FullName,
 			NameAcronym:    driver.NameAcronym,
 			TeamName:       driver.TeamName,
+			Activo:         driver.Activo,
 		})
 	}
 
@@ -214,6 +222,7 @@ func (s *driverService) ListDriversByTeam(ctx context.Context, teamName string) 
 			FullName:       driver.FullName,
 			NameAcronym:    driver.NameAcronym,
 			TeamName:       driver.TeamName,
+			Activo: 	    driver.Activo,
 		})
 	}
 
@@ -239,6 +248,7 @@ func (s *driverService) ListDriversByCountry(ctx context.Context, countryCode st
 			FullName:       driver.FullName,
 			NameAcronym:    driver.NameAcronym,
 			TeamName:       driver.TeamName,
+			Activo: 	    driver.Activo,
 		})
 	}
 	log.Printf("Drivers despues: %v", response)
@@ -264,6 +274,7 @@ func (s *driverService) ListDriversByFullName(ctx context.Context, fullName stri
 			FullName:       driver.FullName,
 			NameAcronym:    driver.NameAcronym,
 			TeamName:       driver.TeamName,
+			Activo: 	    driver.Activo,
 		})
 	}
 
@@ -288,6 +299,7 @@ func (s *driverService) ListDriversByAcronym(ctx context.Context, acronym string
 			FullName:       driver.FullName,
 			NameAcronym:    driver.NameAcronym,
 			TeamName:       driver.TeamName,
+			Activo: 	    driver.Activo,
 		})
 	}
 
@@ -330,6 +342,7 @@ func (s *driverService) FetchAllDriversFromExternalAPI(ctx context.Context) ([]d
                 FullName:       driver.FullName,
                 NameAcronym:    driver.NameAcronym,
                 TeamName:       driver.TeamName,
+				Activo: 	    driver.Activo,
             }
 
             // Insertar el piloto en la base de datos
@@ -348,6 +361,7 @@ func (s *driverService) FetchAllDriversFromExternalAPI(ctx context.Context) ([]d
                 FullName:       newDriver.FullName,
                 NameAcronym:    newDriver.NameAcronym,
                 TeamName:       newDriver.TeamName,
+				Activo: 	    newDriver.Activo,
             })
         }
     }
@@ -394,6 +408,7 @@ func (s *driverService) GetDriverByNumber(ctx context.Context, driverNumber int)
 		FullName:       driver.FullName,
 		NameAcronym:    driver.NameAcronym,
 		TeamName:       driver.TeamName,
+		Activo: 	    driver.Activo,
 	}
 
 	return response, nil

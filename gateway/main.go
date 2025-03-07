@@ -52,6 +52,7 @@ func main() {
     router.POST("/api/signup", handlers.SignupHandler)
 
     router.Any("/users/*proxyPath", proxy.ReverseProxy())
+    router.Any("drivers", proxy.ReverseProxy())
 	router.Any("/drivers/*proxyPath", proxy.ReverseProxy())
 	router.Any("/prodes/*proxyPath", proxy.ReverseProxy())
 	router.Any("/results/*proxyPath", proxy.ReverseProxy())

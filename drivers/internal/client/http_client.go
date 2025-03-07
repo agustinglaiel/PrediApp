@@ -171,6 +171,7 @@ func (c *HttpClient) GetAllDriversFromExternalAPI() ([]dto.ResponseDriverDTO, er
             FullName:       driver.FullName,
             NameAcronym:    driver.NameAcronym,
             TeamName:       driver.TeamName,
+			Activo:         false,
         })
     }
 
