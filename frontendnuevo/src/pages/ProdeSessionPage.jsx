@@ -166,21 +166,21 @@ const ProdeSessionPage = () => {
                 value={formData.P1}
                 onChange={(value) => handleDriverChange("P1", value)}
                 disabled={showWarningModal}
-                drivers={driversForP1} // <--- Filtrado
+                drivers={driversForP1}
               />
               <DriverSelect
                 position="P2"
                 value={formData.P2}
                 onChange={(value) => handleDriverChange("P2", value)}
                 disabled={showWarningModal}
-                drivers={driversForP2} // <--- Filtrado
+                drivers={driversForP2}
               />
               <DriverSelect
                 position="P3"
                 value={formData.P3}
                 onChange={(value) => handleDriverChange("P3", value)}
                 disabled={showWarningModal}
-                drivers={driversForP3} // <--- Filtrado
+                drivers={driversForP3}
               />
 
               <SubmitButton
@@ -193,12 +193,15 @@ const ProdeSessionPage = () => {
           </div>
         )}
 
-        <button onClick={() => navigate("/")} className="mt-4">
+        {/* <button onClick={() => navigate("/")} className="mt-4">
           Volver
-        </button>
+        </button> */}
 
         <WarningModal isOpen={showWarningModal} onClose={handleCloseModal} />
       </main>
+      <footer className="bg-gray-200 text-gray-700 text-center py-3 text-sm w-full fixed bottom-0 left-0">
+        <p>© 2025 PrediApp</p>
+      </footer>
     </div>
   );
 };
