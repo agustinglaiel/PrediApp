@@ -189,6 +189,18 @@ func (sc *SessionController) ListUpcomingSessions(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+func (sc *SessionController) ListPastSessions(c *gin.Context) {
+	// Llamar al servicio para obtener las sesiones pasadas de este mismo año
+	response, apiErr := sc.sessionService.ListPastSessions(c.Request.Context())
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	// Responder con el listado de sesiones pasadas
+	c.JSON(http.StatusOK, response)
+}
+
 func (sc *SessionController) ListSessionsBetweenDates(c *gin.Context) {
 	// Obtener las fechas desde los parámetros de la URL o el query
 	startDateStr := c.Query("start_date")

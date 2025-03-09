@@ -27,6 +27,7 @@ type SessionServiceInterface interface{
 	ListSessionsByCircuitKey(ctx context.Context, circuitKey int) ([]dto.ResponseSessionDTO, e.ApiError)
 	ListSessionsByCountryCode(ctx context.Context, countryCode string) ([]dto.ResponseSessionDTO, e.ApiError)
 	ListUpcomingSessions(ctx context.Context) ([]dto.ResponseSessionDTO, e.ApiError)
+    ListPastSessions(ctx context.Context) ([]dto.ResponseSessionDTO, e.ApiError)
 	ListSessionsBetweenDates(ctx context.Context, startDate time.Time, endDate time.Time) ([]dto.ResponseSessionDTO, e.ApiError)
 	FindSessionsByNameAndType(ctx context.Context, sessionName string, sessionType string) ([]dto.ResponseSessionDTO, e.ApiError)
 	GetAllSessions(ctx context.Context) ([]dto.ResponseSessionDTO, e.ApiError)
@@ -501,6 +502,41 @@ func (s *sessionService) ListUpcomingSessions(ctx context.Context) ([]dto.Respon
     }
 
     // Si no hay próximas sesiones, devolver lista vacía
+    if len(response) == 0 {
+        return []dto.ResponseSessionDTO{}, nil
+    }
+
+    return response, nil
+}
+
+func (s *sessionService) ListPastSessions(ctx context.Context) ([]dto.ResponseSessionDTO, e.ApiError){
+    // Llamar al repositorio para obtener las sesiones pasadas
+    sessions, err := s.sessionsRepo.GetPastSessions(ctx)
+    if err != nil {
+        return nil, err
+    }
+
+    // Convertir el resultado de []*model.Session a []dto.ResponseSessionDTO
+    var response []dto.ResponseSessionDTO
+    for _, session := range sessions {
+        response = append(response, dto.ResponseSessionDTO{
+            ID:               session.ID,
+            WeekendID:        session.WeekendID,
+            CircuitKey:       session.CircuitKey,
+            CircuitShortName: session.CircuitShortName,
+            CountryCode:      session.CountryCode,
+            CountryName:      session.CountryName,
+            DateStart:        session.DateStart,
+            DateEnd:          session.DateEnd,
+            Location:         session.Location,
+            SessionKey:       session.SessionKey,
+            SessionName:      session.SessionName,
+            SessionType:      session.SessionType,
+            Year:             session.Year,
+        })
+    }
+
+    // Si no hay sesiones pasadas, devolver lista vacía
     if len(response) == 0 {
         return []dto.ResponseSessionDTO{}, nil
     }

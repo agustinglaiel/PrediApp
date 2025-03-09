@@ -25,6 +25,7 @@ func MapUrls(engine *gin.Engine, sessionController *api.SessionController) {
 	engine.GET("/sessions/circuit/:circuitKey", sessionController.ListSessionsByCircuitKey)
 	engine.GET("/sessions/country/:countryCode", sessionController.ListSessionsByCountryCode)
 	engine.GET("/sessions/upcoming", sessionController.ListUpcomingSessions)
+	engine.GET("/sessions/lasts", sessionController.ListPastSessions)
 	// engine.GET("/sessions/date-range", sessionController.ListSessionsBetweenDates) VER DESPUES
 	engine.GET("/sessions/name-type", sessionController.FindSessionsByNameAndType)
 	engine.GET("/sessions/:id/name-type", sessionController.GetSessionNameAndTypeById)

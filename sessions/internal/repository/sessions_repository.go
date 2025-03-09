@@ -24,6 +24,7 @@ type SessionRepository interface{
 	GetSessionsByCircuitKey(ctx context.Context, circuitKey int) ([]*model.Session, e.ApiError)
 	GetSessionsByCountryCode(ctx context.Context, countryCode string) ([]*model.Session, e.ApiError)
 	GetUpcomingSessions(ctx context.Context) ([]*model.Session, e.ApiError)
+	GetPastSessions(ctx context.Context) ([]*model.Session, e.ApiError)
 	GetSessionsBetweenDates(ctx context.Context, startDate time.Time, endDate time.Time) ([]*model.Session, e.ApiError)
 	GetSessionsByNameAndType(ctx context.Context, sessionName string, sessionType string) ([]*model.Session, e.ApiError)
 	GetSessionBySessionKey(ctx context.Context, sessionKey int) (*model.Session, e.ApiError)
@@ -123,6 +124,20 @@ func (s *sessionRepository) GetUpcomingSessions(ctx context.Context) ([]*model.S
         return nil, e.NewInternalServerApiError("Error encontrando próximas sesiones", err)
     }
     return sessions, nil
+}
+
+func (s *sessionRepository) GetPastSessions(ctx context.Context) ([]*model.Session, e.ApiError){
+	var sessions []*model.Session
+	currentTime := time.Now()
+	currentYear := currentTime.Year() // Obtiene el año actual (por ejemplo, 2025)
+
+	if err := s.db.WithContext(ctx).
+		Where("date_start < ?", currentTime).
+		Where("YEAR(date_start) = ?", currentYear).
+		Find(&sessions).Error; err != nil {
+		return nil, e.NewInternalServerApiError("Error encontrando sesiones pasadas", err)
+	}
+	return sessions, nil
 }
 
 func (s *sessionRepository) GetSessionsBetweenDates(ctx context.Context, startDate time.Time, endDate time.Time) ([]*model.Session, e.ApiError) {
