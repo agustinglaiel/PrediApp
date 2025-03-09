@@ -11,9 +11,8 @@ import SubmitButton from "../components/pronosticos/SubmitButton";
 import WarningModal from "../components/pronosticos/WarningModal";
 
 import { getAllDrivers } from "../api/drivers";
-import { createProdeSession } from "../api/prodes"; // <--- Usamos esta función
+import { createProdeSession } from "../api/prodes";
 
-// Simulamos isRaceSession para verificar si la sesión es Race (no deberíamos usar ProdeSessionPage si es Race)
 const isRaceSession = (sessionName, sessionType) => {
   return sessionName === "Race" && sessionType === "Race";
 };
@@ -21,37 +20,39 @@ const isRaceSession = (sessionName, sessionType) => {
 const ProdeSessionPage = () => {
   const { session_id } = useParams();
   const navigate = useNavigate();
-  const { state } = useLocation(); // Si venimos de HomePage con navigate("/pronosticos/...", { state: ... })
+  const { state } = useLocation();
 
-  // Lista de pilotos
   const [allDrivers, setAllDrivers] = useState([]);
   const [loadingDrivers, setLoadingDrivers] = useState(true);
   const [driversError, setDriversError] = useState(null);
 
-  // Detalles de la sesión
   const [sessionDetails, setSessionDetails] = useState(() => {
     if (state) {
       return {
-        countryName: state.countryName,
-        flagUrl: state.flagUrl,
-        sessionType: state.sessionTypeng,
-        sessionName: state.sessionNameng,
-        dateStart: state.dateStart,
+        countryName: state.countryName || "Hungary",
+        flagUrl: state.flagUrl || "/images/flags/hungary.jpg",
+        sessionType: state.sessionType || "Qualifying",
+        sessionName: state.sessionName || "Qualifying",
+        dateStart: state.dateStart || "2025-12-02T04:00:00-03:00",
+      };
+    } else {
+      return {
+        countryName: "Hungary",
+        flagUrl: "/images/flags/hungary.jpg",
+        sessionType: "Qualifying",
+        sessionName: "Qualifying",
+        dateStart: "2025-12-02T04:00:00-03:00",
       };
     }
   });
 
-  // Estado para P1, P2, P3
   const [formData, setFormData] = useState({
     P1: null,
     P2: null,
     P3: null,
   });
 
-  // Ver si está completo
   const isFormComplete = formData.P1 && formData.P2 && formData.P3;
-
-  // Modal warning
   const [showWarningModal, setShowWarningModal] = useState(false);
 
   // Cargar pilotos
@@ -68,28 +69,22 @@ const ProdeSessionPage = () => {
       }
     }
     fetchDrivers();
-
-    // Si quieres cargar la sesión del backend en caso de no tener state:
-    // getSessionById(session_id).then(resp => setSessionDetails(resp))
   }, [session_id]);
 
-  // Mostrar warning si faltan < 5 min
+  // Warning si faltan <5 min
   useEffect(() => {
     const now = new Date();
     const sessionStart = new Date(sessionDetails.dateStart);
-    const fiveMinutesInMs = 5 * 60 * 1000;
-    const diff = sessionStart - now;
-    if (diff <= fiveMinutesInMs && diff > 0) {
+    const fiveMin = 5 * 60 * 1000;
+    if (sessionStart - now <= fiveMin && sessionStart - now > 0) {
       setShowWarningModal(true);
     }
   }, [sessionDetails.dateStart]);
 
-  // Manejar cambio de pilotos
   const handleDriverChange = (position, value) => {
     setFormData((prev) => ({ ...prev, [position]: value }));
   };
 
-  // Evitar elegir mismo piloto
   const driversForP1 = allDrivers.filter(
     (d) => d.id !== formData.P2 && d.id !== formData.P3
   );
@@ -100,10 +95,8 @@ const ProdeSessionPage = () => {
     (d) => d.id !== formData.P1 && d.id !== formData.P2
   );
 
-  // Enviar pronóstico (sesión no Race)
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
       const payload = {
         session_id,
@@ -111,16 +104,11 @@ const ProdeSessionPage = () => {
         p2: formData.P2,
         p3: formData.P3,
       };
-
-      // Llamamos a createProdeSession
       const response = await createProdeSession(payload);
       console.log("ProdeSession response:", response);
-
-      // Podrías mostrar un mensaje o navegar
       navigate("/");
     } catch (err) {
       console.error("Error createProdeSession:", err.message);
-      // Manejar error en la UI
     }
   };
 
@@ -133,17 +121,16 @@ const ProdeSessionPage = () => {
     return <div>{driversError}</div>;
   }
 
-  // Si la sesión es Race, no deberíamos mostrar este form
   const isRace = isRaceSession(
     sessionDetails.sessionName,
     sessionDetails.sessionType
   );
 
   return (
-    <div>
+    <div className="flex flex-col min-h-screen">
       <Header />
       <NavigationBar />
-      <main className="pt-28 px-4">
+      <main className="flex-grow pt-28 px-4">
         <SessionHeader
           countryName={sessionDetails.countryName}
           flagUrl={sessionDetails.flagUrl}
@@ -152,17 +139,14 @@ const ProdeSessionPage = () => {
           className="mt-6"
         />
 
-        {/* Solo mostramos este form si NO es Race */}
         {!isRace && (
           <div className="mt-4 p-4 bg-white rounded-lg shadow-md">
             <Top3FormHeader sessionType={sessionDetails.sessionType} />
-
             <form
               onSubmit={handleSubmit}
               disabled={showWarningModal}
               className="flex flex-col gap-4"
             >
-              {/* P1, P2, P3 */}
               <DriverSelect
                 position="P1"
                 value={formData.P1}
@@ -197,7 +181,6 @@ const ProdeSessionPage = () => {
 
         <WarningModal isOpen={showWarningModal} onClose={handleCloseModal} />
       </main>
-
       <footer className="bg-gray-200 text-gray-700 text-center py-3 text-sm">
         <p>© 2025 PrediApp</p>
       </footer>

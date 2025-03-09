@@ -12,7 +12,7 @@ import SubmitButton from "../components/pronosticos/SubmitButton";
 import WarningModal from "../components/pronosticos/WarningModal";
 
 import { getAllDrivers } from "../api/drivers";
-import { createProdeCarrera } from "../api/prodes"; // <-- Aquí importamos la función
+import { createProdeCarrera } from "../api/prodes";
 
 const isRaceSession = (sessionName, sessionType) => {
   return sessionName === "Race" && sessionType === "Race";
@@ -23,12 +23,10 @@ const ProdeRacePage = () => {
   const { state } = useLocation();
   const navigate = useNavigate();
 
-  // Listado de pilotos
   const [allDrivers, setAllDrivers] = useState([]);
   const [loadingDrivers, setLoadingDrivers] = useState(true);
   const [driversError, setDriversError] = useState(null);
 
-  // Datos de la sesión
   const [sessionDetails, setSessionDetails] = useState(() => {
     if (state) {
       return {
@@ -49,30 +47,25 @@ const ProdeRacePage = () => {
     }
   });
 
-  // Estado del formulario
   const [formData, setFormData] = useState({
     P1: null,
     P2: null,
     P3: null,
     P4: null,
     P5: null,
-    vsc: false, // boolean
-    sc: false, // boolean
-    dnf: 0, // número de 0 a 20
+    vsc: false,
+    sc: false,
+    dnf: 0,
   });
 
-  // Comprobar si está completo
   const isFormComplete =
     formData.P1 &&
     formData.P2 &&
     formData.P3 &&
     formData.P4 &&
     formData.P5 &&
-    // vsc y sc son boolean; para “completo” podríamos exigir que no sean null
-    // pero si default es false, se interpretaría como "seleccionó No".
     formData.dnf >= 0;
 
-  // Modal advertencia
   const [showWarningModal, setShowWarningModal] = useState(false);
 
   // Cargar pilotos
@@ -91,28 +84,26 @@ const ProdeRacePage = () => {
     fetchDrivers();
   }, [session_id]);
 
-  // Mostrar warning si faltan <5min
+  // Mostrar modal si faltan <5 min
   useEffect(() => {
     const now = new Date();
     const sessionStart = new Date(sessionDetails.dateStart);
-    const fiveMinutesInMs = 5 * 60 * 1000;
+    const fiveMinutes = 5 * 60 * 1000;
     const diff = sessionStart - now;
-    if (diff <= fiveMinutesInMs && diff > 0) {
+    if (diff <= fiveMinutes && diff > 0) {
       setShowWarningModal(true);
     }
   }, [sessionDetails.dateStart]);
 
-  // Manejar cambios de pilotos
+  // Manejar selects
   const handleDriverChange = (position, value) => {
     setFormData((prev) => ({ ...prev, [position]: value }));
   };
-
-  // Manejar cambios en vsc, sc, dnf
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Evitar elegir mismo piloto
+  // Filtrar
   const driversForP1 = allDrivers.filter(
     (d) =>
       d.id !== formData.P2 &&
@@ -149,13 +140,11 @@ const ProdeRacePage = () => {
       d.id !== formData.P4
   );
 
-  // Manejar submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     console.log("ProdeRacePage submit:", formData, session_id);
 
     try {
-      // Preparar datos
       const payload = {
         session_id,
         p1: formData.P1,
@@ -163,32 +152,20 @@ const ProdeRacePage = () => {
         p3: formData.P3,
         p4: formData.P4,
         p5: formData.P5,
-        vsc: formData.vsc, // boolean
-        sc: formData.sc, // boolean
+        vsc: formData.vsc,
+        sc: formData.sc,
         dnf: formData.dnf,
       };
 
-      // Llamar a createProdeCarrera (API)
       const response = await createProdeCarrera(payload);
       console.log("ProdeCarrera response:", response);
-
-      // Podrías mostrar un mensaje de éxito o navegar
       navigate("/");
     } catch (error) {
       console.error("Error en createProdeCarrera:", error.message);
-      // Manejar error en la UI, etc.
     }
   };
 
-  const handleCloseModal = () => {
-    setShowWarningModal(false);
-  };
-
-  // Comprobar si la sesión es Race
-  const isRace = isRaceSession(
-    sessionDetails.sessionName,
-    sessionDetails.sessionType
-  );
+  const handleCloseModal = () => setShowWarningModal(false);
 
   if (loadingDrivers) {
     return <div>Cargando pilotos...</div>;
@@ -197,12 +174,18 @@ const ProdeRacePage = () => {
     return <div>{driversError}</div>;
   }
 
+  const isRace = isRaceSession(
+    sessionDetails.sessionName,
+    sessionDetails.sessionType
+  );
+
   return (
-    <div>
+    <div className="flex flex-col min-h-screen">
       <Header />
       <NavigationBar />
 
-      <main className="pt-28 px-4">
+      {/* main con flex-grow para empujar el footer */}
+      <main className="flex-grow pt-28 px-4">
         <SessionHeader
           countryName={sessionDetails.countryName}
           flagUrl={sessionDetails.flagUrl}
@@ -214,7 +197,6 @@ const ProdeRacePage = () => {
         {isRace && (
           <div className="mt-4 p-4 bg-white rounded-lg shadow-md">
             <Top5FormHeader sessionType={sessionDetails.sessionType} />
-
             <form
               onSubmit={handleSubmit}
               disabled={showWarningModal}
@@ -257,7 +239,6 @@ const ProdeRacePage = () => {
                 drivers={driversForP5}
               />
 
-              {/* VSC / SC */}
               <div className="flex flex-row gap-14 ml-4 mb-4">
                 <YesNoButton
                   label="Virtual Safety Car"
@@ -273,7 +254,6 @@ const ProdeRacePage = () => {
                 />
               </div>
 
-              {/* DNF */}
               <div>
                 <label className="block text-sm font-medium text-black mb-1 ml-4">
                   DNF
@@ -300,7 +280,6 @@ const ProdeRacePage = () => {
             </form>
           </div>
         )}
-
         <WarningModal isOpen={showWarningModal} onClose={handleCloseModal} />
       </main>
 
