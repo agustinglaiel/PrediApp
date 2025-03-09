@@ -13,7 +13,7 @@ const WarningModal = ({ isOpen, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+      <div className="bg-white m-4 p-6 rounded-lg shadow-lg max-w-md w-full">
         <p className="text-center text-gray-800">
           El pronóstico de cada sesión cierra 5 minutos antes del comienzo de la
           misma. Tenlo en cuenta para tus próximos pronósticos!

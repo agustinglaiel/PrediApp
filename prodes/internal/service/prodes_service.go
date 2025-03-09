@@ -142,10 +142,10 @@ func (s *prodeService) CreateProdeSession(ctx context.Context, request prodes.Cr
         return s.UpdateProdeSession(ctx, updateRequest)
     }
 
-    if err != e.NewNotFoundApiError("No prode found for this user and session") {
-        // Si ocurrió un error diferente a "registro no encontrado", devolver el error
-        return prodes.ResponseProdeSessionDTO{}, e.NewInternalServerApiError("Error checking existing prode", err)
-    }
+    // if err != e.NewNotFoundApiError("No prode found for this user and session") {
+    //     // Si ocurrió un error diferente a "registro no encontrado", devolver el error
+    //     return prodes.ResponseProdeSessionDTO{}, e.NewInternalServerApiError("Error checking existing prode", err)
+    // }
     
     // Obtener la información de la sesión desde el microservicio de sesiones
     sessionInfo, err := s.httpClient.GetSessionNameAndType(request.SessionID)
