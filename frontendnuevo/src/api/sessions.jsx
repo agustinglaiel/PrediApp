@@ -18,6 +18,16 @@ export const getUpcomingSessions = async () => {
   }
 };
 
+export const getPastSessions = async () => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/sessions/lasts`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching past sessions:", error);
+    throw error;
+  }
+};
+
 // Función para obtener la sesión por ID (puedes mantenerla como privada si es necesario, pero la haremos pública también por simplicidad)
 export const getSessionById = async (sessionId) => {
   try {

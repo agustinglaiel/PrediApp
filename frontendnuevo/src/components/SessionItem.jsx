@@ -1,6 +1,7 @@
+// src/components/SessionItem.jsx
 import React from "react";
 import DateDisplay from "./DateDisplay";
-import AuthModal from "./AuthModal"; // si lo usas
+import AuthModal from "./AuthModal";
 
 const SessionItem = ({
   sessionId,
@@ -17,7 +18,9 @@ const SessionItem = ({
   onContinueToLogin,
   prodeSession,
   prodeRace,
+  isPastEvent = false,
 }) => {
+  // Verificamos si existe prode
   const hasProde =
     (sessionType !== "Race" && prodeSession) ||
     (sessionType === "Race" && prodeRace);
@@ -34,24 +37,32 @@ const SessionItem = ({
         </div>
       </div>
 
-      {hasPronostico !== undefined && (
-        <button
-          onClick={onPronosticoClick}
-          className={`
-            px-4 py-1
-            rounded-full
-            text-sm font-medium
-            transition-colors duration-200
-            whitespace-nowrap   /* <- evita que se parta en 2 líneas */
-            ${
-              hasProde
-                ? "bg-white text-green-500 border border-green-500 hover:bg-green-50"
-                : "bg-orange-300 text-white hover:bg-orange-400"
-            }
-          `}
-        >
-          {hasProde ? "Actualizar pronóstico" : "Completar pronóstico"}
-        </button>
+      {isPastEvent ? (
+        // Si el evento es pasado, mostramos "Evento finalizado" en negrita
+        <span className="font-bold text-red-500 text-sm mr-4">
+          Evento finalizado
+        </span>
+      ) : (
+        // Evento futuro => mostramos botón
+        hasPronostico !== undefined && (
+          <button
+            onClick={onPronosticoClick}
+            className={`
+              px-4 py-1
+              rounded-full
+              text-sm font-medium
+              transition-colors duration-200
+              whitespace-nowrap
+              ${
+                hasProde
+                  ? "bg-white text-green-500 border border-green-500 hover:bg-green-50"
+                  : "bg-orange-300 text-white hover:bg-orange-400"
+              }
+            `}
+          >
+            {hasProde ? "Actualizar pronóstico" : "Completar pronóstico"}
+          </button>
+        )
       )}
 
       <AuthModal
