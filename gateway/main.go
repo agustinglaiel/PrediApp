@@ -51,12 +51,17 @@ func main() {
     router.POST("/api/login", handlers.LoginHandler)
     router.POST("/api/signup", handlers.SignupHandler)
 
+    router.Any("users", proxy.ReverseProxy())
     router.Any("/users/*proxyPath", proxy.ReverseProxy())
     router.Any("drivers", proxy.ReverseProxy())
 	router.Any("/drivers/*proxyPath", proxy.ReverseProxy())
+    router.Any("prodes", proxy.ReverseProxy())
 	router.Any("/prodes/*proxyPath", proxy.ReverseProxy())
+    router.Any("results", proxy.ReverseProxy())
 	router.Any("/results/*proxyPath", proxy.ReverseProxy())
+    router.Any("sessions", proxy.ReverseProxy())
 	router.Any("/sessions/*proxyPath", proxy.ReverseProxy())
+    router.Any("groups", proxy.ReverseProxy())
 	router.Any("/groups/*proxyPath", proxy.ReverseProxy())
 
     // Grupo de rutas que requieren autenticación

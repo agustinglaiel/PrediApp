@@ -13,11 +13,9 @@ const EventCard = ({
   onCloseModal,
   onContinueToLogin,
 }) => {
-  // Función local para combinar datos del evento y la sesión
   const handlePronosticoClickLocal = (session) => {
     if (!onPronosticoClick) return;
 
-    // Empaquetamos la info
     const sessionData = {
       id: session.id,
       sessionName: session.sessionName || session.session_name,
@@ -28,12 +26,16 @@ const EventCard = ({
       circuitName: circuit,
     };
 
-    console.log(
-      "EventCard: Llamando onPronosticoClick con sessionData:",
-      sessionData
-    );
     onPronosticoClick(sessionData);
   };
+
+  // 1) Creamos una copia de sessions (para no mutar el prop original)
+  // 2) Ordenamos por fecha ascendente
+  const sortedSessions = [...sessions].sort((a, b) => {
+    const dateA = new Date(a.date_start || "2100-01-01");
+    const dateB = new Date(b.date_start || "2100-01-01");
+    return dateA - dateB; // menor => primero
+  });
 
   return (
     <div className="bg-white rounded-xl shadow-sm mb-6 overflow-hidden">
@@ -63,13 +65,14 @@ const EventCard = ({
       </div>
 
       <div className="border-t border-gray-100">
-        {sessions.map((session, index) => (
+        {sortedSessions.map((session, index) => (
           <SessionItem
             key={index}
-            sessionId={session.id} // Pasamos sessionId
+            sessionId={session.id}
             date={session.date}
             month={session.month}
-            sessionType={session.type}
+            sessionName={session.sessionName || session.session_name}
+            sessionType={session.sessionType || session.type}
             startTime={session.startTime}
             endTime={session.endTime}
             hasPronostico={session.hasPronostico}
@@ -78,15 +81,7 @@ const EventCard = ({
             onContinueToLogin={onContinueToLogin}
             prodeSession={session.prodeSession}
             prodeRace={session.prodeRace}
-            // Importante: cuando se hace clic, armamos la data final y llamamos la función
-            onPronosticoClick={() =>
-              handlePronosticoClickLocal({
-                ...session,
-                // si tu backend la guardó como session_name en lugar de sessionName
-                sessionName: session.sessionName || session.session_name,
-                sessionType: session.sessionType || session.type,
-              })
-            }
+            onPronosticoClick={() => handlePronosticoClickLocal(session)}
           />
         ))}
       </div>
