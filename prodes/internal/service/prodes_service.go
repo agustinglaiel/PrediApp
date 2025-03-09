@@ -62,7 +62,7 @@ func (s *prodeService) CreateProdeCarrera(ctx context.Context, request prodes.Cr
             P3:         request.P3,
             P4:         request.P4,
             P5:         request.P5,
-            FastestLap: request.FastestLap,
+            // FastestLap: request.FastestLap,
             VSC:        request.VSC,
             SC:         request.SC,
             DNF:        request.DNF,
@@ -70,10 +70,10 @@ func (s *prodeService) CreateProdeCarrera(ctx context.Context, request prodes.Cr
         return s.UpdateProdeCarrera(ctx, updateRequest)
     }
 
-    if err != e.NewNotFoundApiError("No prode found for this user and session") {
-        // Si ocurrió un error diferente a "registro no encontrado", devolver el error
-        return prodes.ResponseProdeCarreraDTO{}, e.NewInternalServerApiError("Error checking existing prode", err)
-    }
+    // if err != e.NewNotFoundApiError("No prode found for this user and session") {
+    //     // Si ocurrió un error diferente a "registro no encontrado", devolver el error
+    //     return prodes.ResponseProdeCarreraDTO{}, e.NewInternalServerApiError("Error checking existing prode", err)
+    // }
 
     // Hacer la llamada al cliente HTTP para obtener la información de la sesión
     sessionInfo, err := s.httpClient.GetSessionNameAndType(request.SessionID)
@@ -95,7 +95,7 @@ func (s *prodeService) CreateProdeCarrera(ctx context.Context, request prodes.Cr
         P3:         request.P3,
         P4:         request.P4,
         P5:         request.P5,
-        FastestLap: request.FastestLap,
+        // FastestLap: request.FastestLap,
         VSC:        request.VSC,
         SC:         request.SC,
         DNF:        request.DNF,
@@ -117,7 +117,7 @@ func (s *prodeService) CreateProdeCarrera(ctx context.Context, request prodes.Cr
         P3:         prode.P3,
         P4:         prode.P4,
         P5:         prode.P5,
-        FastestLap: prode.FastestLap,
+        // FastestLap: prode.FastestLap,
         VSC:        prode.VSC,
         SC:         prode.SC,
         DNF:        prode.DNF,
@@ -215,7 +215,7 @@ func (s *prodeService) UpdateProdeCarrera(ctx context.Context, request prodes.Up
         P3:         request.P3,
         P4:         request.P4,
         P5:         request.P5,
-        FastestLap: request.FastestLap,
+        // FastestLap: request.FastestLap,
         VSC:        request.VSC,
         SC:         request.SC,
         DNF:        request.DNF,
@@ -237,7 +237,7 @@ func (s *prodeService) UpdateProdeCarrera(ctx context.Context, request prodes.Up
         P3:         prode.P3,
         P4:         prode.P4,
         P5:         prode.P5,
-        FastestLap: prode.FastestLap,
+        // FastestLap: prode.FastestLap,
         VSC:        prode.VSC,
         SC:         prode.SC,
         DNF:        prode.DNF,
@@ -364,7 +364,7 @@ func (s *prodeService) GetProdesByUserId(ctx context.Context, userID int) ([]pro
 			P3:         prode.P3,
 			P4:         prode.P4,
 			P5:         prode.P5,
-			FastestLap: prode.FastestLap,
+			// FastestLap: prode.FastestLap,
 			VSC:        prode.VSC,
 			SC:         prode.SC,
 			DNF:        prode.DNF,
@@ -511,7 +511,7 @@ func (s *prodeService) GetProdeByUserAndSession(ctx context.Context, userID, ses
             P3:         prode.P3,
             P4:         prode.P4,
             P5:         prode.P5,
-            FastestLap: prode.FastestLap,
+            // FastestLap: prode.FastestLap,
             VSC:        prode.VSC,
             SC:         prode.SC,
             DNF:        prode.DNF,
@@ -581,7 +581,7 @@ func (s *prodeService) GetRaceProdesBySession(ctx context.Context, sessionID int
             P3:         prode.P3,
             P4:         prode.P4,
             P5:         prode.P5,
-            FastestLap: prode.FastestLap,
+            // FastestLap: prode.FastestLap,
             VSC:        prode.VSC,
             SC:         prode.SC,
             DNF:        prode.DNF,
@@ -619,7 +619,7 @@ func (s *prodeService) UpdateRaceProdeForUserBySessionId(ctx context.Context, us
         P3:         updatedProde.P3,
         P4:         updatedProde.P4,
         P5:         updatedProde.P5,
-        FastestLap: updatedProde.FastestLap,
+        // FastestLap: updatedProde.FastestLap,
         VSC:        updatedProde.VSC,
         SC:         updatedProde.SC,
         DNF:        updatedProde.DNF,
@@ -641,7 +641,7 @@ func (s *prodeService) UpdateRaceProdeForUserBySessionId(ctx context.Context, us
         P3:         prode.P3,
         P4:         prode.P4,
         P5:         prode.P5,
-        FastestLap: prode.FastestLap,
+        // FastestLap: prode.FastestLap,
         VSC:        prode.VSC,
         SC:         prode.SC,
         DNF:        prode.DNF,
@@ -710,7 +710,7 @@ func (s *prodeService) GetUserProdes(ctx context.Context, userID int) ([]prodes.
             P3:         prode.P3,
             P4:         prode.P4,
             P5:         prode.P5,
-            FastestLap: prode.FastestLap,
+            // FastestLap: prode.FastestLap,
             VSC:        prode.VSC,
             SC:         prode.SC,
             DNF:        prode.DNF,

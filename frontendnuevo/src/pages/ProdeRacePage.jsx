@@ -1,34 +1,34 @@
+// ProdeRacePage.jsx
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { getAllDrivers } from "../api/drivers";
 
-// IMPORTAMOS UNA VERSIÓN NUEVA DE HEADERS
-import SessionHeader from "../components/pronosticos/SessionHeader";
-import Top5FormHeader from "../components/pronosticos/Top5FormHeader";
-
-import DriverSelect from "../components/pronosticos/DriverSelect";
-import SubmitButton from "../components/pronosticos/SubmitButton";
 import Header from "../components/Header";
 import NavigationBar from "../components/NavigationBar";
-import WarningModal from "../components/pronosticos/WarningModal";
+import SessionHeader from "../components/pronosticos/SessionHeader";
+import Top5FormHeader from "../components/pronosticos/Top5FormHeader";
+import DriverSelect from "../components/pronosticos/DriverSelect";
 import YesNoButton from "../components/pronosticos/YesNoButton";
+import SubmitButton from "../components/pronosticos/SubmitButton";
+import WarningModal from "../components/pronosticos/WarningModal";
+
+import { getAllDrivers } from "../api/drivers";
+import { createProdeCarrera } from "../api/prodes"; // <-- Aquí importamos la función
 
 const isRaceSession = (sessionName, sessionType) => {
   return sessionName === "Race" && sessionType === "Race";
 };
 
 const ProdeRacePage = () => {
-  // 1) Leemos el id de la URL y el state (por si venimos de navigate)
   const { session_id } = useParams();
   const { state } = useLocation();
   const navigate = useNavigate();
 
-  // 2) Listado de pilotos
+  // Listado de pilotos
   const [allDrivers, setAllDrivers] = useState([]);
   const [loadingDrivers, setLoadingDrivers] = useState(true);
   const [driversError, setDriversError] = useState(null);
 
-  // 3) Detalles de la sesión (dummy + fallback a state)
+  // Datos de la sesión
   const [sessionDetails, setSessionDetails] = useState(() => {
     if (state) {
       return {
@@ -39,7 +39,6 @@ const ProdeRacePage = () => {
         dateStart: state.dateStart || "2025-12-02T04:00:00-03:00",
       };
     } else {
-      // Fallback dummy si no hay state
       return {
         countryName: "Hungary",
         flagUrl: "/images/flags/hungary.jpg",
@@ -50,33 +49,33 @@ const ProdeRacePage = () => {
     }
   });
 
-  // 4) Campos del formulario de carrera:
+  // Estado del formulario
   const [formData, setFormData] = useState({
     P1: null,
     P2: null,
     P3: null,
     P4: null,
     P5: null,
-    vsc: "", // "yes" o "no"
-    sc: "", // "yes" o "no"
+    vsc: false, // boolean
+    sc: false, // boolean
     dnf: 0, // número de 0 a 20
   });
 
-  // 5) Ver si el formulario está completo
+  // Comprobar si está completo
   const isFormComplete =
     formData.P1 &&
     formData.P2 &&
     formData.P3 &&
     formData.P4 &&
     formData.P5 &&
-    formData.vsc &&
-    formData.sc &&
+    // vsc y sc son boolean; para “completo” podríamos exigir que no sean null
+    // pero si default es false, se interpretaría como "seleccionó No".
     formData.dnf >= 0;
 
-  // 6) Modal de advertencia
+  // Modal advertencia
   const [showWarningModal, setShowWarningModal] = useState(false);
 
-  // 7) Cargar los pilotos al montar
+  // Cargar pilotos
   useEffect(() => {
     async function fetchDrivers() {
       try {
@@ -92,7 +91,7 @@ const ProdeRacePage = () => {
     fetchDrivers();
   }, [session_id]);
 
-  // 8) Mostrar warning si faltan <5min para la sesión
+  // Mostrar warning si faltan <5min
   useEffect(() => {
     const now = new Date();
     const sessionStart = new Date(sessionDetails.dateStart);
@@ -103,23 +102,17 @@ const ProdeRacePage = () => {
     }
   }, [sessionDetails.dateStart]);
 
-  // 9) Manejar cambios en driver selects (P1..P5)
+  // Manejar cambios de pilotos
   const handleDriverChange = (position, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [position]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [position]: value }));
   };
 
-  // 10) Manejar cambios en VSC, SC y DNF
+  // Manejar cambios en vsc, sc, dnf
   const handleChange = (field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  // 11) Filtrado para evitar elegir el mismo piloto en P1..P5
+  // Evitar elegir mismo piloto
   const driversForP1 = allDrivers.filter(
     (d) =>
       d.id !== formData.P2 &&
@@ -156,31 +149,53 @@ const ProdeRacePage = () => {
       d.id !== formData.P4
   );
 
-  // 12) Manejar submit
-  const handleSubmit = (e) => {
+  // Manejar submit
+  const handleSubmit = async (e) => {
     e.preventDefault();
     console.log("ProdeRacePage submit:", formData, session_id);
-    // Llamada al backend...
-    navigate("/"); // Volver a Home
+
+    try {
+      // Preparar datos
+      const payload = {
+        session_id,
+        p1: formData.P1,
+        p2: formData.P2,
+        p3: formData.P3,
+        p4: formData.P4,
+        p5: formData.P5,
+        vsc: formData.vsc, // boolean
+        sc: formData.sc, // boolean
+        dnf: formData.dnf,
+      };
+
+      // Llamar a createProdeCarrera (API)
+      const response = await createProdeCarrera(payload);
+      console.log("ProdeCarrera response:", response);
+
+      // Podrías mostrar un mensaje de éxito o navegar
+      navigate("/");
+    } catch (error) {
+      console.error("Error en createProdeCarrera:", error.message);
+      // Manejar error en la UI, etc.
+    }
   };
 
   const handleCloseModal = () => {
     setShowWarningModal(false);
   };
 
-  // Render de Loading / error
+  // Comprobar si la sesión es Race
+  const isRace = isRaceSession(
+    sessionDetails.sessionName,
+    sessionDetails.sessionType
+  );
+
   if (loadingDrivers) {
     return <div>Cargando pilotos...</div>;
   }
   if (driversError) {
     return <div>{driversError}</div>;
   }
-
-  // 13) Ver si es “Race”
-  const isRace = isRaceSession(
-    sessionDetails.sessionName,
-    sessionDetails.sessionType
-  );
 
   return (
     <div>
@@ -200,13 +215,12 @@ const ProdeRacePage = () => {
           <div className="mt-4 p-4 bg-white rounded-lg shadow-md">
             <Top5FormHeader sessionType={sessionDetails.sessionType} />
 
-            {/* FORM con layout en columna */}
             <form
               onSubmit={handleSubmit}
               disabled={showWarningModal}
               className="flex flex-col gap-4 mt-4"
             >
-              {/* P1..P5 (labels en DriverSelect.jsx) */}
+              {/* P1..P5 */}
               <DriverSelect
                 position="P1"
                 value={formData.P1}
@@ -243,6 +257,7 @@ const ProdeRacePage = () => {
                 drivers={driversForP5}
               />
 
+              {/* VSC / SC */}
               <div className="flex flex-row gap-14 ml-4 mb-4">
                 <YesNoButton
                   label="Virtual Safety Car"
@@ -250,7 +265,6 @@ const ProdeRacePage = () => {
                   onChange={(newVal) => handleChange("vsc", newVal)}
                   disabled={showWarningModal}
                 />
-
                 <YesNoButton
                   label="Safety Car"
                   value={formData.sc}
@@ -259,7 +273,7 @@ const ProdeRacePage = () => {
                 />
               </div>
 
-              {/* DNF (0..20) */}
+              {/* DNF */}
               <div>
                 <label className="block text-sm font-medium text-black mb-1 ml-4">
                   DNF
@@ -287,12 +301,9 @@ const ProdeRacePage = () => {
           </div>
         )}
 
-        {/* <button onClick={() => navigate("/")} className="mt-4">
-          Volver
-        </button> */}
-
         <WarningModal isOpen={showWarningModal} onClose={handleCloseModal} />
       </main>
+
       <footer className="bg-gray-200 text-gray-700 text-center py-3 text-sm">
         <p>© 2025 PrediApp</p>
       </footer>

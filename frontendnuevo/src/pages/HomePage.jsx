@@ -141,7 +141,7 @@ const HomePage = () => {
             .then((prode) => {
               if (prode) {
                 prodeCount++;
-                if (prode.p4 && prode.p5 && prode.fastest_lap !== undefined) {
+                if (prode.p4 !== undefined && prode.p5 !== undefined) {
                   return { prode, error: null, isRace: true };
                 } else {
                   return { prode, error: null, isRace: false };

@@ -32,11 +32,6 @@ const SessionItem = ({
           {startTime}
           {endTime ? ` - ${endTime}` : ""}
         </div>
-        {prodeRace && (
-          <div className="text-xs text-gray-500">
-            Pronóstico Carrera: {prodeRace.P1}, {prodeRace.P2}, {prodeRace.P3}
-          </div>
-        )}
       </div>
 
       {hasPronostico !== undefined && (

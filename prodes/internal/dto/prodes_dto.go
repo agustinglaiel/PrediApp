@@ -11,7 +11,7 @@ type CreateProdeCarreraDTO struct {
     P3         int `json:"p3"` // driver_id
     P4         int `json:"p4"` // driver_id
     P5         int `json:"p5"` // driver_id
-    FastestLap int `json:"fastest_lap"` // driver_id
+    // FastestLap int `json:"fastest_lap"` // driver_id
     VSC        bool `json:"vsc"`
     SC         bool `json:"sc"`
     DNF        int  `json:"dnf"`
@@ -48,7 +48,7 @@ type ResponseProdeCarreraDTO struct {
     P3         int  `json:"p3"` // driver_id
     P4         int  `json:"p4"` // driver_id
     P5         int  `json:"p5"` // driver_id
-    FastestLap int  `json:"fastest_lap"` // driver_id
+    // FastestLap int  `json:"fastest_lap"` // driver_id
     VSC        bool `json:"vsc"`
     SC         bool `json:"sc"`
     DNF        int  `json:"dnf"`
@@ -74,7 +74,7 @@ type UpdateProdeCarreraDTO struct {
     P3         int `json:"p3"` // driver_id
     P4         int `json:"p4"` // driver_id
     P5         int `json:"p5"` // driver_id
-    FastestLap int `json:"fastest_lap"` // driver_id
+    // FastestLap int `json:"fastest_lap"` // driver_id
     VSC        bool `json:"vsc"`
     SC         bool `json:"sc"`
     DNF        int  `json:"dnf"`

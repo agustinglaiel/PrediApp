@@ -15,7 +15,7 @@ const DriverSelect = ({
         value={value || ""}
         onChange={(e) => onChange(parseInt(e.target.value) || null)}
         disabled={disabled}
-        className="mt-1 block w-full pr-10 py-2 text-gray-700 border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+        className="mt-1 block w-full py-2 text-gray-700 border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
       >
         <option value="">Selecciona un piloto</option>
         {drivers.map((driver) => (

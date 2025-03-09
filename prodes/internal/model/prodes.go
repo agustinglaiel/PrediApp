@@ -22,8 +22,8 @@ type ProdeCarrera struct {
 	DriverP4   Driver         `gorm:"foreignKey:P4;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
 	P5         int            `json:"p5"` // driver_id
 	DriverP5   Driver         `gorm:"foreignKey:P5;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
-	FastestLap int            `json:"fastest_lap"` // driver_id
-	DriverFastestLap Driver   `gorm:"foreignKey:FastestLap;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
+	// FastestLap int            `json:"fastest_lap"` // driver_id
+	// DriverFastestLap Driver   `gorm:"foreignKey:FastestLap;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
 	VSC        bool           `json:"vsc"`
 	SC         bool           `json:"sc"`
 	DNF        int            `json:"dnf"`
