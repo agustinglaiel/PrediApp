@@ -237,7 +237,7 @@ func (c *HttpClient) GetSessionNameAndType(eventID int) (dto.SessionNameAndTypeD
 // GetSessionByID realiza una solicitud GET para obtener los detalles completos de una sesión desde el microservicio de sessions
 func (c *HttpClient) GetSessionByID(sessionID int) (dto.SessionDetailsDTO, error) {
     // Definir el endpoint para la solicitud GET
-    endpoint := fmt.Sprintf("8056/sessions/%d", sessionID)
+    endpoint := fmt.Sprintf("8080/sessions/%d", sessionID)
 
     // Hacer la solicitud GET utilizando el cliente HTTP
     body, err := c.Get(endpoint)
@@ -304,24 +304,18 @@ func (c *HttpClient) GetAllDrivers() ([]dto.DriverDTO, error) {
 // GetTopDriversBySession realiza una solicitud GET al microservicio de results para obtener los mejores N pilotos de una sesión
 func (c *HttpClient) GetTopDriversBySession(sessionID int, n int) ([]dto.TopDriverDTO, error) {
     // Definir el endpoint correctamente
-	fmt.Println("ENTRAMOS")
     endpoint := fmt.Sprintf("8080/results/session/%d/top/%d", sessionID, n)
-	fmt.Println("Endpoint: ", endpoint)
     // Hacer la solicitud GET utilizando el cliente HTTP
     body, err := c.Get(endpoint)
     if err != nil {
         return nil, fmt.Errorf("error fetching top drivers: %w", err)
     }     
 
-    fmt.Println("Body: ", string(body)) // Debugging
-
     // Deserializar la respuesta JSON en una lista de TopDriverDTO
     var topDrivers []dto.TopDriverDTO
     if err := json.Unmarshal(body, &topDrivers); err != nil {
         return nil, fmt.Errorf("error decoding top drivers response: %w", err)
     }
-
-    fmt.Println("Top Drivers: ", topDrivers)
 
     return topDrivers, nil
 }

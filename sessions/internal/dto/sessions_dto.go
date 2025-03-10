@@ -58,12 +58,10 @@ type ResponseSessionDTO struct {
     SessionName      string    `json:"session_name"`
     SessionType      string    `json:"session_type"`
     Year             int       `json:"year"`
-
-    // Solo para "Race"
-    DFastLap         *int      `json:"d_fast_lap,omitempty"`
-    VSC              *bool     `json:"vsc,omitempty"`
-    SF               *bool     `json:"sf,omitempty"`
-    DNF              *int      `json:"dnf,omitempty"`
+    DFastLap         *int      `json:"d_fast_lap"`
+    VSC              *bool     `json:"vsc"`
+    SF               *bool     `json:"sf"`
+    DNF              *int      `json:"dnf"`
 }
 
 type DeleteSessionDTO struct {

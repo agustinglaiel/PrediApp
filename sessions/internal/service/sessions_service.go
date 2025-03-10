@@ -157,20 +157,6 @@ func (s *sessionService) CreateSession(ctx context.Context, request dto.CreateSe
 }
 
 func (s *sessionService) GetSessionById(ctx context.Context, sessionID int) (dto.ResponseSessionDTO, e.ApiError) {
-	// // Definir la clave de la caché
-    // cacheKey := fmt.Sprintf("session_%d", sessionID)
-
-    // // Verificar si la sesión está en caché
-    // if cachedData, found := s.cache.Get(cacheKey); found {
-    //     return cachedData.(dto.ResponseSessionDTO), nil
-    // }
-
-    // // Si no está en caché, obtenerla del repositorio
-    // session, err := s.sessionsRepo.GetSessionById(ctx, sessionID)
-    // if err != nil {
-    //     return dto.ResponseSessionDTO{}, err
-    // }
-
     // Verificas si existe una session con ese sessionID
     session, err := s.sessionsRepo.GetSessionById(ctx, sessionID)
     if err != nil {
@@ -179,31 +165,24 @@ func (s *sessionService) GetSessionById(ctx context.Context, sessionID int) (dto
 
 	// Convert Model to Response DTO
 	response := dto.ResponseSessionDTO{
-		ID:               session.ID,
+        ID:               session.ID,
         WeekendID:        session.WeekendID,
-		CircuitKey:       session.CircuitKey,
-		CircuitShortName: session.CircuitShortName,
-		CountryCode:      session.CountryCode,
-		CountryName:      session.CountryName,
-		DateStart:        session.DateStart,
-		DateEnd:          session.DateEnd,
-		Location:         session.Location,
-		SessionKey:       session.SessionKey,
-		SessionName:      session.SessionName,
-		SessionType:      session.SessionType,
-		Year:             session.Year,
-	}
-
-	// Si es una "Race", agregar los datos adicionales
-	if session.SessionType == "Race" && session.SessionName == "Race" {
-		response.DFastLap = session.DFastLap
-		response.VSC = session.VSC
-		response.SF = session.SF
-		response.DNF = session.DNF
-	}
-
-    // // Guardar la sesión en caché por 30 minutos
-    // s.cache.Set(cacheKey, response, 30*time.Minute)
+        CircuitKey:       session.CircuitKey,
+        CircuitShortName: session.CircuitShortName,
+        CountryCode:      session.CountryCode,
+        CountryName:      session.CountryName,
+        DateStart:        session.DateStart,
+        DateEnd:          session.DateEnd,
+        Location:         session.Location,
+        SessionKey:       session.SessionKey,
+        SessionName:      session.SessionName,
+        SessionType:      session.SessionType,
+        Year:             session.Year,
+        DFastLap:         session.DFastLap, // Siempre incluir, incluso si es nil
+        VSC:              session.VSC,      // Siempre incluir, incluso si es nil
+        SF:               session.SF,       // Siempre incluir, incluso si es nil
+        DNF:              session.DNF,      // Siempre incluir, incluso si es nil
+    }
 
 	return response, nil
 }
