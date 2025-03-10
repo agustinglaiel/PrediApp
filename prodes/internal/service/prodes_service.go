@@ -35,8 +35,9 @@ type ProdeServiceInterface interface {
 	GetUserProdes(ctx context.Context, userID int) ([]prodes.ResponseProdeCarreraDTO, []prodes.ResponseProdeSessionDTO, e.ApiError)
 	GetDriverDetails(ctx context.Context, driverID int) (prodes.DriverDTO, e.ApiError)
 	GetAllDrivers(ctx context.Context) ([]prodes.DriverDTO, e.ApiError)
-	GetTopDriversBySessionId(ctx context.Context, sessionID, n int) ([]prodes.DriverDTO, e.ApiError)
+	GetTopDriversBySessionId(ctx context.Context, sessionID, n int) ([]prodes.TopDriverDTO, e.ApiError)
     GetProdeByUserAndSession (ctx context.Context, userID int, sessionID int)(*prodes.ResponseProdeCarreraDTO, *prodes.ResponseProdeSessionDTO, e.ApiError)
+    UpdateScoresForSessionProdes(ctx context.Context, sessionID int) e.ApiError
 }
 
 // NewProdeService crea una nueva instancia de ProdeService con inyección de dependencias
@@ -790,8 +791,7 @@ func (s *prodeService) GetAllDrivers(ctx context.Context) ([]prodes.DriverDTO, e
     return driverResponses, nil
 }
 
-func (s *prodeService) GetTopDriversBySessionId(ctx context.Context, sessionID, n int) ([]prodes.DriverDTO, e.ApiError) {
-    // Llamar al cliente HTTP para obtener los mejores pilotos de la sesión
+func (s *prodeService) GetTopDriversBySessionId(ctx context.Context, sessionID, n int) ([]prodes.TopDriverDTO, e.ApiError) {
     topDrivers, err := s.httpClient.GetTopDriversBySession(sessionID, n)
     if err != nil {
         return nil, e.NewInternalServerApiError("Error fetching top drivers from results service", err)
@@ -801,7 +801,86 @@ func (s *prodeService) GetTopDriversBySessionId(ctx context.Context, sessionID, 
     return topDrivers, nil
 }
 
+func (s *prodeService) UpdateScoresForSessionProdes(ctx context.Context, sessionID int) e.ApiError {
+    // 1. Obtener el top 3 real de la sesión
+    fmt.Println("Fetching top drivers for session:", sessionID) // Debugging
+    realTopDrivers, err := s.httpClient.GetTopDriversBySession(sessionID, 3)
+    if err != nil {
+        return e.NewInternalServerApiError("Error fetching real top drivers for session", err)
+    }
+    
+    fmt.Println("Real top drivers:", realTopDrivers) // Debugging
+
+    // 2. Obtener todos los ProdeSession de la BD para esta sesión
+    prodesSession, apiErr := s.prodeRepo.GetSessionProdesBySession(ctx, sessionID)
+    if apiErr != nil {
+        return e.NewInternalServerApiError("Error fetching prodes session for scoring", apiErr)
+    }
+
+    // 3. Recorrer cada prode y calcular
+    for _, prode := range prodesSession {
+        // Calcular el score
+        score := calculateSessionScore(prode, realTopDrivers)
+        prode.Score = score
+
+        // Actualizar en la BD
+        if err := s.prodeRepo.UpdateProdeSession(ctx, prode); err != nil {
+            return e.NewInternalServerApiError("Error updating prode session score", err)
+        }
+    }
+
+    return nil
+}
+
+// calculateSessionScore calcula el puntaje basándose en P1,P2,P3 del prode y en un array de 3 drivers reales
+func calculateSessionScore(prode *model.ProdeSession, realTop []prodes.TopDriverDTO) int {
+    score := 0
+
+    // P1
+    if len(realTop) > 0 {
+        if prode.P1 == realTop[0].DriverID {
+            score += 3
+        } else if driverInList(prode.P1, realTop) {
+            score += 1
+        }
+    }
+
+    // P2
+    if len(realTop) > 1 {
+        if prode.P2 == realTop[1].DriverID {
+            score += 3
+        } else if driverInList(prode.P2, realTop) {
+            score += 1
+        }
+    }
+
+    // P3
+    if len(realTop) > 2 {
+        if prode.P3 == realTop[2].DriverID {
+            score += 3
+        } else if driverInList(prode.P3, realTop) {
+            score += 1
+        }
+    }
+
+    return score
+}
+
+
+// driverInList revisa si un driverID está en la lista de drivers del top real
+func driverInList(driverID int, realTop []prodes.TopDriverDTO) bool {
+    for _, driver := range realTop {
+        if driver.DriverID == driverID {
+            return true
+        }
+    }
+    return false
+}
+
+
+
 //Función auxiliar para mayor modularidad y me devuelve el bool de si es session name y type = race. 
 func isRaceSession(sessionName string, sessionType string) bool {
     return sessionName == "Race" && sessionType == "Race"
 }
+

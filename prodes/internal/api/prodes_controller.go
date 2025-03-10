@@ -364,3 +364,19 @@ func (c *ProdeController) GetTopDriversBySessionId(ctx *gin.Context) {
 
     ctx.JSON(http.StatusOK, topDrivers)
 }
+
+func (c *ProdeController) UpdateScoresForSession(ctx *gin.Context) {
+    sessionID, err := strconv.Atoi(ctx.Param("session_id"))
+    if err != nil {
+        ctx.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Invalid session_id parameter"))
+        return
+    }
+
+    // Llamar al service
+    if apiErr := c.prodeService.UpdateScoresForSessionProdes(ctx.Request.Context(), sessionID); apiErr != nil {
+        ctx.JSON(apiErr.Status(), apiErr)
+        return
+    }
+
+    ctx.JSON(http.StatusOK, gin.H{"message": "Scores updated successfully"})
+}

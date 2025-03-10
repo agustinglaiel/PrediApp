@@ -61,3 +61,9 @@ type Lap struct {
 	LapNumber   int     `json:"lap_number"`
 	LapDuration float64 `json:"lap_duration"`
 }
+
+// DTO para devolver solo la posición y el ID del piloto
+type TopDriverDTO struct {
+    Position int `json:"position"`
+    DriverID int `json:"driver_id"`
+}

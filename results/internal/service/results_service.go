@@ -30,7 +30,7 @@ type ResultService interface {
 	GetAllResults(ctx context.Context) ([]dto.ResponseResultDTO, e.ApiError)
 	GetResultsForDriverAcrossSessions(ctx context.Context, driverID int) ([]dto.ResponseResultDTO, e.ApiError)
 	GetBestPositionForDriver(ctx context.Context, driverID int) (dto.ResponseResultDTO, e.ApiError)
-	GetTopNDriversInSession(ctx context.Context, sessionID int, n int) ([]dto.ResponseResultDTO, e.ApiError)
+	GetTopNDriversInSession(ctx context.Context, sessionID int, n int) ([]dto.TopDriverDTO, e.ApiError)
 	DeleteAllResultsForSession(ctx context.Context, sessionID int) e.ApiError
 	GetResultsForSessionByDriverName(ctx context.Context, sessionID int, driverName string) ([]dto.ResponseResultDTO, e.ApiError)
 	GetTotalFastestLapsForDriver(ctx context.Context, driverID int) (int, e.ApiError)
@@ -657,7 +657,7 @@ func (s *resultService) GetBestPositionForDriver(ctx context.Context, driverID i
 }
 
 // GetTopNDriversInSession obtiene los mejores N pilotos de una sesión específica.
-func (s *resultService) GetTopNDriversInSession(ctx context.Context, sessionID int, n int) ([]dto.ResponseResultDTO, e.ApiError) {
+func (s *resultService) GetTopNDriversInSession(ctx context.Context, sessionID int, n int) ([]dto.TopDriverDTO, e.ApiError) {
     // Validar que sessionID no sea 0
     if sessionID == 0 {
         return nil, e.NewBadRequestApiError("El ID de la sesión no puede ser 0")
@@ -690,37 +690,15 @@ func (s *resultService) GetTopNDriversInSession(ctx context.Context, sessionID i
     }
 
     // Crear un slice para almacenar los DTOs de respuesta
-    var responseResults []dto.ResponseResultDTO
+    var topDrivers []dto.TopDriverDTO
     for i := 0; i < n; i++ {
-        result := results[i]
-        response := dto.ResponseResultDTO{
-            ID:             result.ID,
-            Position:       result.Position,
-            FastestLapTime: result.FastestLapTime,
-            Driver: dto.ResponseDriverDTO{
-                ID:          result.Driver.ID,
-                FirstName:   result.Driver.FirstName,
-                LastName:    result.Driver.LastName,
-                FullName:    result.Driver.FullName,
-                NameAcronym: result.Driver.NameAcronym,
-                TeamName:    result.Driver.TeamName,
-            },
-            Session: dto.ResponseSessionDTO{
-                ID:               result.Session.ID,
-                CircuitShortName: result.Session.CircuitShortName,
-                CountryName:      result.Session.CountryName,
-                Location:         result.Session.Location,
-                SessionName:      result.Session.SessionName,
-                SessionType:      result.Session.SessionType,
-                DateStart:        result.Session.DateStart,
-            },
-            CreatedAt: result.CreatedAt,
-            UpdatedAt: result.UpdatedAt,
-        }
-        responseResults = append(responseResults, response)
+        topDrivers = append(topDrivers, dto.TopDriverDTO{
+            Position: results[i].Position,
+            DriverID: results[i].DriverID,
+        })
     }
 
-    return responseResults, nil
+    return topDrivers, nil
 }
 
 // GetResultsForSessionByDriverName obtiene los resultados de un piloto en una sesión específica por nombre o acrónimo

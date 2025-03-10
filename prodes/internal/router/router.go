@@ -19,6 +19,7 @@ func MapUrls(engine *gin.Engine, prodeController *prodes.ProdeController) {
 	engine.PUT("/prodes/session/:session_id", prodeController.UpdateProdeSession)
 	// engine.GET("/prodes/session/user/:user_id/session/:session_id", prodeController.GetSessionProdeByUserAndSession)
 	engine.GET("/prodes/session/:session_id", prodeController.GetSessionProdesBySession)
+	engine.POST("/prodes/session/:session_id/score", prodeController.UpdateScoresForSession)
 
 	// Rutas para eliminar prodes
 	engine.DELETE("/prodes/:id", prodeController.DeleteProdeById)

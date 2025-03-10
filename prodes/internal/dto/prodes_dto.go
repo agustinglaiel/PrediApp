@@ -129,3 +129,7 @@ type DriverDTO struct {
     TeamName       string `json:"team_name"`       // Nombre del equipo
 }
 
+type TopDriverDTO struct {
+    Position int `json:"position"`
+    DriverID int `json:"driver_id"`
+}
