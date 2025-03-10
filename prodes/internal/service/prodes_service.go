@@ -99,6 +99,7 @@ func (s *prodeService) CreateProdeCarrera(ctx context.Context, request prodes.Cr
         VSC:        request.VSC,
         SC:         request.SC,
         DNF:        request.DNF,
+        Score:      0,
     }
 
     // Crear el pronóstico de carrera en la base de datos
@@ -121,6 +122,7 @@ func (s *prodeService) CreateProdeCarrera(ctx context.Context, request prodes.Cr
         VSC:        prode.VSC,
         SC:         prode.SC,
         DNF:        prode.DNF,
+        Score:      prode.Score,
     }
 
     return response, nil
@@ -165,6 +167,7 @@ func (s *prodeService) CreateProdeSession(ctx context.Context, request prodes.Cr
         P1:        request.P1,
         P2:        request.P2,
         P3:        request.P3,
+        Score:     0,
     }
 
     // Crear el pronóstico de sesión en la base de datos
@@ -181,6 +184,7 @@ func (s *prodeService) CreateProdeSession(ctx context.Context, request prodes.Cr
         P1:        prode.P1,
         P2:        prode.P2,
         P3:        prode.P3,
+        Score:     prode.Score,
     }
 
     return response, nil
@@ -241,6 +245,7 @@ func (s *prodeService) UpdateProdeCarrera(ctx context.Context, request prodes.Up
         VSC:        prode.VSC,
         SC:         prode.SC,
         DNF:        prode.DNF,
+        Score:      prode.Score,
     }
 
     return response, nil
@@ -289,6 +294,7 @@ func (s *prodeService) UpdateProdeSession(ctx context.Context, request prodes.Up
         P1:        prode.P1,
         P2:        prode.P2,
         P3:        prode.P3,
+        Score:     prode.Score,
     }
 
     return response, nil
@@ -368,6 +374,7 @@ func (s *prodeService) GetProdesByUserId(ctx context.Context, userID int) ([]pro
 			VSC:        prode.VSC,
 			SC:         prode.SC,
 			DNF:        prode.DNF,
+            Score:      prode.Score,
 		})
 	}
 
@@ -380,6 +387,7 @@ func (s *prodeService) GetProdesByUserId(ctx context.Context, userID int) ([]pro
 			P1:      prode.P1,
 			P2:      prode.P2,
 			P3:      prode.P3,
+            Score:   prode.Score,
 		})
 	}
 
@@ -515,6 +523,7 @@ func (s *prodeService) GetProdeByUserAndSession(ctx context.Context, userID, ses
             VSC:        prode.VSC,
             SC:         prode.SC,
             DNF:        prode.DNF,
+            Score:      prode.Score,
         }
         fmt.Printf("Found prode carrera for userID %d and sessionID %d: %+v\n", userID, sessionID, response)
         return response, nil, nil // Devolver solo el DTO de carrera, nil para sesión, y nil para error
@@ -545,6 +554,7 @@ func (s *prodeService) GetProdeByUserAndSession(ctx context.Context, userID, ses
         P1:        prode.P1,
         P2:        prode.P2,
         P3:        prode.P3,
+        Score:     prode.Score,
     }
     fmt.Printf("Found prode session for userID %d and sessionID %d: %+v\n", userID, sessionID, response)
     return nil, response, nil // Devolver nil para carrera, solo el DTO de sesión, y nil para error
@@ -585,6 +595,7 @@ func (s *prodeService) GetRaceProdesBySession(ctx context.Context, sessionID int
             VSC:        prode.VSC,
             SC:         prode.SC,
             DNF:        prode.DNF,
+            Score:      prode.Score,
         })
     }
 
@@ -678,6 +689,7 @@ func (s *prodeService) GetSessionProdeBySession(ctx context.Context, sessionID i
             P1:        prode.P1,
             P2:        prode.P2,
             P3:        prode.P3,
+            Score:     prode.Score,
         })
     }
 
@@ -714,6 +726,7 @@ func (s *prodeService) GetUserProdes(ctx context.Context, userID int) ([]prodes.
             VSC:        prode.VSC,
             SC:         prode.SC,
             DNF:        prode.DNF,
+            Score:      prode.Score,
         })
     }
 
@@ -727,6 +740,7 @@ func (s *prodeService) GetUserProdes(ctx context.Context, userID int) ([]prodes.
             P1:        prode.P1,
             P2:        prode.P2,
             P3:        prode.P3,
+            Score:     prode.Score,
         })
     }
 

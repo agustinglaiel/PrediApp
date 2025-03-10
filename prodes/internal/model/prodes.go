@@ -27,6 +27,7 @@ type ProdeCarrera struct {
 	VSC        bool           `json:"vsc"`
 	SC         bool           `json:"sc"`
 	DNF        int            `json:"dnf"`
+	Score      int            `gorm:"default:0" json:"score"`
 	CreatedAt  time.Time      `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt  time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
 	DeletedAt  gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
@@ -45,6 +46,7 @@ type ProdeSession struct {
 	DriverP2  Driver         `gorm:"foreignKey:P2;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
 	P3        int            `json:"p3"` // driver_id
 	DriverP3  Driver         `gorm:"foreignKey:P3;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
+	Score      int            `gorm:"default:0" json:"score"`
 	CreatedAt time.Time      `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`

@@ -52,6 +52,7 @@ type ResponseProdeCarreraDTO struct {
     VSC        bool `json:"vsc"`
     SC         bool `json:"sc"`
     DNF        int  `json:"dnf"`
+    Score      int  `json:"score"`
 }
 
 // DTO de respuesta para un pronóstico de sesión
@@ -62,6 +63,7 @@ type ResponseProdeSessionDTO struct {
     P1        int `json:"p1"` // driver_id
     P2        int `json:"p2"` // driver_id
     P3        int `json:"p3"` // driver_id
+    Score     int  `json:"score"`
 }
 
 // DTO para actualizar un pronóstico de carrera
