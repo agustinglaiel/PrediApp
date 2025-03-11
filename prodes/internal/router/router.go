@@ -13,6 +13,7 @@ func MapUrls(engine *gin.Engine, prodeController *prodes.ProdeController) {
 	// engine.GET("/prodes/carrera/user/:user_id/session/:session_id", prodeController.GetRaceProdeByUserAndSession)
 	engine.GET("/prodes/carrera/session/:session_id", prodeController.GetRaceProdesBySession)
 	engine.PUT("/prodes/carrera/user/:user_id/session/:session_id", prodeController.UpdateRaceProdeForUserBySessionId)
+	engine.POST("/prodes/carrera/:session_id/score", prodeController.UpdateScoresForRace)
 
 	// Rutas relacionadas con prodes de sesión
 	engine.POST("/prodes/session", prodeController.CreateProdeSession)

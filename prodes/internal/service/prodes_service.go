@@ -37,6 +37,7 @@ type ProdeServiceInterface interface {
 	GetAllDrivers(ctx context.Context) ([]prodes.DriverDTO, e.ApiError)
 	GetTopDriversBySessionId(ctx context.Context, sessionID, n int) ([]prodes.TopDriverDTO, e.ApiError)
     GetProdeByUserAndSession (ctx context.Context, userID int, sessionID int)(*prodes.ResponseProdeCarreraDTO, *prodes.ResponseProdeSessionDTO, e.ApiError)
+    UpdateScoresForRaceProdes(ctx context.Context, sessionID int) e.ApiError
     UpdateScoresForSessionProdes(ctx context.Context, sessionID int) e.ApiError
 }
 
@@ -801,6 +802,51 @@ func (s *prodeService) GetTopDriversBySessionId(ctx context.Context, sessionID, 
     return topDrivers, nil
 }
 
+func (s *prodeService) UpdateScoresForRaceProdes(ctx context.Context, sessionID int) e.ApiError {
+    // 1. Verificar si la sesión es Race
+    sessionDetails, err := s.httpClient.GetSessionByID(sessionID)
+    if err != nil {
+        return e.NewInternalServerApiError("Error fetching session details", err)
+    }
+
+    // Validar si efectivamente sessionName=Race y sessionType=Race
+    if !isRaceSession(sessionDetails.SessionName, sessionDetails.SessionType) {
+        return e.NewBadRequestApiError("La sesión no es de tipo 'Race'; no se pueden recalcular prodes carrera.")
+    }
+
+    // 2. Obtener top 5 real de la sesión
+    realTopDrivers, err := s.httpClient.GetTopDriversBySession(sessionID, 5)
+    if err != nil {
+        return e.NewInternalServerApiError("Error fetching top 5 drivers for race session", err)
+    }
+
+    // 3. Obtener VSC, SC y DNF reales
+    // O bien sessionDetails. ??? (si tu microservicio sessions/ results te da esos campos)
+    // Supongamos:
+    realVSC := sessionDetails.VSC  // bool
+    realSC  := sessionDetails.SC   // bool
+    realDNF := sessionDetails.DNF  // int
+
+    // 4. Traer todos los ProdeCarrera para esta sesión
+    raceProdes, err := s.prodeRepo.GetRaceProdesBySession(ctx, sessionID)
+    if err != nil {
+        return e.NewInternalServerApiError("Error fetching race prodes for session", err)
+    }
+
+    // 5. Recalcular Score de cada prode
+    for _, prode := range raceProdes {
+        newScore := calculateRaceScore(prode, realTopDrivers, realVSC, realSC, realDNF)
+        prode.Score = newScore
+
+        // 6. Guardar en la BD
+        if err := s.prodeRepo.UpdateProdeCarrera(ctx, prode); err != nil {
+            return e.NewInternalServerApiError("Error updating race prode score", err)
+        }
+    }
+
+    return nil
+}
+
 func (s *prodeService) UpdateScoresForSessionProdes(ctx context.Context, sessionID int) e.ApiError {
     // 1. Obtener el top 3 real de la sesión
     fmt.Println("Fetching top drivers for session:", sessionID) // Debugging
@@ -832,7 +878,72 @@ func (s *prodeService) UpdateScoresForSessionProdes(ctx context.Context, session
     return nil
 }
 
-// calculateSessionScore calcula el puntaje basándose en P1,P2,P3 del prode y en un array de 3 drivers reales
+func calculateRaceScore(prode *model.ProdeCarrera, realTop []prodes.TopDriverDTO, realVSC bool, realSC bool, realDNF int) int {
+    score := 0
+
+    // P1
+    if len(realTop) > 0 {
+        if prode.P1 == realTop[0].DriverID {
+            score += 3
+        } else if driverInList(prode.P1, realTop) {
+            score += 1
+        }
+    }
+
+    // P2
+    if len(realTop) > 1 {
+        if prode.P2 == realTop[1].DriverID {
+            score += 3
+        } else if driverInList(prode.P2, realTop) {
+            score += 1
+        }
+    }
+
+    // P3
+    if len(realTop) > 2 {
+        if prode.P3 == realTop[2].DriverID {
+            score += 3
+        } else if driverInList(prode.P3, realTop) {
+            score += 1
+        }
+    }
+
+    // P4
+    if len(realTop) > 3 {
+        if prode.P4 == realTop[3].DriverID {
+            score += 3
+        } else if driverInList(prode.P4, realTop) {
+            score += 1
+        }
+    }
+
+    // P5
+    if len(realTop) > 4 {
+        if prode.P5 == realTop[4].DriverID {
+            score += 3
+        } else if driverInList(prode.P5, realTop) {
+            score += 1
+        }
+    }
+
+    // 2. Comparar VSC
+    if prode.VSC == realVSC {
+        score += 2
+    }
+
+    // 3. Comparar SC
+    if prode.SC == realSC {
+        score += 2
+    }
+
+    // 4. Comparar DNF
+    if prode.DNF == realDNF {
+        score += 5
+    }
+
+    return score
+}
+
 func calculateSessionScore(prode *model.ProdeSession, realTop []prodes.TopDriverDTO) int {
     score := 0
 
@@ -866,8 +977,6 @@ func calculateSessionScore(prode *model.ProdeSession, realTop []prodes.TopDriver
     return score
 }
 
-
-// driverInList revisa si un driverID está en la lista de drivers del top real
 func driverInList(driverID int, realTop []prodes.TopDriverDTO) bool {
     for _, driver := range realTop {
         if driver.DriverID == driverID {
@@ -877,9 +986,6 @@ func driverInList(driverID int, realTop []prodes.TopDriverDTO) bool {
     return false
 }
 
-
-
-//Función auxiliar para mayor modularidad y me devuelve el bool de si es session name y type = race. 
 func isRaceSession(sessionName string, sessionType string) bool {
     return sessionName == "Race" && sessionType == "Race"
 }
