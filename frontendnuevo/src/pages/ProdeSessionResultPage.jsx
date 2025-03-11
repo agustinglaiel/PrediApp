@@ -6,6 +6,7 @@ import Header from "../components/Header";
 import NavigationBar from "../components/NavigationBar";
 import SessionHeader from "../components/pronosticos/SessionHeader";
 import DriverResultDisplay from "../components/results/DriverResultDisplay";
+import MissingProdeSession from "../components/results/MissingProdeSession"; // Nuevo import
 
 import { getProdeByUserAndSession } from "../api/prodes";
 import { getDriverById } from "../api/drivers";
@@ -24,6 +25,7 @@ const ProdeSessionResultPage = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showMissingProdeModal, setShowMissingProdeModal] = useState(false); // Estado para el modal
 
   useEffect(() => {
     const fetchSessionAndProdeData = async () => {
@@ -37,7 +39,6 @@ const ProdeSessionResultPage = () => {
           throw new Error("Usuario no autenticado. Por favor, inicia sesión.");
         }
 
-        // Obtener datos de la sesión directamente del backend
         const sessionData = await getSessionById(sessionId);
         const sessionInfo = {
           countryName: sessionData.country_name || "Unknown",
@@ -60,11 +61,14 @@ const ProdeSessionResultPage = () => {
           sessionId
         );
         if (!prode) {
-          throw new Error("No se encontró un pronóstico para esta sesión.");
+          // En lugar de lanzar error, mostramos el modal
+          setShowMissingProdeModal(true);
+          setLoading(false);
+          return;
         }
 
         if (prode.p4 !== undefined || prode.p5 !== undefined) {
-          navigate("/pronosticos"); // Redirigir si es un pronóstico de carrera
+          navigate("/pronosticos");
           return;
         }
 
@@ -89,14 +93,18 @@ const ProdeSessionResultPage = () => {
         setError(err.message || "Error al cargar los resultados.");
         console.error("Error en ProdeSessionResultPage:", err);
       } finally {
-        setLoading(false);
+        if (!showMissingProdeModal) setLoading(false); // Solo desactivamos loading si no mostramos el modal
       }
     };
 
     fetchSessionAndProdeData();
   }, [session_id, navigate]);
 
-  if (loading || !sessionDetails) {
+  const handleCloseMissingProdeModal = () => {
+    setShowMissingProdeModal(false);
+  };
+
+  if (loading || (!showMissingProdeModal && !sessionDetails)) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-50">
         <p className="text-gray-500">Cargando resultados...</p>
@@ -118,28 +126,35 @@ const ProdeSessionResultPage = () => {
       <NavigationBar />
       <main className="flex-grow pt-28 px-4">
         <div className="mt-8 p-2 bg-white rounded-lg shadow-md">
-          {/* SessionHeader ahora está dentro del recuadro */}
           <SessionHeader
-            countryName={sessionDetails.countryName}
-            flagUrl={sessionDetails.flagUrl}
-            sessionName={sessionDetails.sessionName}
-            sessionType={sessionDetails.sessionType}
+            countryName={sessionDetails?.countryName}
+            flagUrl={sessionDetails?.flagUrl}
+            sessionName={sessionDetails?.sessionName}
+            sessionType={sessionDetails?.sessionType}
             className="mb-4"
           />
-          <div className="flex flex-col gap-4">
-            <DriverResultDisplay position="P1" driverName={drivers.p1} />
-            <DriverResultDisplay position="P2" driverName={drivers.p2} />
-            <DriverResultDisplay position="P3" driverName={drivers.p3} />
-          </div>
-          {prodeData?.score !== null && prodeData?.score !== undefined && (
-            <div className="mt-4 text-center">
-              <p className="text-lg font-semibold text-gray-800">
-                Puntaje obtenido: {prodeData.score} puntos
-              </p>
-            </div>
+          {prodeData && (
+            <>
+              <div className="flex flex-col gap-4">
+                <DriverResultDisplay position="P1" driverName={drivers.p1} />
+                <DriverResultDisplay position="P2" driverName={drivers.p2} />
+                <DriverResultDisplay position="P3" driverName={drivers.p3} />
+              </div>
+              {prodeData?.score !== null && prodeData?.score !== undefined && (
+                <div className="mt-4 text-center">
+                  <p className="text-lg font-semibold text-gray-800">
+                    Puntaje obtenido: {prodeData.score} puntos
+                  </p>
+                </div>
+              )}
+            </>
           )}
         </div>
       </main>
+      <MissingProdeSession
+        isOpen={showMissingProdeModal}
+        onClose={handleCloseMissingProdeModal}
+      />
       <footer className="bg-gray-200 text-gray-700 text-center py-3 text-sm">
         <p>© 2025 PrediApp</p>
       </footer>
