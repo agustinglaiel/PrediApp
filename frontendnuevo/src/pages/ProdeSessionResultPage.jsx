@@ -5,7 +5,7 @@ import { useParams, useLocation, useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import NavigationBar from "../components/NavigationBar";
 import SessionHeader from "../components/pronosticos/SessionHeader";
-import Top3FormHeader from "../components/pronosticos/Top3FormHeader";
+import SessionResultForm from "../components/results/SessionResultForm";
 
 import { getProdeByUserAndSession } from "../api/prodes";
 import { getDriverById } from "../api/drivers";
@@ -15,7 +15,6 @@ const ProdeSessionResultPage = () => {
   const { state } = useLocation();
   const navigate = useNavigate();
 
-  // Estado inicial para los detalles de la sesión
   const [sessionDetails, setSessionDetails] = useState(() => {
     if (state) {
       return {
@@ -44,7 +43,6 @@ const ProdeSessionResultPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Efecto para cargar los datos del pronóstico y los pilotos
   useEffect(() => {
     const fetchProdeAndDrivers = async () => {
       try {
@@ -62,26 +60,29 @@ const ProdeSessionResultPage = () => {
           parseInt(session_id, 10)
         );
 
-        // Verificar si existe un pronóstico y si es de tipo sesión (no Race)
         if (!prode) {
           throw new Error("No se encontró un pronóstico para esta sesión.");
         }
+
+        // Verificar si es un pronóstico de carrera (p4 y p5 existen)
         if (prode.p4 !== undefined || prode.p5 !== undefined) {
-          // Si es un prode de carrera, redirigir o manejar de otra forma
+          // Si es un pronóstico de carrera, podrías redirigir a otra página en el futuro
           navigate("/pronosticos");
           return;
         }
 
         setProdeData(prode);
 
-        // Obtener los datos de los pilotos por ID
+        // Obtener los datos de los pilotos
         const driverPromises = [
           prode.p1 ? getDriverById(prode.p1) : Promise.resolve(null),
           prode.p2 ? getDriverById(prode.p2) : Promise.resolve(null),
           prode.p3 ? getDriverById(prode.p3) : Promise.resolve(null),
         ];
 
-        const [driverP1, driverP2, driverP3] = await Promise.all(driverPromises);
+        const [driverP1, driverP2, driverP3] = await Promise.all(
+          driverPromises
+        );
 
         setDrivers({
           p1: driverP1,
@@ -99,7 +100,6 @@ const ProdeSessionResultPage = () => {
     fetchProdeAndDrivers();
   }, [session_id, navigate]);
 
-  // Renderizado condicional para loading y error
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-50">
@@ -128,31 +128,17 @@ const ProdeSessionResultPage = () => {
           sessionType={sessionDetails.sessionType}
           className="mt-6"
         />
-
-        <div className="mt-4 p-4 bg-white rounded-lg shadow-md">
-          <Top3FormHeader sessionType={sessionDetails.sessionType} />
-          <div className="flex flex-col gap-4 mt-4">
-            {/* Mostrar las posiciones P1, P2, P3 */}
-            {["p1", "p2", "p3"].map((position) => (
-              <div key={position} className="mb-4 ml-4">
-                <label className="block text-sm font-medium text-black">
-                  {position.toUpperCase()}
-                </label>
-                <div className="mt-1 block w-full py-2 px-3 text-gray-700 bg-gray-100 border border-gray-300 rounded-md">
-                  {drivers[position]?.full_name || "No seleccionado"}
-                </div>
-              </div>
-            ))}
-            {/* Mostrar el puntaje si está disponible */}
-            {prodeData?.score !== null && prodeData?.score !== undefined && (
-              <div className="mt-2 text-center">
-                <p className="text-lg font-semibold text-gray-800">
-                  Puntaje obtenido: {prodeData.score} puntos
-                </p>
-              </div>
-            )}
+        <SessionResultForm
+          sessionType={sessionDetails.sessionType}
+          drivers={drivers}
+        />
+        {prodeData?.score !== null && prodeData?.score !== undefined && (
+          <div className="mt-4 text-center">
+            <p className="text-lg font-semibold text-gray-800">
+              Puntaje obtenido: {prodeData.score} puntos
+            </p>
           </div>
-        </div>
+        )}
       </main>
       <footer className="bg-gray-200 text-gray-700 text-center py-3 text-sm">
         <p>© 2025 PrediApp</p>

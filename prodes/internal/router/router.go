@@ -27,7 +27,7 @@ func MapUrls(engine *gin.Engine, prodeController *prodes.ProdeController) {
 
 	// Rutas relacionadas con usuarios
 	engine.GET("/prodes/user/:user_id", prodeController.GetProdesByUserId)
-	engine.GET("/prodes/user/:user_id/session/:session_id", prodeController.GetProdeByUserAndSession) // Nueva ruta para obtener el prode para una sesion de un usuario
+	engine.GET("/prodes/user/:user_id/session/:session_id", prodeController.GetProdeByUserAndSession)
 
 	// Rutas relacionadas con pilotos
 	engine.GET("/drivers/:driver_id", prodeController.GetDriverDetails)
