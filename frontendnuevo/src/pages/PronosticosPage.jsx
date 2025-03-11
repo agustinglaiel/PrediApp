@@ -69,6 +69,7 @@ const PronosticosPage = () => {
         hasPronostico: true, // seguirás ajustando según tu lógica
         prodeSession: null,
         prodeRace: null,
+        score: null,
       });
     });
 
@@ -76,6 +77,7 @@ const PronosticosPage = () => {
   };
 
   // Rellena cada sesión con los datos de Prode si el usuario está logueado
+  // En fillProdeData
   const fillProdeData = async (eventsArray) => {
     const userId = localStorage.getItem("userId");
     if (!userId) return eventsArray;
@@ -88,17 +90,21 @@ const PronosticosPage = () => {
             sess.id
           );
           if (prode) {
-            // Si hay p4 y p5, asumimos que es carrera
             if (prode.p4 !== undefined && prode.p5 !== undefined) {
               sess.prodeRace = prode;
               sess.prodeSession = null;
+              sess.score = prode.score || 0; // Asignamos el score (0 si no existe)
             } else {
               sess.prodeSession = prode;
               sess.prodeRace = null;
+              sess.score = prode.score || 0; // Asignamos el score (0 si no existe)
             }
+          } else {
+            sess.score = null; // Si no hay prode, score es null
           }
-        } catch {
-          // Podrías ignorar errores 404
+        } catch (err) {
+          console.error(`Error fetching prode for session ${sess.id}:`, err);
+          sess.score = null; // En caso de error, score es null
         }
       });
       await Promise.all(prodePromises);

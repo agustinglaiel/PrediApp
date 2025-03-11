@@ -19,6 +19,7 @@ const SessionItem = ({
   prodeSession,
   prodeRace,
   isPastEvent = false,
+  score,
 }) => {
   // Verificamos si existe prode
   const hasProde =
@@ -39,8 +40,8 @@ const SessionItem = ({
 
       {isPastEvent ? (
         // Si el evento es pasado, mostramos "Evento finalizado" en negrita
-        <span className="font-bold text-red-500 text-sm mr-4">
-          Evento finalizado
+        <span className="font-bold text-black text-sm mr-4">
+          {score !== null && score !== undefined ? score : "0"} Puntos
         </span>
       ) : (
         // Evento futuro => mostramos botón

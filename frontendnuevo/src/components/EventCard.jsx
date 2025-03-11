@@ -82,8 +82,8 @@ const EventCard = ({
             onContinueToLogin={onContinueToLogin}
             prodeSession={session.prodeSession}
             prodeRace={session.prodeRace}
-            // <-- Importante: le pasamos la prop
             isPastEvent={isPastEvent}
+            score={session.score}
             onPronosticoClick={() => handlePronosticoClickLocal(session)}
           />
         ))}
