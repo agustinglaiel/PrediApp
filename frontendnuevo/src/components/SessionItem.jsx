@@ -1,4 +1,4 @@
-// src/components/SessionItem.jsx
+// frontendnuevo/src/components/SessionItem.jsx
 import React from "react";
 import DateDisplay from "./DateDisplay";
 import AuthModal from "./AuthModal";
@@ -21,7 +21,6 @@ const SessionItem = ({
   isPastEvent = false,
   score,
 }) => {
-  // Verificamos si existe prode
   const hasProde =
     (sessionType !== "Race" && prodeSession) ||
     (sessionType === "Race" && prodeRace);
@@ -29,7 +28,6 @@ const SessionItem = ({
   return (
     <div className="flex items-center p-3 border-b border-gray-100 last:border-b-0">
       <DateDisplay date={date} month={month} />
-
       <div className="ml-6 flex-grow">
         <div className="font-semibold">{sessionName}</div>
         <div className="text-sm text-gray-600">
@@ -39,12 +37,15 @@ const SessionItem = ({
       </div>
 
       {isPastEvent ? (
-        // Si el evento es pasado, mostramos "Evento finalizado" en negrita
-        <span className="font-bold text-black text-sm mr-4">
-          {score !== null && score !== undefined ? score : "0"} Puntos
-        </span>
+        <button
+          onClick={onPronosticoClick}
+          className="px-4 py-1 rounded-full text-sm font-medium transition-colors duration-200 whitespace-nowrap bg-gray-200 text-gray-700 hover:bg-gray-300"
+        >
+          {score !== null && score !== undefined
+            ? `${score} Puntos`
+            : "Ver resultados"}
+        </button>
       ) : (
-        // Evento futuro => mostramos botón
         hasPronostico !== undefined && (
           <button
             onClick={onPronosticoClick}

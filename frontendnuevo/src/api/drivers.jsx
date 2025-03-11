@@ -27,3 +27,21 @@ export const getAllDrivers = async () => {
     ); // Lanza un error personalizado
   }
 };
+
+export const getDriverById = async (driverId) => {
+  try {
+    const response = await api.get(`/drivers/${driverId}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("jwtToken")}` },
+    });
+    console.log(`Piloto con ID ${driverId} recibido:`, response.data);
+    return response.data; // Retorna el objeto ResponseDriverDTO
+  } catch (error) {
+    console.error(`Error fetching driver with ID ${driverId}:`, {
+      message: error.message,
+      response: error.response,
+    });
+    throw new Error(
+      error.response?.data?.message || `Error fetching driver ${driverId}.`
+    );
+  }
+};

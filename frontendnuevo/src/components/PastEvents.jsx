@@ -1,4 +1,4 @@
-// src/components/PastEvents.jsx
+// frontendnuevo/src/components/PastEvents.jsx
 import React from "react";
 import EventCard from "./EventCard";
 

@@ -1,4 +1,4 @@
-// src/pages/PronosticosPage.jsx
+// frontendnuevo/src/pages/PronosticosPage.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -19,13 +19,10 @@ const PronosticosPage = () => {
 
   const navigate = useNavigate();
 
-  // Agrupa las sesiones por weekend_id
   const groupSessionsByWeekend = (sessions) => {
     const eventsMap = {};
-
     sessions.forEach((session) => {
       const weekendId = session.weekend_id;
-
       if (!eventsMap[weekendId]) {
         eventsMap[weekendId] = {
           country: session.country_name,
@@ -43,7 +40,6 @@ const PronosticosPage = () => {
       const dateStartObj = new Date(session.date_start);
       const dateEndObj = new Date(session.date_end);
 
-      // Para eliminar AM/PM, añadimos hour12: false
       const startTime = dateStartObj.toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
@@ -66,18 +62,15 @@ const PronosticosPage = () => {
         startTime,
         endTime,
         date_start: session.date_start,
-        hasPronostico: true, // seguirás ajustando según tu lógica
+        hasPronostico: true,
         prodeSession: null,
         prodeRace: null,
         score: null,
       });
     });
-
     return Object.values(eventsMap);
   };
 
-  // Rellena cada sesión con los datos de Prode si el usuario está logueado
-  // En fillProdeData
   const fillProdeData = async (eventsArray) => {
     const userId = localStorage.getItem("userId");
     if (!userId) return eventsArray;
@@ -93,23 +86,21 @@ const PronosticosPage = () => {
             if (prode.p4 !== undefined && prode.p5 !== undefined) {
               sess.prodeRace = prode;
               sess.prodeSession = null;
-              sess.score = prode.score || 0; // Asignamos el score (0 si no existe)
             } else {
               sess.prodeSession = prode;
               sess.prodeRace = null;
-              sess.score = prode.score || 0; // Asignamos el score (0 si no existe)
             }
+            sess.score = prode.score || 0;
           } else {
-            sess.score = null; // Si no hay prode, score es null
+            sess.score = null;
           }
         } catch (err) {
           console.error(`Error fetching prode for session ${sess.id}:`, err);
-          sess.score = null; // En caso de error, score es null
+          sess.score = null;
         }
       });
       await Promise.all(prodePromises);
     }
-
     return eventsArray;
   };
 
@@ -119,7 +110,6 @@ const PronosticosPage = () => {
         setLoading(true);
         setError(null);
 
-        // Llamamos a ambos endpoints
         const [upcomingRaw, pastRaw] = await Promise.all([
           getUpcomingSessions(),
           getPastSessions(),
@@ -144,7 +134,17 @@ const PronosticosPage = () => {
   }, []);
 
   const handlePronosticoClick = (sessionData) => {
-    navigate(`/pronosticos/${sessionData.id}`, { state: sessionData });
+    const isPastEvent = new Date(sessionData.date_start) < new Date();
+    const isRace = sessionData.sessionName === "Race" && sessionData.sessionType === "Race";
+
+    if (isPastEvent && !isRace) {
+      // Redirigir a ProdeSessionResultPage para sesiones pasadas no-Race
+      navigate(`/pronosticos/result/${sessionData.id}`, { state: sessionData });
+    } else if (!isPastEvent) {
+      // Redirigir a formulario de pronóstico para eventos futuros
+      navigate(`/pronosticos/${sessionData.id}`, { state: sessionData });
+    }
+    // Para sesiones pasadas de tipo Race, podrías agregar otra página en el futuro
   };
 
   if (loading) {
@@ -167,21 +167,16 @@ const PronosticosPage = () => {
     <div className="flex flex-col min-h-screen bg-gray-50">
       <Header />
       <NavigationBar />
-
       <main className="flex-grow pt-24">
-        {/* Próximos eventos */}
         <UpcomingEvents
           events={upcomingEvents}
           onPronosticoClick={handlePronosticoClick}
         />
-
-        {/* Eventos anteriores */}
         <PastEvents
           events={pastEvents}
           onPronosticoClick={handlePronosticoClick}
         />
       </main>
-
       <footer className="bg-gray-200 text-gray-700 text-center py-3 text-sm">
         <p>© 2025 PrediApp</p>
       </footer>

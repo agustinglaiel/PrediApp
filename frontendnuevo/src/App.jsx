@@ -1,4 +1,4 @@
-// App.jsx
+// frontendnuevo/src/App.jsx
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
@@ -6,6 +6,7 @@ import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import ProdeDispatcher from "./pages/ProdeDispatcher";
 import PronosticosPage from "./pages/PronosticosPage";
+import ProdeSessionResultPage from "./pages/ProdeSessionResultPage";
 
 function App() {
   return (
@@ -15,6 +16,10 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/pronosticos" element={<PronosticosPage />} />
         <Route path="/pronosticos/:session_id" element={<ProdeDispatcher />} />
+        <Route
+          path="/pronosticos/result/:session_id"
+          element={<ProdeSessionResultPage />}
+        />
         {/* <Route path="*" element={<NotFoundPage />} /> */}
       </Routes>
     </Router>
