@@ -1,4 +1,4 @@
-// src/components/EventCard.jsx
+// frontendnuevo/src/components/EventCard.jsx
 import React from "react";
 import SessionItem from "./SessionItem";
 
@@ -12,10 +12,8 @@ const EventCard = ({
   isModalOpen,
   onCloseModal,
   onContinueToLogin,
-  // Importante: prop para eventos pasados
   isPastEvent = false,
 }) => {
-  // Ordenar sesiones por fecha (opcional)
   const sortedSessions = [...sessions].sort((a, b) => {
     const dateA = new Date(a.date_start);
     const dateB = new Date(b.date_start);
@@ -29,12 +27,13 @@ const EventCard = ({
       id: session.id,
       sessionName: session.sessionName,
       sessionType: session.sessionType,
-      dateStart: session.date_start,
+      date_start: session.date_start,
       countryName: country,
-      flagUrl,
+      flagUrl: flagUrl,
       circuitName: circuit,
     };
 
+    console.log("EventCard: Enviando sessionData:", sessionData);
     onPronosticoClick(sessionData);
   };
 

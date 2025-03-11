@@ -25,8 +25,8 @@ const PronosticosPage = () => {
       const weekendId = session.weekend_id;
       if (!eventsMap[weekendId]) {
         eventsMap[weekendId] = {
-          country: session.country_name,
-          circuit: session.circuit_short_name,
+          country: session.country_name || "Unknown",
+          circuit: session.circuit_short_name || "Unknown Circuit",
           flagUrl: session.country_name
             ? `/images/flags/${session.country_name.toLowerCase()}.jpg`
             : "/images/flags/default.jpg",
@@ -115,6 +115,8 @@ const PronosticosPage = () => {
           getPastSessions(),
         ]);
 
+        console.log("Sesiones pasadas crudas:", pastRaw);
+
         const upcomingGrouped = groupSessionsByWeekend(upcomingRaw || []);
         const pastGrouped = groupSessionsByWeekend(pastRaw || []);
 
@@ -135,16 +137,16 @@ const PronosticosPage = () => {
 
   const handlePronosticoClick = (sessionData) => {
     const isPastEvent = new Date(sessionData.date_start) < new Date();
-    const isRace = sessionData.sessionName === "Race" && sessionData.sessionType === "Race";
+    const isRace =
+      sessionData.sessionName === "Race" && sessionData.sessionType === "Race";
+
+    console.log("PronosticosPage: Navegando con sessionData:", sessionData);
 
     if (isPastEvent && !isRace) {
-      // Redirigir a ProdeSessionResultPage para sesiones pasadas no-Race
       navigate(`/pronosticos/result/${sessionData.id}`, { state: sessionData });
     } else if (!isPastEvent) {
-      // Redirigir a formulario de pronóstico para eventos futuros
       navigate(`/pronosticos/${sessionData.id}`, { state: sessionData });
     }
-    // Para sesiones pasadas de tipo Race, podrías agregar otra página en el futuro
   };
 
   if (loading) {
