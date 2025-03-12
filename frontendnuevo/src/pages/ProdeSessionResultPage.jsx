@@ -185,7 +185,7 @@ const ProdeSessionResultPage = () => {
         {/* Resultados reales */}
         <div className="mt-4 p-2 bg-white rounded-lg shadow-md">
           <h3 className="text-lg font-semibold text-gray-800 mt-2 mb-4 ml-4">
-            Resultados Reales
+            Resultados
           </h3>
           <div className="flex flex-col gap-4">
             <DriverResultDisplay position="P1" driverName={realDrivers.p1} />

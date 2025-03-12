@@ -140,11 +140,17 @@ const PronosticosPage = () => {
     const isRace =
       sessionData.sessionName === "Race" && sessionData.sessionType === "Race";
 
-    console.log("PronosticosPage: Navegando con sessionData:", sessionData);
-
-    if (isPastEvent && !isRace) {
-      navigate(`/pronosticos/result/${sessionData.id}`, { state: sessionData });
-    } else if (!isPastEvent) {
+    if (isPastEvent) {
+      if (isRace) {
+        navigate(`/pronosticos/result/race/${sessionData.id}`, {
+          state: sessionData,
+        });
+      } else {
+        navigate(`/pronosticos/result/${sessionData.id}`, {
+          state: sessionData,
+        });
+      }
+    } else {
       navigate(`/pronosticos/${sessionData.id}`, { state: sessionData });
     }
   };
