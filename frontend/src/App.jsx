@@ -1,41 +1,34 @@
-// src/App.jsx
-import "./index.css"; // Asegúrate de que esta línea esté presente
+// frontendnuevo/src/App.jsx
 import React from "react";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import SignUp from "./pages/Signup";
-import Login from "./pages/Login";
-import ProdesPage from "./pages/ProdesPage";
-import AdminPanel from "./pages/AdminPanel";
-import UpdateUser from "./pages/UpdateUser";
-import RaceWeekendPage from "./pages/RaceWeekendPage";
-import { SessionsProvider } from "./contexts/SessionsContext"; // Importamos el proveedor del contexto
-import RacePredictionForm from "./pages/RacePredictionForm";
-import SessionPredictionForm from "./pages/SessionPredictionForm";
-import Home from "./pages/HomePage";
-const App = () => {
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
+import HomePage from "./pages/HomePage";
+import LoginPage from "./pages/LoginPage";
+import ProdeDispatcher from "./pages/ProdeDispatcher";
+import PronosticosPage from "./pages/PronosticosPage";
+import ProdeSessionResultPage from "./pages/ProdeSessionResultPage";
+import ProdeRaceResultPage from "./pages/ProdeRaceResultPage";
+
+function App() {
   return (
-    <SessionsProvider>
-      {" "}
-      <Router>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/prodesPage" element={<ProdesPage />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<SignUp />} />
-          <Route path="/admin" element={<AdminPanel />} />
-          <Route path="/update-user/:id" element={<UpdateUser />} />
-          <Route path="/race-weekend" element={<RaceWeekendPage />} />
-          <Route
-            path="/prode/race/:sessionId"
-            element={<RacePredictionForm />}
-          />
-          <Route
-            path="/prode/session/:sessionId"
-            element={<SessionPredictionForm />}
-          />
-        </Routes>
-      </Router>
-    </SessionsProvider>
+    <Router>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/pronosticos" element={<PronosticosPage />} />
+        <Route path="/pronosticos/:session_id" element={<ProdeDispatcher />} />
+        <Route
+          path="/pronosticos/result/:session_id"
+          element={<ProdeSessionResultPage />}
+        />
+        <Route
+          path="/pronosticos/result/race/:session_id"
+          element={<ProdeRaceResultPage />}
+        />
+        {/* <Route path="*" element={<NotFoundPage />} /> */}
+      </Routes>
+    </Router>
   );
-};
+}
+
 export default App;
