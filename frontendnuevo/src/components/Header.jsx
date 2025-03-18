@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import SignOutAlert from "./SignOutAlert";
+import { logout } from "../api/users"; // Importamos la función logout desde users.jsx
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -35,11 +36,19 @@ const Header = () => {
   };
 
   // Función para confirmar el cierre de sesión
-  const confirmSignOut = () => {
-    localStorage.removeItem("jwtToken");
-    localStorage.removeItem("userId");
-    setShowSignOutModal(false);
-    navigate("/");
+  const confirmSignOut = async () => {
+    try {
+      await logout(); // Llamamos a la función logout de users.jsx
+      setShowSignOutModal(false);
+      navigate("/");
+      window.location.reload();
+    } catch (error) {
+      console.error("Error during sign out:", error.message);
+      // Aunque falle el logout en el backend, el localStorage ya se limpió
+      setShowSignOutModal(false);
+      navigate("/");
+      window.location.reload();
+    }
   };
 
   // Función para cerrar el modal sin acción
@@ -98,11 +107,9 @@ const Header = () => {
 
           {/* Logo como botón de Log In/Sign Out (right) */}
           <div className="flex-none mr-2 md:mr-6 flex items-center">
-            {" "}
-            {/* Añadido flex items-center */}
             <button
               onClick={handleLogoClick}
-              className="focus:outline-none flex items-center justify-center" /* Añadido flex items-center justify-center */
+              className="focus:outline-none flex items-center justify-center"
               title={isAuthenticated ? "Sign Out" : "Log In"}
             >
               <div className="w-9 h-9 rounded-full overflow-hidden">
