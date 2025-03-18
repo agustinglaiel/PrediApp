@@ -47,9 +47,10 @@ func main() {
     // configurar middlewares CORS
     router.Use(middleware.CorsMiddleware())
 
-    // Configurar ruta para el login (Fuera del grupo /api)
     router.POST("/api/login", handlers.LoginHandler)
     router.POST("/api/signup", handlers.SignupHandler)
+    router.POST("/api/refresh", handlers.RefreshTokenHandler) 
+	router.POST("/api/signout", handlers.SignOutHandler)
 
     router.Any("users", proxy.ReverseProxy())
     router.Any("/users/*proxyPath", proxy.ReverseProxy())
