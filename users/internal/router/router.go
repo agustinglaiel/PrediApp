@@ -13,6 +13,9 @@ func MapUrls(engine *gin.Engine, userController *api.UserController) {
         // Rutas abiertas (sin autenticación)
         usersGroup.POST("/signup", userController.SignUp)
         usersGroup.POST("/login", userController.Login)
+        usersGroup.POST("/refresh-token", userController.StoreRefreshToken)
+        usersGroup.POST("/refresh", userController.Refresh)
+        usersGroup.POST("/signout", userController.SignOut)
 
         // Rutas para obtener, actualizar o eliminar usuarios
         usersGroup.GET("/:id", userController.GetUserByID)

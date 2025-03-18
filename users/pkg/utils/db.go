@@ -37,7 +37,7 @@ func DisconnectDB() {
 
 // StartDbEngine migrates the database tables
 func StartDbEngine() {
-    DB.AutoMigrate(&model.User{})
+    DB.AutoMigrate(&model.User{}, &model.RefreshToken{})
     // Agrega otras migraciones aquí si es necesario
     fmt.Println("Finishing Migration Database Tables")
 }

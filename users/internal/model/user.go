@@ -26,3 +26,11 @@ type User struct {
 	ProviderID      string         `gorm:"size:255" json:"provider_id,omitempty"`
 	AvatarURL       string         `gorm:"size:255" json:"avatar_url,omitempty"`
 }
+
+type RefreshToken struct {
+	ID        int       `gorm:"primaryKey" json:"id"`
+	UserID    int       `gorm:"index" json:"user_id"`
+	Token     string    `gorm:"size:255;uniqueIndex" json:"token"`
+	ExpiresAt time.Time `json:"expires_at"`
+	Revoked   bool      `gorm:"default:false" json:"revoked"`
+}

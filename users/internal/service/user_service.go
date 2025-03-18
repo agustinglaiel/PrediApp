@@ -18,7 +18,6 @@ type userService struct {
 type UserServiceInterface interface {
     SignUp(ctx context.Context, request dto.UserSignUpRequestDTO) (dto.UserSignUpResponseDTO, e.ApiError)
     Login(ctx context.Context, request dto.UserLoginRequestDTO) (dto.UserLoginResponseDTO, e.ApiError)
-    // OAuthSignIn(ctx context.Context, request dto.GoogleOAuthRequestDTO) (dto.GoogleOAuthResponseDTO, e.ApiError)
     GetUserById(ctx context.Context, id int) (dto.UserResponseDTO, e.ApiError)
     GetUserByUsername(ctx context.Context, username string) (dto.UserResponseDTO, e.ApiError)
     GetUsers(ctx context.Context) ([]dto.UserResponseDTO, e.ApiError)
@@ -27,6 +26,11 @@ type UserServiceInterface interface {
     DeleteUserById(ctx context.Context, id int) e.ApiError
     DeleteUserByUsername(ctx context.Context, username string) e.ApiError
     UpdateRoleByUserId(ctx context.Context, id int, request dto.UserUpdateRoleRequestDTO) (dto.UserResponseDTO, e.ApiError)
+
+    // Métodos para el Refresh Token
+    StoreRefreshToken(ctx context.Context, userID int, token string, expiresAt time.Time) e.ApiError
+    ValidateRefreshToken(ctx context.Context, refreshToken string) (*model.User, e.ApiError)
+    RevokeRefreshToken(ctx context.Context, refreshToken string) e.ApiError
 }
 
 func NewUserService(userRepo repository.UserRepository) UserServiceInterface {
@@ -70,12 +74,6 @@ func (s *userService) SignUp(ctx context.Context, request dto.UserSignUpRequestD
 		return dto.UserSignUpResponseDTO{}, e.NewInternalServerApiError("error creating user", err)
 	}
 
-    // Genarar el token JWT para el usuario regittado
-    // token, err := jwt.GenerateJWT(newUser.ID, newUser.Role)
-    // if err != nil {
-    //     return dto.UserSignUpResponseDTO{}, e.NewInternalServerApiError("error generating token", err)
-    // }
-
 	response := dto.UserSignUpResponseDTO{
 		ID:        newUser.ID,
 		FirstName: newUser.FirstName,
@@ -111,72 +109,6 @@ func (s *userService) Login(ctx context.Context, request dto.UserLoginRequestDTO
 
 	return response, nil
 }
-
-// func (s *userService) OAuthSignIn(ctx context.Context, request dto.GoogleOAuthRequestDTO) (dto.GoogleOAuthResponseDTO, e.ApiError) {
-// 	googleUser, err := VerifyGoogleToken(request.GoogleToken)
-// 	if err != nil {
-// 		return dto.GoogleOAuthResponseDTO{}, e.NewBadRequestApiError("invalid Google token")
-// 	}
-// 	user, apiErr := s.userRepo.GetUserByEmail(ctx, googleUser.Email)
-// 	if apiErr != nil {
-// 		if apiErr.Status() != 404 {
-// 			return dto.GoogleOAuthResponseDTO{}, apiErr
-// 		}
-// 		user = &model.User{
-// 			FirstName:       googleUser.FirstName,
-// 			LastName:        googleUser.LastName,
-// 			Username:        googleUser.NickName,
-// 			Email:           googleUser.Email,
-// 			Role:            "user",
-// 			Provider:        "google",
-// 			ProviderID:      googleUser.UserID,
-// 			AvatarURL:       googleUser.AvatarURL,
-// 			IsActive:        true,
-// 			IsEmailVerified: true,
-// 			CreatedAt:       time.Now(),
-// 		}
-// 		if apiErr := s.userRepo.CreateUser(ctx, user); apiErr != nil {
-// 			return dto.GoogleOAuthResponseDTO{}, apiErr
-// 		}
-// 	} else {
-// 		user.Provider = "google"
-// 		user.ProviderID = googleUser.UserID
-// 		user.AvatarURL = googleUser.AvatarURL
-// 		user.IsActive = true
-// 		now := time.Now()
-// 		user.LastLoginAt = &now
-// 		if apiErr := s.userRepo.UpdateUserByID(ctx, user.ID, user); apiErr != nil {
-// 			return dto.GoogleOAuthResponseDTO{}, apiErr
-// 		}
-// 	}
-// 	response := dto.GoogleOAuthResponseDTO{
-// 		ID:          user.ID,
-// 		FirstName:   user.FirstName,
-// 		LastName:    user.LastName,
-// 		Username:    user.Username,
-// 		Email:       user.Email,
-// 		Role:        user.Role,
-// 		Token:       "dummy-jwt-token", // Reemplazar con el token real
-// 		Provider:    user.Provider,
-// 		ProviderID:  user.ProviderID,
-// 		AvatarURL:   user.AvatarURL,
-// 	}
-// 	return response, nil
-// }
-
-// func VerifyGoogleToken(googleToken string) (*goth.User, e.ApiError) {
-// 	provider := google.New("client-id", "client-secret", "redirect-url", "profile", "email")
-// 	goth.UseProviders(provider)
-// 	session, err := provider.UnmarshalSession(`{"AuthURL":"","AccessToken":"` + googleToken + `"}`)
-// 	if err != nil {
-// 		return nil, e.NewInternalServerApiError("failed to unmarshal session", err)
-// 	}
-// 	user, err := provider.FetchUser(session)
-// 	if err != nil {
-// 		return nil, e.NewInternalServerApiError("failed to verify Google token", err)
-// 	}
-// 	return &user, nil
-// }
 
 func (s *userService) GetUserById(ctx context.Context, id int) (dto.UserResponseDTO, e.ApiError) {
     user, apiErr := s.userRepo.GetUserByID(ctx, id)
@@ -409,4 +341,40 @@ func (s *userService) UpdateRoleByUserId(ctx context.Context, id int, request dt
     }
 
     return response, nil
+}
+
+func (s *userService) StoreRefreshToken(ctx context.Context, userID int, token string, expiresAt time.Time) e.ApiError {
+    refreshToken := &model.RefreshToken{
+        UserID:    userID,
+        Token:     token,
+        ExpiresAt: expiresAt,
+        Revoked:   false,
+    }
+    return s.userRepo.CreateRefreshToken(ctx, refreshToken)
+}
+
+// ValidateRefreshToken valida un refresh token y devuelve el usuario asociado
+func (s *userService) ValidateRefreshToken(ctx context.Context, refreshToken string) (*model.User, e.ApiError) {
+    rt, apiErr := s.userRepo.GetRefreshToken(ctx, refreshToken)
+    if apiErr != nil {
+        return nil, apiErr
+    }
+    if rt.Revoked || rt.ExpiresAt.Before(time.Now()) {
+        return nil, e.NewUnauthorizedApiError("invalid or expired refresh token")
+    }
+    user, apiErr := s.userRepo.GetUserByID(ctx, rt.UserID)
+    if apiErr != nil {
+        return nil, apiErr
+    }
+    return user, nil
+}
+
+// RevokeRefreshToken revoca un refresh token
+func (s *userService) RevokeRefreshToken(ctx context.Context, refreshToken string) e.ApiError {
+    rt, apiErr := s.userRepo.GetRefreshToken(ctx, refreshToken)
+    if apiErr != nil {
+        return apiErr
+    }
+    rt.Revoked = true
+    return s.userRepo.UpdateRefreshToken(ctx, rt)
 }
