@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "axios": "^1.7.9",
+    "axios": "^1.8.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-icons": "^5.5.0",
@@ -28,8 +28,11 @@
     "eslint-plugin-react-refresh": "^0.4.18",
     "eslint-plugin-tailwindcss": "^3.18.0",
     "globals": "^15.14.0",
-    "postcss": "^8.5.3",
-    "tailwindcss": "^3.4.1",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.14",
     "vite": "^6.1.0"
+  },
+  "resolutions": {
+    "esbuild": "^0.25.0"
   }
 }
