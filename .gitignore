@@ -1,3 +1,5 @@
 .env
-.mod
-.sum
+node_modules/
+
+# Ignorar archivos de macOS
+.DS_Store
