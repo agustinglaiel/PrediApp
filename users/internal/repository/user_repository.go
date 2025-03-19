@@ -30,6 +30,7 @@ type UserRepository interface {
 	CreateRefreshToken(ctx context.Context, refreshToken *model.RefreshToken) e.ApiError
 	GetRefreshToken(ctx context.Context, token string) (*model.RefreshToken, e.ApiError)
 	UpdateRefreshToken(ctx context.Context, refreshToken *model.RefreshToken) e.ApiError
+	DeleteRefreshToken(ctx context.Context, token string) e.ApiError 
 }
 
 // NewUserRepository crea una nueva instancia de userRepository
@@ -161,4 +162,13 @@ func (r *userRepository) UpdateRefreshToken(ctx context.Context, refreshToken *m
 		return e.NewInternalServerApiError("error updating refresh token", err)
 	}
 	return nil
+}
+
+// DeleteRefreshToken elimina un refresh token de la base de datos
+func (r *userRepository) DeleteRefreshToken(ctx context.Context, token string) e.ApiError {
+    if err := r.db.WithContext(ctx).Where("token = ?", token).Delete(&model.RefreshToken{}).Error; err != nil {
+        log.Printf("Error deleting refresh token: %v", err)
+        return e.NewInternalServerApiError("error deleting refresh token", err)
+    }
+    return nil
 }

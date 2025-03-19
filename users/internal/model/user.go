@@ -33,5 +33,4 @@ type RefreshToken struct {
     UserID    int       `gorm:"index;foreignKey:UserID;references:ID;constraint:OnDelete:CASCADE" json:"user_id"`
     Token     string    `gorm:"size:255;uniqueIndex" json:"token"`
     ExpiresAt time.Time `json:"expires_at"`
-    Revoked   bool      `gorm:"default:false" json:"revoked"`
 }

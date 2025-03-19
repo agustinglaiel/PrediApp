@@ -31,6 +31,7 @@ type UserServiceInterface interface {
     StoreRefreshToken(ctx context.Context, userID int, token string, expiresAt time.Time) e.ApiError
     ValidateRefreshToken(ctx context.Context, refreshToken string) (*model.User, e.ApiError)
     RevokeRefreshToken(ctx context.Context, refreshToken string) e.ApiError
+    
 }
 
 func NewUserService(userRepo repository.UserRepository) UserServiceInterface {
@@ -348,7 +349,6 @@ func (s *userService) StoreRefreshToken(ctx context.Context, userID int, token s
         UserID:    userID,
         Token:     token,
         ExpiresAt: expiresAt,
-        Revoked:   false,
     }
     return s.userRepo.CreateRefreshToken(ctx, refreshToken)
 }
@@ -359,8 +359,8 @@ func (s *userService) ValidateRefreshToken(ctx context.Context, refreshToken str
     if apiErr != nil {
         return nil, apiErr
     }
-    if rt.Revoked || rt.ExpiresAt.Before(time.Now()) {
-        return nil, e.NewUnauthorizedApiError("invalid or expired refresh token")
+    if rt.ExpiresAt.Before(time.Now()) {
+        return nil, e.NewUnauthorizedApiError("expired refresh token")
     }
     user, apiErr := s.userRepo.GetUserByID(ctx, rt.UserID)
     if apiErr != nil {
@@ -371,10 +371,11 @@ func (s *userService) ValidateRefreshToken(ctx context.Context, refreshToken str
 
 // RevokeRefreshToken revoca un refresh token
 func (s *userService) RevokeRefreshToken(ctx context.Context, refreshToken string) e.ApiError {
-    rt, apiErr := s.userRepo.GetRefreshToken(ctx, refreshToken)
+    // Verificar si el refreshToken existe
+    _, apiErr := s.userRepo.GetRefreshToken(ctx, refreshToken)
     if apiErr != nil {
         return apiErr
     }
-    rt.Revoked = true
-    return s.userRepo.UpdateRefreshToken(ctx, rt)
+    // Eliminar el refreshToken de la base de datos
+    return s.userRepo.DeleteRefreshToken(ctx, refreshToken)
 }
