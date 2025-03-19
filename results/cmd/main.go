@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 	"results/internal/api"
 	"results/internal/client"
 	"results/internal/repository"
@@ -13,46 +12,13 @@ import (
 	"results/pkg/utils"
 
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 )
 
-// Función para buscar el archivo .env en el directorio raíz
-func loadEnv() {
-	currentDir, err := os.Getwd()
-	if err != nil {
-		log.Fatalf("Error al obtener el directorio actual: %v", err)
-	}
-
-	for {
-		envPath := filepath.Join(currentDir, ".env")
-		if _, err := os.Stat(envPath); err == nil {
-			// Si encontramos el archivo .env, lo cargamos
-			err = godotenv.Load(envPath)
-			if err != nil {
-				log.Fatalf("Error al cargar el archivo .env: %v", err)
-			}
-			fmt.Printf("Archivo .env cargado desde: %s\n", envPath)
-			return
-		}
-
-		// Si llegamos al directorio raíz del sistema y no encontramos el archivo, salimos
-		parentDir := filepath.Dir(currentDir)
-		if parentDir == currentDir {
-			log.Fatalf("Archivo .env no encontrado en la jerarquía de directorios")
-		}
-
-		// Continuamos buscando en el directorio padre
-		currentDir = parentDir
-	}
-}
-
 func main() {
-	loadEnv()
-
 	// Obtener el puerto de la variable de entorno PORT
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8055" // Valor por defecto en caso de que no esté configurado
+		log.Fatal("PORT is not set in the environment")
 	}
 
 	// Inicializar la base de datos
@@ -81,6 +47,7 @@ func main() {
 	router.MapUrls(ginRouter, resultController)
 
 	// Iniciar servidor usando el puerto obtenido de la variable de entorno
+	fmt.Printf("Results service listening on port %s...\n", port)
 	if err := ginRouter.Run(":" + port); err != nil {
 		log.Fatalf("Failed to run server on port %s: %v", port, err)
 	}

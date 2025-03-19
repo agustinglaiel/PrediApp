@@ -18,7 +18,7 @@ func main() {
 	// Obtener el puerto de la variable de entorno PORT
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8054" // Valor por defecto en caso de que no esté configurado
+		log.Fatal("PORT is not set in the environment")
 	}
 
 	// Inicializar la base de datos
@@ -44,25 +44,11 @@ func main() {
 	// Configurar el router
 	ginRouter := gin.Default()
 
-	// // Configurar RabbitMQ y comenzar a consumir mensajes
-	// conn, ch, err := utils.SetupRabbitMQ()
-	// if err != nil {
-	// 	log.Fatalf("Error configurando RabbitMQ: %v", err)
-	// }
-	// defer utils.CloseRabbitMQ(conn, ch)
-
-	// // Iniciar la escucha de mensajes en segundo plano
-	// msgs, err := utils.ConsumeMessages(ch)
-	// if err != nil {
-	// 	log.Fatalf("Error al consumir mensajes de RabbitMQ: %v", err)
-	// }
-	// go utils.HandleMessage(msgs)
-
 	// Llamar a MapUrls para configurar las rutas
 	router.MapUrls(ginRouter, prodeController)
 
 	// Iniciar servidor usando el puerto obtenido de la variable de entorno
-	fmt.Printf("Users service listening on port %s...\n", port)
+	fmt.Printf("Prodes service listening on port %s...\n", port)
 	if err := ginRouter.Run(":" + port); err != nil {
 		log.Fatalf("Failed to run server on port %s: %v", port, err)
 	}

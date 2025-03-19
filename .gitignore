@@ -1,4 +1,6 @@
 .env
+.env.stage
+.env.prod
 node_modules/
 
 # Ignorar archivos de macOS

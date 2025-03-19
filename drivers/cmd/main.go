@@ -18,7 +18,7 @@ func main() {
 	// Obtener el puerto de la variable de entorno PORT
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8051" // Valor por defecto en caso de que no esté configurado
+		log.Fatal("PORT is not set in the environment")
 	}
 
 	// Inicializar la base de datos
@@ -47,7 +47,7 @@ func main() {
 	router.MapUrls(ginRouter, driverController)
 
 	// Iniciar servidor usando el puerto obtenido de la variable de entorno
-	fmt.Printf("Users service listening on port %s...\n", port)
+	fmt.Printf("Drivers service listening on port %s...\n", port)
 	if err := ginRouter.Run(":" + port); err != nil {
 		log.Fatalf("Failed to run server on port %s: %v", port, err)
 	}
