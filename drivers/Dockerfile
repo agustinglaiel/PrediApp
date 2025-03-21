@@ -3,7 +3,6 @@ FROM golang:1.23-alpine AS builder
 
 # Establecer el directorio de trabajo
 WORKDIR /app
-
 # Instalar dependencias del sistema necesarias para compilar
 RUN apk add --no-cache git
 
@@ -16,7 +15,7 @@ COPY . .
 
 # Compilar la aplicación
 # El binario se genera desde cmd/main.go
-RUN go build -o users-service ./cmd/main.go
+RUN go build -o drivers-service ./cmd/main.go
 
 # Etapa 2: Imagen final
 FROM alpine:latest
@@ -28,15 +27,11 @@ RUN apk add --no-cache ca-certificates tzdata
 WORKDIR /app
 
 # Copiar el binario desde la etapa de construcción
-COPY --from=builder /app/users-service .
+COPY --from=builder /app/drivers-service .
 COPY --from=builder /app/wait-for-db.sh .
 RUN chmod +x wait-for-db.sh
 
 ENTRYPOINT ["./wait-for-db.sh"]
 
-# No exponemos un puerto fijo, se define en tiempo de ejecución con PORT
-# EXPOSE es opcional y puede usarse como documentación
-# EXPOSE ${PORT}
-
 # Comando para ejecutar el microservicio
-CMD ["./users-service"]
+CMD ["./drivers-service"]

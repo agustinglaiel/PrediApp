@@ -16,7 +16,7 @@ COPY . .
 
 # Compilar la aplicación
 # El binario se genera desde cmd/main.go
-RUN go build -o users-service ./cmd/main.go
+RUN go build -o groups-service ./cmd/main.go
 
 # Etapa 2: Imagen final
 FROM alpine:latest
@@ -28,15 +28,11 @@ RUN apk add --no-cache ca-certificates tzdata
 WORKDIR /app
 
 # Copiar el binario desde la etapa de construcción
-COPY --from=builder /app/users-service .
+COPY --from=builder /app/groups-service .
 COPY --from=builder /app/wait-for-db.sh .
 RUN chmod +x wait-for-db.sh
 
 ENTRYPOINT ["./wait-for-db.sh"]
 
-# No exponemos un puerto fijo, se define en tiempo de ejecución con PORT
-# EXPOSE es opcional y puede usarse como documentación
-# EXPOSE ${PORT}
-
 # Comando para ejecutar el microservicio
-CMD ["./users-service"]
+CMD ["./groups-service"]

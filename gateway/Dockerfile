@@ -7,16 +7,15 @@ WORKDIR /app
 # Instalar dependencias del sistema necesarias para compilar
 RUN apk add --no-cache git
 
-# Copiar los archivos de módulos y descargar dependencias
-COPY go.mod go.sum ./
+# Copiar los archivos de módulos y descargar dependencias desde el directorio gateway/
+COPY gateway/go.mod gateway/go.sum ./
 RUN go mod download
 
-# Copiar el resto del código fuente
-COPY . .
+# Copiar el resto del código fuente desde el directorio gateway/
+COPY gateway/ .
 
 # Compilar la aplicación
-# El binario se genera desde cmd/main.go
-RUN go build -o users-service ./cmd/main.go
+RUN go build -o gateway-service ./main.go
 
 # Etapa 2: Imagen final
 FROM alpine:latest
@@ -28,15 +27,13 @@ RUN apk add --no-cache ca-certificates tzdata
 WORKDIR /app
 
 # Copiar el binario desde la etapa de construcción
-COPY --from=builder /app/users-service .
-COPY --from=builder /app/wait-for-db.sh .
-RUN chmod +x wait-for-db.sh
+COPY --from=builder /app/gateway-service .
 
-ENTRYPOINT ["./wait-for-db.sh"]
+# Copiar los archivos .env desde la raíz del proyecto al directorio padre (/)
+COPY .env* /
 
-# No exponemos un puerto fijo, se define en tiempo de ejecución con PORT
-# EXPOSE es opcional y puede usarse como documentación
-# EXPOSE ${PORT}
+# Exponer el puerto 8080 (fijo según el código)
+EXPOSE 8080
 
 # Comando para ejecutar el microservicio
-CMD ["./users-service"]
+CMD ["./gateway-service"]
