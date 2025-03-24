@@ -221,7 +221,7 @@ func (c *HttpClient) GetSessionData(location string, sessionName string, session
 
 // GetFastestLapBySessionID obtiene el piloto con la vuelta más rápida de una sesión específica
 func (c *HttpClient) GetFastestLapBySessionID(sessionID int) (*dto.FastestLapDTO, error) {
-    endpoint := fmt.Sprintf("http://localhost:8071/results/session/%d/fastest-lap", sessionID)
+    endpoint := fmt.Sprintf("http://localhost:8080/results/session/%d/fastest-lap", sessionID)
     fmt.Println("Requesting:", endpoint)  // Log de la solicitud
 
     body, err := c.Get(endpoint)
