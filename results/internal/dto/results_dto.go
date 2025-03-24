@@ -67,3 +67,16 @@ type TopDriverDTO struct {
     Position int `json:"position"`
     DriverID int `json:"driver_id"`
 }
+
+// CreateBulkResultsDTO representa la estructura para crear múltiples resultados a la vez
+type CreateBulkResultsDTO struct {
+    SessionID int                  `json:"session_id" binding:"required"`
+    Results   []CreateResultItemDTO `json:"results" binding:"required,dive"`
+}
+
+// CreateResultItemDTO representa cada resultado individual en la creación masiva
+type CreateResultItemDTO struct {
+    DriverID       int     `json:"driver_id" binding:"required"`
+    Position       int     `json:"position" binding:"required"`
+    FastestLapTime float64 `json:"fastest_lap_time,omitempty"`
+}

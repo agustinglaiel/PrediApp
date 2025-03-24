@@ -50,22 +50,23 @@ func (rc *ResultController) FetchResultsFromExternalAPI(c *gin.Context) {
 }
 
 // GetResultByID obtiene un resultado por su ID
-func (rc *ResultController) GetResultByID(c *gin.Context) {
-	resultID, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de resultado inválido"))
-		return
-	}
+// func (rc *ResultController) GetResultByID(c *gin.Context) {
+// 	resultID, err := strconv.Atoi(c.Param("id"))
+// 	if err != nil {
+// 		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de resultado inválido"))
+// 		return
+// 	}
 
-	result, apiErr := rc.resultService.GetResultByID(c.Request.Context(), resultID)
-	if apiErr != nil {
-		c.JSON(apiErr.Status(), apiErr)
-		return
-	}
+// 	result, apiErr := rc.resultService.GetResultByID(c.Request.Context(), resultID)
+// 	if apiErr != nil {
+// 		c.JSON(apiErr.Status(), apiErr)
+// 		return
+// 	}
 
-	c.JSON(http.StatusOK, result)
-}
+// 	c.JSON(http.StatusOK, result)
+// }
 
+//ESTO SOLO SIRVE PARA CREAR UN RESULTADO A LA VEZ
 // CreateResult crea un nuevo resultado
 func (rc *ResultController) CreateResult(c *gin.Context) {
 	var request dto.CreateResultDTO
@@ -169,38 +170,38 @@ func (rc *ResultController) GetAllResults(c *gin.Context) {
 }
 
 // GetResultsForDriverAcrossSessions obtiene todos los resultados de un piloto a través de las sesiones
-func (rc *ResultController) GetResultsForDriverAcrossSessions(c *gin.Context) {
-	driverID, err := strconv.Atoi(c.Param("driverID"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de piloto inválido"))
-		return
-	}
+// func (rc *ResultController) GetResultsForDriverAcrossSessions(c *gin.Context) {
+// 	driverID, err := strconv.Atoi(c.Param("driverID"))
+// 	if err != nil {
+// 		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de piloto inválido"))
+// 		return
+// 	}
 
-	results, apiErr := rc.resultService.GetResultsForDriverAcrossSessions(c.Request.Context(), driverID)
-	if apiErr != nil {
-		c.JSON(apiErr.Status(), apiErr)
-		return
-	}
+// 	results, apiErr := rc.resultService.GetResultsForDriverAcrossSessions(c.Request.Context(), driverID)
+// 	if apiErr != nil {
+// 		c.JSON(apiErr.Status(), apiErr)
+// 		return
+// 	}
 
-	c.JSON(http.StatusOK, results)
-}
+// 	c.JSON(http.StatusOK, results)
+// }
 
 // GetBestPositionForDriver obtiene la mejor posición de un piloto en cualquier sesión
-func (rc *ResultController) GetBestPositionForDriver(c *gin.Context) {
-	driverID, err := strconv.Atoi(c.Param("driverID"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de piloto inválido"))
-		return
-	}
+// func (rc *ResultController) GetBestPositionForDriver(c *gin.Context) {
+// 	driverID, err := strconv.Atoi(c.Param("driverID"))
+// 	if err != nil {
+// 		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de piloto inválido"))
+// 		return
+// 	}
 
-	bestPosition, apiErr := rc.resultService.GetBestPositionForDriver(c.Request.Context(), driverID)
-	if apiErr != nil {
-		c.JSON(apiErr.Status(), apiErr)
-		return
-	}
+// 	bestPosition, apiErr := rc.resultService.GetBestPositionForDriver(c.Request.Context(), driverID)
+// 	if apiErr != nil {
+// 		c.JSON(apiErr.Status(), apiErr)
+// 		return
+// 	}
 
-	c.JSON(http.StatusOK, bestPosition)
-}
+// 	c.JSON(http.StatusOK, bestPosition)
+// }
 
 // GetTopNDriversInSession obtiene los mejores N pilotos en una sesión
 func (rc *ResultController) GetTopNDriversInSession(c *gin.Context) {
@@ -243,58 +244,76 @@ func (rc *ResultController) DeleteAllResultsForSession(c *gin.Context) {
 }
 
 // GetResultsForSessionByDriverName obtiene los resultados de una sesión filtrados por el nombre del piloto
-func (rc *ResultController) GetResultsForSessionByDriverName(c *gin.Context) {
-	sessionID, err := strconv.Atoi(c.Param("sessionID"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de sesión inválido"))
-		return
-	}
+// func (rc *ResultController) GetResultsForSessionByDriverName(c *gin.Context) {
+// 	sessionID, err := strconv.Atoi(c.Param("sessionID"))
+// 	if err != nil {
+// 		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de sesión inválido"))
+// 		return
+// 	}
 
-	driverName := c.Param("driverName")
-	if driverName == "" {
-		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Nombre del piloto inválido"))
-		return
-	}
+// 	driverName := c.Param("driverName")
+// 	if driverName == "" {
+// 		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Nombre del piloto inválido"))
+// 		return
+// 	}
 
-	results, apiErr := rc.resultService.GetResultsForSessionByDriverName(c.Request.Context(), sessionID, driverName)
-	if apiErr != nil {
-		c.JSON(apiErr.Status(), apiErr)
-		return
-	}
+// 	results, apiErr := rc.resultService.GetResultsForSessionByDriverName(c.Request.Context(), sessionID, driverName)
+// 	if apiErr != nil {
+// 		c.JSON(apiErr.Status(), apiErr)
+// 		return
+// 	}
 
-	c.JSON(http.StatusOK, results)
-}
+// 	c.JSON(http.StatusOK, results)
+// }
 
 // GetTotalFastestLapsForDriver obtiene el total de vueltas rápidas de un piloto
-func (rc *ResultController) GetTotalFastestLapsForDriver(c *gin.Context) {
-	driverID, err := strconv.Atoi(c.Param("driverID"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de piloto inválido"))
-		return
-	}
+// func (rc *ResultController) GetTotalFastestLapsForDriver(c *gin.Context) {
+// 	driverID, err := strconv.Atoi(c.Param("driverID"))
+// 	if err != nil {
+// 		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de piloto inválido"))
+// 		return
+// 	}
 
-	totalFastestLaps, apiErr := rc.resultService.GetTotalFastestLapsForDriver(c.Request.Context(), driverID)
-	if apiErr != nil {
-		c.JSON(apiErr.Status(), apiErr)
-		return
-	}
+// 	totalFastestLaps, apiErr := rc.resultService.GetTotalFastestLapsForDriver(c.Request.Context(), driverID)
+// 	if apiErr != nil {
+// 		c.JSON(apiErr.Status(), apiErr)
+// 		return
+// 	}
 
-	c.JSON(http.StatusOK, gin.H{"total_fastest_laps": totalFastestLaps})
-}
+// 	c.JSON(http.StatusOK, gin.H{"total_fastest_laps": totalFastestLaps})
+// }
 
 // GetLastResultForDriver obtiene el último resultado registrado de un piloto
-func (rc *ResultController) GetLastResultForDriver(c *gin.Context) {
-	driverID, err := strconv.Atoi(c.Param("driverID"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de piloto inválido"))
-		return
-	}
+// func (rc *ResultController) GetLastResultForDriver(c *gin.Context) {
+// 	driverID, err := strconv.Atoi(c.Param("driverID"))
+// 	if err != nil {
+// 		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de piloto inválido"))
+// 		return
+// 	}
 
-	lastResult, apiErr := rc.resultService.GetLastResultForDriver(c.Request.Context(), driverID)
-	if apiErr != nil {
-		c.JSON(apiErr.Status(), apiErr)
-		return
-	}
+// 	lastResult, apiErr := rc.resultService.GetLastResultForDriver(c.Request.Context(), driverID)
+// 	if apiErr != nil {
+// 		c.JSON(apiErr.Status(), apiErr)
+// 		return
+// 	}
 
-	c.JSON(http.StatusOK, lastResult)
+// 	c.JSON(http.StatusOK, lastResult)
+// }
+
+// CreateBulkResults crea múltiples resultados para una sesión en una sola operación
+func (rc *ResultController) CreateSessionResultsAdmin(c *gin.Context) {
+    var bulkRequest dto.CreateBulkResultsDTO
+    if err := c.ShouldBindJSON(&bulkRequest); err != nil {
+        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Datos inválidos para creación masiva"))
+        return
+    }
+
+    createdResults, apiErr := rc.resultService.CreateSessionResultsAdmin(c.Request.Context(), bulkRequest)
+    if apiErr != nil {
+        c.JSON(apiErr.Status(), apiErr)
+        return
+    }
+
+    // Retornamos la lista de resultados creados
+    c.JSON(http.StatusCreated, createdResults)
 }

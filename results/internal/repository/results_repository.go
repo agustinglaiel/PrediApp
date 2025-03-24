@@ -24,12 +24,14 @@ type ResultRepository interface {
 	GetDriverPositionInSession(ctx context.Context, driverID int, sessionID int) (int, e.ApiError)
 	GetResultsOrderedByPosition(ctx context.Context, sessionID int) ([]*model.Result, e.ApiError)
 	ExistsSessionInResults(ctx context.Context, sessionID int) (bool, e.ApiError)
+	SessionCreateResultAdmin(ctx context.Context, results []*model.Result) error 
 }
 
 func NewResultRepository(db *gorm.DB) ResultRepository {
 	return &resultRepository{db: db}
 }
 
+//ESTO SOLO SIRVE PARA CREAR UN RESULTADO A LA VEZ
 // CreateResult crea un nuevo resultado en la base de datos
 func (r *resultRepository) CreateResult(ctx context.Context, result *model.Result) e.ApiError {
 	if err := r.db.WithContext(ctx).Create(result).Error; err != nil {
@@ -138,4 +140,14 @@ func (r *resultRepository) ExistsSessionInResults(ctx context.Context, sessionID
 	}
 
 	return count > 0, nil
+}
+
+func (r *resultRepository) SessionCreateResultAdmin(ctx context.Context, results []*model.Result) error {
+    // Ejecutamos la creación en una sola transacción
+    return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+        if err := tx.Create(&results).Error; err != nil {
+            return err
+        }
+        return nil
+    })
 }
