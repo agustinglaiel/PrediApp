@@ -46,48 +46,44 @@ func NewResultService(resultRepo repository.ResultRepository, client *client.Htt
 
 // FetchResultsFromExternalAPI obtiene los resultados de una API externa y los inserta o actualiza en la base de datos
 func (s *resultService) FetchResultsFromExternalAPI(ctx context.Context, sessionID int) ([]dto.ResponseResultDTO, e.ApiError) {
-    // fmt.Println("Service: Iniciando FetchResultsFromExternalAPI")
-    // Llamar al microservicio de sessions para obtener el sessionKey
+    // 1. Obtener sessionKey llamando al otro microservicio
     sessionKey, err := s.client.GetSessionKeyBySessionID(sessionID)
     if err != nil {
-        fmt.Println("Service: Error obteniendo sessionKey SERVICE", err)
         return nil, e.NewInternalServerApiError("Error obteniendo session key", err)
     }
 
-    // 2. Usar la sessionKey para hacer la solicitud a la API externa y obtener las posiciones
+    // 2. Obtener las "positions" desde la API externa
     positions, err := s.client.GetPositions(sessionKey)
     if err != nil {
-        fmt.Println("Service: Error obteniendo posiciones de la API externa", err)
         return nil, e.NewInternalServerApiError("Error fetching positions from external API", err)
     }
 
-    // 3. Crear un slice para almacenar los DTOs de respuesta
-    var responseResults []dto.ResponseResultDTO
-
-    // 4. Crear un mapa para eliminar duplicados y quedarnos con la última posición registrada para cada piloto
-    finalPositions := make(map[int]int)
+    // Mapa para quedarnos con la última posición reportada (driverNumber -> *int)
+    finalPositions := make(map[int]*int)
     for _, pos := range positions {
+        // pos.Position es *int
         finalPositions[pos.DriverNumber] = pos.Position
     }
 
-    // fmt.Printf("Service: Posiciones finales: %+v\n", finalPositions)
+    var responseResults []dto.ResponseResultDTO
 
-    // Obtener las vueltas más rápidas de los pilotos y guardarlas en la base de datos
-    for driverNumber, position := range finalPositions {
-        // Obtener las vueltas del piloto usando sessionKey y driverNumber
+    // 3. Para cada driverNumber, determinamos la vuelta más rápida y actualizamos/insertamos en DB
+    for driverNumber, positionPtr := range finalPositions {
         laps, err := s.client.GetLaps(sessionKey, driverNumber)
         if err != nil {
-            fmt.Printf("Error obteniendo vueltas para el piloto %d: %v\n", driverNumber, err)
+            // Simplemente mostramos en consola y continuamos
+            fmt.Printf("Error obteniendo vueltas para driver %d: %v\n", driverNumber, err)
             continue
         }
 
-        // Si no hay vueltas válidas, saltar al siguiente piloto
         if len(laps) == 0 {
+            // Si no hay vueltas válidas, tal vez significa que ni empezó. Podrías hacer Status="DNS".
+            // Aquí simplemente skip, o generas un result con fastestLap=0, etc.
             fmt.Printf("No valid laps found for driver %d\n", driverNumber)
             continue
         }
 
-        // Encontrar la vuelta más rápida del piloto
+        // 4. Encontrar la vuelta más rápida
         var fastestLap float64
         for _, lap := range laps {
             if fastestLap == 0 || lap.LapDuration < fastestLap {
@@ -95,50 +91,59 @@ func (s *resultService) FetchResultsFromExternalAPI(ctx context.Context, session
             }
         }
 
-        // Llamar al microservicio de drivers para obtener la información completa del piloto
-        fmt.Printf("Verificando driverNumber: %d\n", driverNumber)
+        // 5. Obtener info completa del driver desde microservicio de drivers
         driverInfo, err := s.client.GetDriverByNumber(driverNumber)
         if err != nil {
-            fmt.Printf("Error obteniendo piloto para el driver_number %d: %v\n", driverNumber, err)
+            fmt.Printf("Error obteniendo info del driver_number %d: %v\n", driverNumber, err)
             continue
         }
 
-        // Verificar si el resultado ya existe
-        existingPosition, _ := s.resultRepo.GetDriverPositionInSession(ctx, driverInfo.ID, sessionID)
+        // 6. Ver si ya existe un resultado para (driver, session)
+        existingResult, _ := s.resultRepo.GetResultByDriverAndSession(ctx, driverInfo.ID, sessionID)
 
-        // Crear el nuevo resultado o actualizar si ya existe
-        newResult := &model.Result{
-            SessionID:      sessionID,
-            DriverID:       driverInfo.ID,
-            Position:       position,
-            FastestLapTime: fastestLap,
+        // Definir status según si hay o no position
+        //   - Si positionPtr != nil => FINISHED
+        //   - Si positionPtr == nil => "DNF" (o "DNS", según tu preferencia)
+        status := "DNF"
+        if positionPtr != nil {
+            status = "FINISHED"
         }
 
-        if existingPosition == 0 {
-            // Si no existe, insertarlo en la base de datos
-            if err := s.resultRepo.CreateResult(ctx, newResult); err != nil {
-                return nil, e.NewInternalServerApiError("Error inserting result into database", err)
+        if existingResult == nil {
+            // Crear nuevo result
+            newResult := &model.Result{
+                SessionID:      sessionID,
+                DriverID:       driverInfo.ID,
+                Position:       positionPtr,   // *int
+                Status:         status,        // "FINISHED" o "DNF"
+                FastestLapTime: fastestLap,
             }
+            if err := s.resultRepo.CreateResult(ctx, newResult); err != nil {
+                return nil, e.NewInternalServerApiError("Error inserting result", err)
+            }
+            existingResult = newResult
         } else {
-            // Actualizar el resultado si ya existe
-            newResult.Position = position
-            newResult.FastestLapTime = fastestLap
-            if err := s.resultRepo.UpdateResult(ctx, newResult); err != nil {
+            // Actualizar
+            existingResult.Position = positionPtr
+            existingResult.Status = status
+            existingResult.FastestLapTime = fastestLap
+            if err := s.resultRepo.UpdateResult(ctx, existingResult); err != nil {
                 return nil, e.NewInternalServerApiError("Error updating existing result", err)
             }
         }
 
-        // Volver a obtener la sesión para completar los datos
-        session, err := s.client.GetSessionByID(newResult.SessionID)
+        // 7. Obtener la info de la sesión para armar el DTO de respuesta
+        sessionData, err := s.client.GetSessionByID(sessionID)
         if err != nil {
             return nil, e.NewInternalServerApiError("Error fetching session data", err)
         }
 
-        // Convertir el modelo a DTO y agregarlo a la respuesta
+        // 8. Construir el DTO
         responseResult := dto.ResponseResultDTO{
-            ID:             newResult.ID,
-            Position:       newResult.Position,
-            FastestLapTime: newResult.FastestLapTime,
+            ID:             existingResult.ID,
+            Position:       existingResult.Position,
+            Status:         existingResult.Status,
+            FastestLapTime: existingResult.FastestLapTime,
             Driver: dto.ResponseDriverDTO{
                 ID:          driverInfo.ID,
                 FirstName:   driverInfo.FirstName,
@@ -148,138 +153,186 @@ func (s *resultService) FetchResultsFromExternalAPI(ctx context.Context, session
                 TeamName:    driverInfo.TeamName,
             },
             Session: dto.ResponseSessionDTO{
-                ID:               session.ID,
-                CircuitShortName: session.CircuitShortName,
-                CountryName:      session.CountryName,
-                Location:         session.Location,
-                SessionName:      session.SessionName,
-                SessionType:      session.SessionType,
-                DateStart:        session.DateStart,
+                ID:               sessionData.ID,
+                CircuitShortName: sessionData.CircuitShortName,
+                CountryName:      sessionData.CountryName,
+                Location:         sessionData.Location,
+                SessionName:      sessionData.SessionName,
+                SessionType:      sessionData.SessionType,
+                DateStart:        sessionData.DateStart,
             },
-            CreatedAt: newResult.CreatedAt,
-            UpdatedAt: newResult.UpdatedAt,
+            CreatedAt: existingResult.CreatedAt,
+            UpdatedAt: existingResult.UpdatedAt,
         }
         responseResults = append(responseResults, responseResult)
     }
 
-    // 6. Retornar los resultados procesados
     return responseResults, nil
 }
 
 //ESTO SOLO SIRVE PARA CREAR UN RESULTADO A LA VEZ
 // CreateResult crea un nuevo resultado
 func (s *resultService) CreateResult(ctx context.Context, request dto.CreateResultDTO) (dto.ResponseResultDTO, e.ApiError) {
-	// Validar posición (debe ser entre 1 y 20)
-	if request.Position < 1 || request.Position > 20 {
-		return dto.ResponseResultDTO{}, e.NewBadRequestApiError("Invalid position value, must be between 1 and 20")
-	}
+    // 1. Validar status
+    //    Ejemplo de validación de status vs. position
+    validStatuses := map[string]bool{"FINISHED": true, "DNF": true, "DNS": true, "DSQ": true}
+    if request.Status == "" {
+        // Si no viene, por defecto interpretamos FINISHED si hay position, DNF si no
+        if request.Position != nil {
+            request.Status = "FINISHED"
+        } else {
+            request.Status = "DNF"
+        }
+    } else {
+        // Verificar si el status es uno de los válidos
+        if !validStatuses[request.Status] {
+            return dto.ResponseResultDTO{}, e.NewBadRequestApiError(fmt.Sprintf("Status inválido: %s", request.Status))
+        }
+    }
 
-	// Validar el tiempo de vuelta más rápido (debe ser mayor a 30 segundos y no puede ser 0)
-	if request.FastestLapTime < 30 {
-		return dto.ResponseResultDTO{}, e.NewBadRequestApiError("Invalid fastest lap time, must be greater than 30 seconds")
-	}
+    // 2. Reglas:
+    //    - Si status == "FINISHED", position != nil y entre 1..20
+    //    - Si status != "FINISHED", position == nil
+    if request.Status == "FINISHED" {
+        if request.Position == nil {
+            return dto.ResponseResultDTO{}, e.NewBadRequestApiError("Debe proporcionar una posición cuando el estado es FINISHED")
+        }
+        if *request.Position < 1 || *request.Position > 20 {
+            return dto.ResponseResultDTO{}, e.NewBadRequestApiError("La posición debe estar entre 1 y 20 si es FINISHED")
+        }
+    } else {
+        // DNF, DNS, DSQ => position debe ser nil
+        if request.Position != nil {
+            return dto.ResponseResultDTO{}, e.NewBadRequestApiError(fmt.Sprintf("No puede proporcionar Position cuando Status es %s", request.Status))
+        }
+    }
 
-	// Verificar si ya existe un resultado para el piloto en la sesión
-	existingResult, _ := s.resultRepo.GetDriverPositionInSession(ctx, request.DriverID, request.SessionID)
-	if existingResult > 0 {
-		return dto.ResponseResultDTO{}, e.NewBadRequestApiError("A result for this driver in this session already exists")
-	}
+    // 3. Validar fastestLapTime si lo deseas
+    if request.FastestLapTime != 0 && request.FastestLapTime < 30 {
+        return dto.ResponseResultDTO{}, e.NewBadRequestApiError("Fastest lap time debe ser mayor a 30 (o 0 si se omite)")
+    }
 
-	newResult := &model.Result{
-		SessionID:      request.SessionID,
-		DriverID:       request.DriverID,
-		Position:       request.Position,
-		FastestLapTime: request.FastestLapTime,
-	}
+    // 4. Revisar si ya existe un resultado para (driver, session)
+    existingResult, _ := s.resultRepo.GetResultByDriverAndSession(ctx, request.DriverID, request.SessionID)
+    if existingResult != nil {
+        return dto.ResponseResultDTO{}, e.NewBadRequestApiError("Ya existe un resultado para este driver en esta sesión")
+    }
 
-	// Insertar el nuevo resultado en la base de datos
-	if err := s.resultRepo.CreateResult(ctx, newResult); err != nil {
-		return dto.ResponseResultDTO{}, e.NewInternalServerApiError("Error creating result", err)
-	}
+    // 5. Crear modelo
+    newResult := &model.Result{
+        SessionID:      request.SessionID,
+        DriverID:       request.DriverID,
+        Position:       request.Position,
+        Status:         request.Status,
+        FastestLapTime: request.FastestLapTime,
+    }
 
-	// Convertir el modelo en DTO
-	response := dto.ResponseResultDTO{
-		ID:             newResult.ID,
-		Position:       newResult.Position,
-		FastestLapTime: newResult.FastestLapTime,
-		Driver: dto.ResponseDriverDTO{
-			ID:          newResult.DriverID,
-			FirstName:   newResult.Driver.FirstName,
-			LastName:    newResult.Driver.LastName,
-			FullName:    newResult.Driver.FullName,
-			NameAcronym: newResult.Driver.NameAcronym,
-			TeamName:    newResult.Driver.TeamName,
-		},
-		Session: dto.ResponseSessionDTO{
-			ID:               newResult.SessionID,
-			CircuitShortName: newResult.Session.CircuitShortName,
-			CountryName:      newResult.Session.CountryName,
-			Location:         newResult.Session.Location,
-			SessionName:      newResult.Session.SessionName,
-			SessionType:      newResult.Session.SessionType,
-			DateStart:        newResult.Session.DateStart,
-		},
-		CreatedAt: newResult.CreatedAt,
-		UpdatedAt: newResult.UpdatedAt,
-	}
+    // 6. Insertar en DB
+    if err := s.resultRepo.CreateResult(ctx, newResult); err != nil {
+        return dto.ResponseResultDTO{}, e.NewInternalServerApiError("Error creando resultado", err)
+    }
 
-	return response, nil
+    // 7. Construir DTO de respuesta
+    response := dto.ResponseResultDTO{
+        ID:             newResult.ID,
+        Position:       newResult.Position,
+        Status:         newResult.Status,
+        FastestLapTime: newResult.FastestLapTime,
+        // Driver y Session lo puedes rellenar si has hecho Preload en repo, o usando otros microservicios
+        Driver: dto.ResponseDriverDTO{ ID: newResult.DriverID },
+        Session: dto.ResponseSessionDTO{ ID: newResult.SessionID },
+        CreatedAt: newResult.CreatedAt,
+        UpdatedAt: newResult.UpdatedAt,
+    }
+
+    return response, nil
 }
 
 // UpdateResult actualiza un resultado existente
 func (s *resultService) UpdateResult(ctx context.Context, resultID int, request dto.UpdateResultDTO) (dto.ResponseResultDTO, e.ApiError) {
-	result, err := s.resultRepo.GetResultByID(ctx, resultID)
-	if err != nil {
-		return dto.ResponseResultDTO{}, e.NewBadRequestApiError("error al obtener el resultado por su ID")
-	}
+    // 1. Buscar el resultado en DB
+    result, err := s.resultRepo.GetResultByID(ctx, resultID)
+    if err != nil {
+        return dto.ResponseResultDTO{}, e.NewBadRequestApiError("Error obteniendo el resultado por su ID")
+    }
 
-	// Actualizar los campos que estén presentes en el DTO
-	// Validar posición (debe ser entre 1 y 20)
-	if request.Position != 0 {
-		if request.Position < 1 || request.Position > 20 {
-			return dto.ResponseResultDTO{}, e.NewBadRequestApiError("Invalid position value, must be between 1 and 20")
-		}
-		result.Position = request.Position
-	}
-	// Validar el tiempo de vuelta más rápido (debe ser mayor a 30 segundos y no puede ser 0)
-	if request.FastestLapTime != 0 {
-		if request.FastestLapTime < 30 {
-			return dto.ResponseResultDTO{}, e.NewBadRequestApiError("Invalid fastest lap time, must be greater than 30 seconds")
-		}
-		result.FastestLapTime = request.FastestLapTime
-	}
+    // 2. Actualizar STATUS
+    validStatuses := map[string]bool{"FINISHED": true, "DNF": true, "DNS": true, "DSQ": true}
+    if request.Status != "" {
+        // Si viene un nuevo Status, validarlo
+        if !validStatuses[request.Status] {
+            return dto.ResponseResultDTO{}, e.NewBadRequestApiError(fmt.Sprintf("Status inválido: %s", request.Status))
+        }
+        result.Status = request.Status
+    }
 
-	if err := s.resultRepo.UpdateResult(ctx, result); err != nil {
-		return dto.ResponseResultDTO{}, e.NewInternalServerApiError("Error updating result", err)
-	}
+    // 3. Actualizar POSITION si viene
+    if request.Position != nil {
+        // Si la nueva position no es nil, forzamos status = FINISHED
+        if result.Status != "" && result.Status != "FINISHED" {
+            return dto.ResponseResultDTO{}, e.NewBadRequestApiError(
+                fmt.Sprintf("No se puede asignar Position si el Status es %s", result.Status),
+            )
+        }
+        if *request.Position < 1 || *request.Position > 20 {
+            return dto.ResponseResultDTO{}, e.NewBadRequestApiError("La posición debe estar entre 1 y 20")
+        }
+        // Marcamos status "FINISHED" si no se había puesto
+        if result.Status == "" || result.Status == "DNF" || result.Status == "DNS" || result.Status == "DSQ" {
+            result.Status = "FINISHED"
+        }
+        result.Position = request.Position
+    } else {
+        // Si Position es nil en request, no necesariamente la borras:
+        //  - Podrías dejarla tal cual, o
+        //  - Si explicitamente deseas "quitársela", significaría un status != FINISHED
+        //    Depende de tu negocio. Un approach:
+        // if request.Status == "DNF" { 
+        //   result.Position = nil 
+        // }
+    }
 
-	// Convertir el modelo actualizado a DTO
-	response := dto.ResponseResultDTO{
-		ID:             result.ID,
-		Position:       result.Position,
-		FastestLapTime: result.FastestLapTime,
-		Driver: dto.ResponseDriverDTO{
-			ID:          result.Driver.ID,
-			FirstName:   result.Driver.FirstName,
-			LastName:    result.Driver.LastName,
-			FullName:    result.Driver.FullName,
-			NameAcronym: result.Driver.NameAcronym,
-			TeamName:    result.Driver.TeamName,
-		},
-		Session: dto.ResponseSessionDTO{
-			ID:               result.Session.ID,
-			CircuitShortName: result.Session.CircuitShortName,
-			CountryName:      result.Session.CountryName,
-			Location:         result.Session.Location,
-			SessionName:      result.Session.SessionName,
-			SessionType:      result.Session.SessionType,
-			DateStart:        result.Session.DateStart,
-		},
-		CreatedAt: result.CreatedAt,
-		UpdatedAt: result.UpdatedAt,
-	}
+    // 4. Actualizar fastestLapTime si != 0
+    if request.FastestLapTime != 0 {
+        if request.FastestLapTime < 30 {
+            return dto.ResponseResultDTO{}, e.NewBadRequestApiError("Invalid fastest lap time, must be > 30")
+        }
+        result.FastestLapTime = request.FastestLapTime
+    }
 
-	return response, nil
+    // 5. Persistir cambios
+    if err := s.resultRepo.UpdateResult(ctx, result); err != nil {
+        return dto.ResponseResultDTO{}, e.NewInternalServerApiError("Error updating result", err)
+    }
+
+    // 6. Construir respuesta
+    response := dto.ResponseResultDTO{
+        ID:             result.ID,
+        Position:       result.Position,
+        Status:         result.Status,
+        FastestLapTime: result.FastestLapTime,
+        Driver: dto.ResponseDriverDTO{
+            ID:          result.Driver.ID,
+            FirstName:   result.Driver.FirstName,
+            LastName:    result.Driver.LastName,
+            FullName:    result.Driver.FullName,
+            NameAcronym: result.Driver.NameAcronym,
+            TeamName:    result.Driver.TeamName,
+        },
+        Session: dto.ResponseSessionDTO{
+            ID:               result.Session.ID,
+            CircuitShortName: result.Session.CircuitShortName,
+            CountryName:      result.Session.CountryName,
+            Location:         result.Session.Location,
+            SessionName:      result.Session.SessionName,
+            SessionType:      result.Session.SessionType,
+            DateStart:        result.Session.DateStart,
+        },
+        CreatedAt: result.CreatedAt,
+        UpdatedAt: result.UpdatedAt,
+    }
+
+    return response, nil
 }
 
 // GetResultsOrderedByPosition obtiene los resultados de una sesión específica ordenados por posición
@@ -659,12 +712,9 @@ func (s *resultService) GetAllResults(ctx context.Context) ([]dto.ResponseResult
 
 // GetTopNDriversInSession obtiene los mejores N pilotos de una sesión específica.
 func (s *resultService) GetTopNDriversInSession(ctx context.Context, sessionID int, n int) ([]dto.TopDriverDTO, e.ApiError) {
-    // Validar que sessionID no sea 0
     if sessionID == 0 {
         return nil, e.NewBadRequestApiError("El ID de la sesión no puede ser 0")
     }
-
-    // Validar que n sea mayor que 0
     if n < 1 {
         return nil, e.NewBadRequestApiError("El número de pilotos a obtener debe ser mayor que 0")
     }
@@ -680,25 +730,34 @@ func (s *resultService) GetTopNDriversInSession(ctx context.Context, sessionID i
         return nil, e.NewNotFoundApiError("No se encontraron resultados para la sesión")
     }
 
-    // Ajustar n si es mayor que el número de resultados disponibles
-    if n > len(results) {
-        n = len(results)
+    // Filtrar sólo los que tengan Position != nil (o Status == FINISHED)
+    var finishedResults []*model.Result
+    for _, r := range results {
+        if r.Position != nil {
+            finishedResults = append(finishedResults, r)
+        }
+    }
+    if len(finishedResults) == 0 {
+        return nil, e.NewNotFoundApiError("Ningún piloto terminó la sesión")
     }
 
-    // Limitar a un máximo de 20 pilotos (como regla de negocio en Fórmula 1)
+    // Ajustar n si excede
+    if n > len(finishedResults) {
+        n = len(finishedResults)
+    }
     if n > 20 {
         n = 20
     }
 
-    // Crear un slice para almacenar los DTOs de respuesta
+    // Construir el slice final
     var topDrivers []dto.TopDriverDTO
     for i := 0; i < n; i++ {
+        // Aquí *finishedResults[i].Position es seguro: no es nil
         topDrivers = append(topDrivers, dto.TopDriverDTO{
-            Position: results[i].Position,
-            DriverID: results[i].DriverID,
+            Position: *finishedResults[i].Position, 
+            DriverID: finishedResults[i].DriverID,
         })
     }
-
     return topDrivers, nil
 }
 
@@ -847,61 +906,97 @@ func (s *resultService) GetTopNDriversInSession(ctx context.Context, sessionID i
 // }
 
 func (s *resultService) CreateSessionResultsAdmin(ctx context.Context, bulkRequest dto.CreateBulkResultsDTO) ([]dto.ResponseResultDTO, e.ApiError) {
-    // 1. Validar session_id (por ejemplo, que sea > 0)
+    // 1. Validar session_id
     if bulkRequest.SessionID == 0 {
         return nil, e.NewBadRequestApiError("El session_id no puede ser 0")
     }
 
-    // 2. Crear un slice para almacenar los resultados (modelo GORM) que vamos a insertar
     var resultsToCreate []*model.Result
 
-    // 3. Validar y transformar cada item
+    // 2. Definir un set de status válidos (o puedes usar "FINISHED" por defecto si Position != nil)
+    validStatuses := map[string]bool{"FINISHED": true, "DNF": true, "DNS": true, "DSQ": true}
+
+    // 3. Recorrer cada ítem
     for _, item := range bulkRequest.Results {
-        // Valida los límites de posición, fastest_lap_time, etc., si tu lógica lo requiere
-        if item.Position < 1 || item.Position > 20 {
-            return nil, e.NewBadRequestApiError(fmt.Sprintf("Posición inválida para el driver_id %d. Debe estar entre 1 y 20", item.DriverID))
-        }
-        if item.FastestLapTime < 30 && item.FastestLapTime != 0 {
-            return nil, e.NewBadRequestApiError(fmt.Sprintf("FastestLapTime inválido para el driver_id %d. Debe ser mayor que 30 o estar vacío", item.DriverID))
+        // item.Position es *int en tu `CreateResultItemDTO` si lo ajustaste; si sigue int, 
+        //   tendrás que adaptarlo. Asumamos que lo cambiaste a *int.  
+        //   OJO: en tu snippet actual `CreateResultItemDTO` está "Position int binding:'required'".
+        //   Cambia a Position *int si quieres permitir nulos.
+
+        // Validar si el status no viene, asumimos algo en base a la position
+        if item.Status == "" {
+            if item.Position != nil {
+                item.Status = "FINISHED"
+            } else {
+                item.Status = "DNF"
+            }
+        } else {
+            if !validStatuses[item.Status] {
+                return nil, e.NewBadRequestApiError(fmt.Sprintf("Status inválido: %s", item.Status))
+            }
         }
 
-        // Verifica si ya existe un resultado para ese driver en la misma sesión, si así lo deseas
-        existingPosition, _ := s.resultRepo.GetDriverPositionInSession(ctx, item.DriverID, bulkRequest.SessionID)
-        if existingPosition > 0 {
-            return nil, e.NewBadRequestApiError(fmt.Sprintf("Ya existe un resultado para driver_id %d en la sesión %d", item.DriverID, bulkRequest.SessionID))
+        // Validación de la combinación status/position
+        if item.Status == "FINISHED" {
+            if item.Position == nil {
+                return nil, e.NewBadRequestApiError("Debe proporcionar una posición si el status es FINISHED")
+            }
+            if *item.Position < 1 || *item.Position > 20 {
+                return nil, e.NewBadRequestApiError(
+                    fmt.Sprintf("Posición inválida para driver_id %d. Debe estar entre 1 y 20", item.DriverID),
+                )
+            }
+        } else {
+            // "DNF", "DNS", "DSQ" => position debe ser nil
+            if item.Position != nil {
+                return nil, e.NewBadRequestApiError(
+                    fmt.Sprintf("No puede dar Position si el status es %s (driver_id %d)", item.Status, item.DriverID),
+                )
+            }
         }
 
-        // Crea el objeto model.Result
+        // Validar fastestLapTime
+        if item.FastestLapTime != 0 && item.FastestLapTime < 30 {
+            return nil, e.NewBadRequestApiError(
+                fmt.Sprintf("FastestLapTime inválido para driver_id %d. Debe ser >30 o 0", item.DriverID),
+            )
+        }
+
+        // Verificar si ya existe un resultado para (driver, session)
+        existingResult, _ := s.resultRepo.GetResultByDriverAndSession(ctx, item.DriverID, bulkRequest.SessionID)
+        if existingResult != nil {
+            return nil, e.NewBadRequestApiError(
+                fmt.Sprintf("Ya existe un resultado para driver_id %d en la sesión %d", item.DriverID, bulkRequest.SessionID),
+            )
+        }
+
+        // Crear el objeto
         newResult := &model.Result{
             SessionID:      bulkRequest.SessionID,
             DriverID:       item.DriverID,
             Position:       item.Position,
+            Status:         item.Status,
             FastestLapTime: item.FastestLapTime,
         }
         resultsToCreate = append(resultsToCreate, newResult)
     }
 
-    // 4. Insertar en DB
-    //    Aquí puedes usar una transacción en bloque, así o con un "transaction" manual:
+    // 4. Insertar en DB usando un método de repositorio con Transaction
     txErr := s.resultRepo.SessionCreateResultAdmin(ctx, resultsToCreate)
     if txErr != nil {
         return nil, e.NewInternalServerApiError("Error creando resultados masivamente", txErr)
     }
 
-    // 5. Convertir a DTO de respuesta
-    //    (si hace falta, podrías refetch para tener los preload de Driver/Session completos)
+    // 5. Convertir a DTO
     var responseResults []dto.ResponseResultDTO
     for _, r := range resultsToCreate {
         responseResults = append(responseResults, dto.ResponseResultDTO{
-            ID:             r.ID, // GORM debería llenarlo tras el insert
+            ID:             r.ID,
             Position:       r.Position,
+            Status:         r.Status,
             FastestLapTime: r.FastestLapTime,
-            Driver: dto.ResponseDriverDTO{
-                ID: r.DriverID,
-            },
-            Session: dto.ResponseSessionDTO{
-                ID: r.SessionID,
-            },
+            Driver: dto.ResponseDriverDTO{ ID: r.DriverID },
+            Session: dto.ResponseSessionDTO{ ID: r.SessionID },
             CreatedAt: r.CreatedAt,
             UpdatedAt: r.UpdatedAt,
         })

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"results/internal/model"
 	e "results/pkg/utils"
 
@@ -15,13 +16,14 @@ type resultRepository struct {
 type ResultRepository interface {
 	CreateResult(ctx context.Context, result *model.Result) e.ApiError
 	GetResultByID(ctx context.Context, resultID int) (*model.Result, e.ApiError)
+	GetResultByDriverAndSession(ctx context.Context, driverID, sessionID int) (*model.Result, e.ApiError)
 	UpdateResult(ctx context.Context, result *model.Result) e.ApiError
 	DeleteResult(ctx context.Context, resultID int) e.ApiError
 	GetResultsBySessionID(ctx context.Context, sessionID int) ([]*model.Result, e.ApiError)
 	GetResultsByDriverID(ctx context.Context, driverID int) ([]*model.Result, e.ApiError)
 	GetAllResults(ctx context.Context) ([]*model.Result, e.ApiError)
 	GetFastestLapInSession(ctx context.Context, sessionID int) (*model.Result, e.ApiError)
-	GetDriverPositionInSession(ctx context.Context, driverID int, sessionID int) (int, e.ApiError)
+	// GetDriverPositionInSession(ctx context.Context, driverID int, sessionID int) (int, e.ApiError)
 	GetResultsOrderedByPosition(ctx context.Context, sessionID int) ([]*model.Result, e.ApiError)
 	ExistsSessionInResults(ctx context.Context, sessionID int) (bool, e.ApiError)
 	SessionCreateResultAdmin(ctx context.Context, results []*model.Result) error 
@@ -50,6 +52,19 @@ func (r *resultRepository) GetResultByID(ctx context.Context, resultID int) (*mo
 		return nil, e.NewInternalServerApiError("Error finding result", err)
 	}
 	return &result, nil
+}
+
+func (r *resultRepository) GetResultByDriverAndSession(ctx context.Context, driverID, sessionID int) (*model.Result, e.ApiError) {
+    var result model.Result
+    if err := r.db.WithContext(ctx).
+        Where("driver_id = ? AND session_id = ?", driverID, sessionID).
+        First(&result).Error; err != nil {
+        if errors.Is(err, gorm.ErrRecordNotFound) {
+            return nil, nil // no es error, simplemente no existe
+        }
+        return nil, e.NewInternalServerApiError("Error al buscar resultado por driver y session", err)
+    }
+    return &result, nil
 }
 
 // UpdateResult actualiza un resultado existente en la base de datos
@@ -108,17 +123,17 @@ func (r *resultRepository) GetFastestLapInSession(ctx context.Context, sessionID
 }
 
 // GetDriverPositionInSession obtiene la posición de un piloto en una sesión, cargando las relaciones de la sesión
-func (r *resultRepository) GetDriverPositionInSession(ctx context.Context, driverID int, sessionID int) (int, e.ApiError) {
-    var result model.Result
-    // Asegurarnos de cargar la relación con la sesión
-    if err := r.db.WithContext(ctx).Preload("Session").Where("driver_id = ? AND session_id = ?", driverID, sessionID).First(&result).Error; err != nil {
-        if err == gorm.ErrRecordNotFound {
-            return 0, e.NewNotFoundApiError("No position found for the given driver in the session")
-        }
-        return 0, e.NewInternalServerApiError("Error fetching driver position in session", err)
-    }
-    return result.Position, nil
-}
+// func (r *resultRepository) GetDriverPositionInSession(ctx context.Context, driverID int, sessionID int) (int, e.ApiError) {
+//     var result model.Result
+//     // Asegurarnos de cargar la relación con la sesión
+//     if err := r.db.WithContext(ctx).Preload("Session").Where("driver_id = ? AND session_id = ?", driverID, sessionID).First(&result).Error; err != nil {
+//         if err == gorm.ErrRecordNotFound {
+//             return 0, e.NewNotFoundApiError("No position found for the given driver in the session")
+//         }
+//         return 0, e.NewInternalServerApiError("Error fetching driver position in session", err)
+//     }
+//     return result.Position, nil
+// }
 
 // GetResultsOrderedByPosition obtiene los resultados de una sesión ordenados por posición
 /*

@@ -9,7 +9,8 @@ type Result struct {
     Session        Session   `gorm:"foreignKey:SessionID;constraint:OnDelete:CASCADE;OnUpdate:CASCADE;"`
     DriverID       int       `json:"driver_id" gorm:"type:int"`  // Foreign key to drivers
     Driver         Driver    `gorm:"foreignKey:DriverID;constraint:OnDelete:CASCADE;OnUpdate:CASCADE;"`
-    Position       int       `json:"position"`   // Posición del piloto en la carrera
+    Position       *int       `json:"position"`   // Posición del piloto en la carrera
+    Status         string    `json:"status"`     // Estado del piloto en la carrera
     FastestLapTime float64   `json:"fastest_lap_time"` // Duración de la vuelta rápida en segundos (con decimales)
     CreatedAt      time.Time `gorm:"autoCreateTime" json:"created_at"`
     UpdatedAt      time.Time `gorm:"autoUpdateTime" json:"updated_at"`

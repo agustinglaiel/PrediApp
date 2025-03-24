@@ -6,25 +6,28 @@ import "time"
 type CreateResultDTO struct {
 	SessionID      int  `json:"session_id" binding:"required"`
 	DriverID       int    `json:"driver_id" binding:"required"`
-	Position       int     `json:"position" binding:"required"`
-	FastestLapTime float64 `json:"fastest_lap_time"`
+	Position       *int     `json:"position,omitempty"`
+	Status         string  `json:"status,omitempty"`
+	FastestLapTime float64 `json:"fastest_lap_time,omitempty"`
 }
 
 // DTO para actualizar un resultado existente
 type UpdateResultDTO struct {
-	Position       int     `json:"position,omitempty"`
+	Position       *int    `json:"position,omitempty"`
+	Status         string  `json:"status,omitempty"`
 	FastestLapTime float64 `json:"fastest_lap_time,omitempty"`
 }
 
 // DTO para devolver un resultado con detalles del piloto y la sesión
 type ResponseResultDTO struct {
-	ID             int                  `json:"id"`
-	Position       int                  `json:"position"`
-	FastestLapTime float64              `json:"fastest_lap_time"`
-	Session        ResponseSessionDTO   `json:"session"`
-	Driver         ResponseDriverDTO    `json:"driver"`
-	CreatedAt      time.Time            `json:"created_at"`
-	UpdatedAt      time.Time            `json:"updated_at"`
+	ID             int                `json:"id"`
+	Position       *int               `json:"position"`
+	Status         string             `json:"status"`
+	FastestLapTime float64            `json:"fastest_lap_time"`
+	Session        ResponseSessionDTO `json:"session"`
+	Driver         ResponseDriverDTO  `json:"driver"`
+	CreatedAt      time.Time          `json:"created_at"`
+	UpdatedAt      time.Time          `json:"updated_at"`
 }
 
 // DTO para los detalles de la sesión asociados al resultado
@@ -53,8 +56,7 @@ type ResponseDriverDTO struct {
 
 type Position struct {
 	DriverNumber int       `json:"driver_number"`
-	Position     int       `json:"position"`
-	// Date         time.Time `json:"date"`
+	Position     *int      `json:"position"`
 }
 
 type Lap struct {
@@ -76,7 +78,8 @@ type CreateBulkResultsDTO struct {
 
 // CreateResultItemDTO representa cada resultado individual en la creación masiva
 type CreateResultItemDTO struct {
-    DriverID       int     `json:"driver_id" binding:"required"`
-    Position       int     `json:"position" binding:"required"`
-    FastestLapTime float64 `json:"fastest_lap_time,omitempty"`
+	DriverID       int    `json:"driver_id" binding:"required"`
+	Position       *int   `json:"position,omitempty"`       
+	Status         string `json:"status,omitempty"`
+	FastestLapTime float64 `json:"fastest_lap_time,omitempty"`
 }
