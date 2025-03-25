@@ -360,6 +360,7 @@ func (s *resultService) GetResultsOrderedByPosition(ctx context.Context, session
 		response := dto.ResponseResultDTO{
 			ID:             result.ID,
 			Position:       result.Position,
+            Status:         result.Status,
 			FastestLapTime: result.FastestLapTime,
 			Driver: dto.ResponseDriverDTO{
 				ID:          result.Driver.ID,
