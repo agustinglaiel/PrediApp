@@ -141,7 +141,10 @@ obtiene todos los resultados de una sesión específica (incluyendo detalles de 
 */
 func (r *resultRepository) GetResultsOrderedByPosition(ctx context.Context, sessionID int) ([]*model.Result, e.ApiError) {
     var results []*model.Result
-    if err := r.db.WithContext(ctx).Preload("Driver").Preload("Session").Where("session_id = ?", sessionID).Order("position ASC").Find(&results).Error; err != nil {
+    if err := r.db.WithContext(ctx).
+        Preload("Driver").Preload("Session").Where("session_id = ?", sessionID).
+        Order("CASE WHEN position IS NULL THEN 1 ELSE 0 END ASC, position ASC").
+        Find(&results).Error; err != nil {
         return nil, e.NewInternalServerApiError("Error fetching ordered results for session", err)
     }
     return results, nil
