@@ -26,6 +26,7 @@ type User struct {
 	ProviderID      string         `gorm:"size:255" json:"provider_id,omitempty"`
 	AvatarURL       string         `gorm:"size:255" json:"avatar_url,omitempty"`
 	RefreshTokens   []RefreshToken `gorm:"foreignKey:UserID" json:"-"`
+	Posts           []*Post        `gorm:"foreignKey:UserID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL" json:"-"`
 }
 
 type RefreshToken struct {
@@ -33,4 +34,13 @@ type RefreshToken struct {
     UserID    int       `gorm:"index;foreignKey:UserID;references:ID;constraint:OnDelete:CASCADE" json:"user_id"`
     Token     string    `gorm:"size:255;uniqueIndex" json:"token"`
     ExpiresAt time.Time `json:"expires_at"`
+}
+
+type Post struct {
+	ID           int          `gorm:"primaryKey"`
+	UserID       int          `gorm:"index;not null"`
+	ParentPostID *int         `gorm:"index"`
+	Body         string       `gorm:"type:text;not null"`
+	CreatedAt    time.Time    `gorm:"autoCreateTime"`
+	DeletedAt    gorm.DeletedAt `gorm:"index"`
 }

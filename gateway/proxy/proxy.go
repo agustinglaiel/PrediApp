@@ -119,6 +119,8 @@ func getTargetURL(path string) (string, string) {
         return os.Getenv("SESSIONS_SERVICE_URL"), proxyPath
     case "groups":
         return os.Getenv("GROUPS_SERVICE_URL"), proxyPath
+    case "posts":
+        return os.Getenv("POSTS_SERVICE_URL"), proxyPath
     default:
         return "", ""
     }

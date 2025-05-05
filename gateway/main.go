@@ -81,6 +81,8 @@ func main() {
 	router.Any("/sessions/*proxyPath", proxy.ReverseProxy())
 	router.Any("/groups", proxy.ReverseProxy())
 	router.Any("/groups/*proxyPath", proxy.ReverseProxy())
+	router.Any("/posts", proxy.ReverseProxy())
+	router.Any("/posts/*proxyPath", proxy.ReverseProxy())
 
 	// Iniciar el servidor HTTP
 	fmt.Printf("Gateway (%s) listening on port %s...\n", env, port)

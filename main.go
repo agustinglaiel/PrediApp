@@ -98,6 +98,7 @@ func main() {
 		{"./results/cmd", os.Getenv("RESULTS_SERVICE_URL")},
 		{"./prodes/cmd", os.Getenv("PRODES_SERVICE_URL")},
 		{"./groups/cmd", os.Getenv("GROUPS_SERVICE_URL")},
+		{"./posts/cmd", os.Getenv("POSTS_SERVICE_URL")},
 	}
 
 	// Obtener todas las variables de entorno actualizadas
