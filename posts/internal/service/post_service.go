@@ -2,10 +2,13 @@ package service
 
 import (
 	"context"
+	"fmt"
+	internal "posts/internal/client"
 	"posts/internal/dto"
 	"posts/internal/model"
 	"posts/internal/repository"
 	e "posts/pkg/utils"
+
 	"time"
 )
 
@@ -14,15 +17,18 @@ type PostService interface {
     GetPostByID(ctx context.Context, id int) (dto.PostResponseDTO, e.ApiError)
     GetPosts(ctx context.Context) ([]dto.PostResponseDTO, e.ApiError)
     GetPostsByUserID(ctx context.Context, userID int) ([]dto.PostResponseDTO, e.ApiError)
-    DeletePostByID(ctx context.Context, id int) e.ApiError
-}
+    DeletePostByID(ctx context.Context, id int, userID int) e.ApiError}
 
 type postService struct {
     postRepo repository.PostRepository
+    httpClient *internal.HttpClient
 }
 
 func NewPostService(postRepo repository.PostRepository) PostService {
-    return &postService{postRepo: postRepo}
+	return &postService{
+		postRepo:   postRepo,
+		httpClient: internal.NewHttpClient("http://localhost:8080"),
+	}
 }
 
 func (s *postService) CreatePost(ctx context.Context, request dto.PostCreateRequestDTO) (dto.PostResponseDTO, e.ApiError) {
@@ -96,8 +102,29 @@ func (s *postService) GetPostsByUserID(ctx context.Context, userID int) ([]dto.P
     return response, nil
 }
 
-func (s *postService) DeletePostByID(ctx context.Context, id int) e.ApiError {
-    return s.postRepo.DeletePostByID(ctx, id) // El userID ya no se pasa desde el contexto
+func (s *postService) DeletePostByID(ctx context.Context, id int, userID int) e.ApiError {
+	// Verificar si el usuario existe usando el cliente HTTP
+	userExists, err := s.httpClient.GetUserByID(userID)
+	if err != nil {
+		return e.NewInternalServerApiError("error checking user existence", err)
+	}
+	if !userExists {
+		return e.NewNotFoundApiError(fmt.Sprintf("user with id %d not found", userID))
+	}
+
+	// Obtener el post para verificar el propietario
+	post, apiErr := s.postRepo.GetPostByID(ctx, id)
+	if apiErr != nil {
+		return apiErr
+	}
+
+	// Validar que el user_id coincide con el propietario del post
+	if post.UserID != userID {
+		return e.NewForbiddenApiError("you are not allowed to delete this post")
+	}
+
+	// Eliminar el post
+	return s.postRepo.DeletePostByID(ctx, id)
 }
 
 // mapPostToResponseDTO convierte un modelo Post a un DTO de respuesta

@@ -108,7 +108,7 @@ func (ctrl *PostController) DeletePostByID(c *gin.Context) {
 		return
 	}
 
-	apiErr := ctrl.postService.DeletePostByID(c.Request.Context(), intID)
+	apiErr := ctrl.postService.DeletePostByID(c.Request.Context(), intID, request.UserID)
 	if apiErr != nil {
 		c.JSON(apiErr.Status(), apiErr)
 		return
