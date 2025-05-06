@@ -14,3 +14,11 @@ type PostResponseDTO struct {
 	CreatedAt    string      `json:"created_at"`
 	Children     []PostResponseDTO `json:"children,omitempty"`
 }
+
+type SearchPostResponseDTO struct {
+	ID           int     `json:"id"`
+	UserID       int     `json:"user_id"`
+	ParentPostID *int    `json:"parent_post_id,omitempty"`
+	Body         string  `json:"body"`
+	CreatedAt    string  `json:"created_at"`
+}

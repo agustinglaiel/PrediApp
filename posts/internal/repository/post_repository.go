@@ -89,7 +89,7 @@ func (r *postRepository) DeletePostByID(ctx context.Context, id int) e.ApiError 
 
 func (r *postRepository) SearchPosts(ctx context.Context, query string, offset, limit int) ([]*model.Post, e.ApiError) {
 	var posts []*model.Post
-	// Usar LIKE para buscar en el body
+	// Usar LIKE para buscar en el body sin cargar Children
 	if err := r.db.WithContext(ctx).
 		Where("body LIKE ?", "%"+query+"%").
 		Order("created_at DESC").
@@ -98,9 +98,7 @@ func (r *postRepository) SearchPosts(ctx context.Context, query string, offset, 
 		Find(&posts).Error; err != nil {
 		return nil, e.NewInternalServerApiError("error searching posts", err)
 	}
-	for _, post := range posts {
-		post.Children = r.getChildPosts(ctx, post.ID)
-	}
+	// No cargamos Children aquí
 	return posts, nil
 }
 

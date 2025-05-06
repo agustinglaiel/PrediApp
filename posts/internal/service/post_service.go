@@ -18,8 +18,7 @@ type PostService interface {
     GetPosts(ctx context.Context, offset, limit int) ([]dto.PostResponseDTO, e.ApiError)
     GetPostsByUserID(ctx context.Context, userID int) ([]dto.PostResponseDTO, e.ApiError)
     DeletePostByID(ctx context.Context, id int, userID int) e.ApiError
-    SearchPosts(ctx context.Context, query string, offset, limit int) ([]dto.PostResponseDTO, e.ApiError)
-}
+    SearchPosts(ctx context.Context, query string, offset, limit int) ([]dto.SearchPostResponseDTO, e.ApiError)}
 
 
 type postService struct {
@@ -130,15 +129,21 @@ func (s *postService) DeletePostByID(ctx context.Context, id int, userID int) e.
 	return s.postRepo.DeletePostByID(ctx, id)
 }
 
-func (s *postService) SearchPosts(ctx context.Context, query string, offset, limit int) ([]dto.PostResponseDTO, e.ApiError) {
+func (s *postService) SearchPosts(ctx context.Context, query string, offset, limit int) ([]dto.SearchPostResponseDTO, e.ApiError) {
 	posts, apiErr := s.postRepo.SearchPosts(ctx, query, offset, limit)
 	if apiErr != nil {
 		return nil, apiErr
 	}
 
-	var response []dto.PostResponseDTO
+	var response []dto.SearchPostResponseDTO
 	for _, post := range posts {
-		response = append(response, s.mapPostToResponseDTO(post))
+		response = append(response, dto.SearchPostResponseDTO{
+			ID:           post.ID,
+			UserID:       post.UserID,
+			ParentPostID: post.ParentPostID,
+			Body:         post.Body,
+			CreatedAt:    post.CreatedAt.Format(time.RFC3339),
+		})
 	}
 	return response, nil
 }
