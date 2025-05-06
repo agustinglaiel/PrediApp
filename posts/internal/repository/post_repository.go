@@ -14,6 +14,7 @@ type PostRepository interface {
     GetPosts(ctx context.Context, offset, limit int) ([]*model.Post, e.ApiError)    
     GetPostsByUserID(ctx context.Context, userID int) ([]*model.Post, e.ApiError)
     DeletePostByID(ctx context.Context, id int) e.ApiError // Eliminar el userID como argumento
+    SearchPosts(ctx context.Context, query string, offset, limit int) ([]*model.Post, e.ApiError)
 }
 
 type postRepository struct {
@@ -84,6 +85,23 @@ func (r *postRepository) DeletePostByID(ctx context.Context, id int) e.ApiError 
         return e.NewInternalServerApiError("error deleting post", err)
     }
     return nil
+}
+
+func (r *postRepository) SearchPosts(ctx context.Context, query string, offset, limit int) ([]*model.Post, e.ApiError) {
+	var posts []*model.Post
+	// Usar LIKE para buscar en el body
+	if err := r.db.WithContext(ctx).
+		Where("body LIKE ?", "%"+query+"%").
+		Order("created_at DESC").
+		Offset(offset).
+		Limit(limit).
+		Find(&posts).Error; err != nil {
+		return nil, e.NewInternalServerApiError("error searching posts", err)
+	}
+	for _, post := range posts {
+		post.Children = r.getChildPosts(ctx, post.ID)
+	}
+	return posts, nil
 }
 
 func (r *postRepository) getChildPosts(ctx context.Context, parentID int) []*model.Post {

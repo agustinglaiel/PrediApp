@@ -17,7 +17,10 @@ type PostService interface {
     GetPostByID(ctx context.Context, id int) (dto.PostResponseDTO, e.ApiError)
     GetPosts(ctx context.Context, offset, limit int) ([]dto.PostResponseDTO, e.ApiError)
     GetPostsByUserID(ctx context.Context, userID int) ([]dto.PostResponseDTO, e.ApiError)
-    DeletePostByID(ctx context.Context, id int, userID int) e.ApiError}
+    DeletePostByID(ctx context.Context, id int, userID int) e.ApiError
+    SearchPosts(ctx context.Context, query string, offset, limit int) ([]dto.PostResponseDTO, e.ApiError)
+}
+
 
 type postService struct {
     postRepo repository.PostRepository
@@ -125,6 +128,19 @@ func (s *postService) DeletePostByID(ctx context.Context, id int, userID int) e.
 
 	// Eliminar el post
 	return s.postRepo.DeletePostByID(ctx, id)
+}
+
+func (s *postService) SearchPosts(ctx context.Context, query string, offset, limit int) ([]dto.PostResponseDTO, e.ApiError) {
+	posts, apiErr := s.postRepo.SearchPosts(ctx, query, offset, limit)
+	if apiErr != nil {
+		return nil, apiErr
+	}
+
+	var response []dto.PostResponseDTO
+	for _, post := range posts {
+		response = append(response, s.mapPostToResponseDTO(post))
+	}
+	return response, nil
 }
 
 // mapPostToResponseDTO convierte un modelo Post a un DTO de respuesta

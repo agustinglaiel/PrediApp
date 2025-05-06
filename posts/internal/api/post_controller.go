@@ -133,3 +133,38 @@ func (ctrl *PostController) DeletePostByID(c *gin.Context) {
 	}
 	c.JSON(http.StatusNoContent, nil)
 }
+
+func (ctrl *PostController) SearchPosts(c *gin.Context) {
+	// Obtener parámetro de búsqueda
+	query := c.Query("query")
+	if query == "" {
+		apiErr := e.NewBadRequestApiError("query parameter is required")
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	// Obtener parámetros de paginación
+	offsetStr := c.DefaultQuery("offset", "0")
+	limitStr := c.DefaultQuery("limit", "10")
+
+	offset, err := strconv.Atoi(offsetStr)
+	if err != nil || offset < 0 {
+		apiErr := e.NewBadRequestApiError("invalid offset value")
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil || limit <= 0 {
+		apiErr := e.NewBadRequestApiError("invalid limit value")
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	posts, apiErr := ctrl.postService.SearchPosts(c.Request.Context(), query, offset, limit)
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+	c.JSON(http.StatusOK, posts)
+}
