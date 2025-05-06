@@ -15,7 +15,7 @@ import (
 type PostService interface {
     CreatePost(ctx context.Context, request dto.PostCreateRequestDTO) (dto.PostResponseDTO, e.ApiError)
     GetPostByID(ctx context.Context, id int) (dto.PostResponseDTO, e.ApiError)
-    GetPosts(ctx context.Context) ([]dto.PostResponseDTO, e.ApiError)
+    GetPosts(ctx context.Context, offset, limit int) ([]dto.PostResponseDTO, e.ApiError)
     GetPostsByUserID(ctx context.Context, userID int) ([]dto.PostResponseDTO, e.ApiError)
     DeletePostByID(ctx context.Context, id int, userID int) e.ApiError}
 
@@ -76,17 +76,17 @@ func (s *postService) GetPostByID(ctx context.Context, id int) (dto.PostResponse
     return response, nil
 }
 
-func (s *postService) GetPosts(ctx context.Context) ([]dto.PostResponseDTO, e.ApiError) {
-    posts, apiErr := s.postRepo.GetPosts(ctx)
-    if apiErr != nil {
-        return nil, apiErr
-    }
+func (s *postService) GetPosts(ctx context.Context, offset int, limit int) ([]dto.PostResponseDTO, e.ApiError) {
+	posts, apiErr := s.postRepo.GetPosts(ctx, offset, limit)
+	if apiErr != nil {
+		return nil, apiErr
+	}
 
-    var response []dto.PostResponseDTO
-    for _, post := range posts {
-        response = append(response, s.mapPostToResponseDTO(post))
-    }
-    return response, nil
+	var response []dto.PostResponseDTO
+	for _, post := range posts {
+		response = append(response, s.mapPostToResponseDTO(post))
+	}
+	return response, nil
 }
 
 func (s *postService) GetPostsByUserID(ctx context.Context, userID int) ([]dto.PostResponseDTO, e.ApiError) {

@@ -11,7 +11,7 @@ import (
 type PostRepository interface {
     CreatePost(ctx context.Context, post *model.Post) e.ApiError
     GetPostByID(ctx context.Context, id int) (*model.Post, e.ApiError)
-    GetPosts(ctx context.Context) ([]*model.Post, e.ApiError)
+    GetPosts(ctx context.Context, offset, limit int) ([]*model.Post, e.ApiError)    
     GetPostsByUserID(ctx context.Context, userID int) ([]*model.Post, e.ApiError)
     DeletePostByID(ctx context.Context, id int) e.ApiError // Eliminar el userID como argumento
 }
@@ -43,15 +43,20 @@ func (r *postRepository) GetPostByID(ctx context.Context, id int) (*model.Post, 
     return &post, nil
 }
 
-func (r *postRepository) GetPosts(ctx context.Context) ([]*model.Post, e.ApiError) {
-    var posts []*model.Post
-    if err := r.db.WithContext(ctx).Where("parent_post_id IS NULL").Order("created_at DESC").Find(&posts).Error; err != nil {
-        return nil, e.NewInternalServerApiError("error finding posts", err)
-    }
-    for _, post := range posts {
-        post.Children = r.getChildPosts(ctx, post.ID)
-    }
-    return posts, nil
+func (r *postRepository) GetPosts(ctx context.Context, offset, limit int) ([]*model.Post, e.ApiError) {
+	var posts []*model.Post
+	if err := r.db.WithContext(ctx).
+		Where("parent_post_id IS NULL").
+		Order("created_at DESC").
+		Offset(offset).
+		Limit(limit).
+		Find(&posts).Error; err != nil {
+		return nil, e.NewInternalServerApiError("error finding posts", err)
+	}
+	for _, post := range posts {
+		post.Children = r.getChildPosts(ctx, post.ID)
+	}
+	return posts, nil
 }
 
 func (r *postRepository) GetPostsByUserID(ctx context.Context, userID int) ([]*model.Post, e.ApiError) {

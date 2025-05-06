@@ -59,7 +59,25 @@ func (ctrl *PostController) GetPostByID(c *gin.Context) {
 }
 
 func (ctrl *PostController) GetPosts(c *gin.Context) {
-	posts, apiErr := ctrl.postService.GetPosts(c.Request.Context())
+	// Obtener parámetros de paginación
+	offsetStr := c.DefaultQuery("offset", "0")
+	limitStr := c.DefaultQuery("limit", "10")
+
+	offset, err := strconv.Atoi(offsetStr)
+	if err != nil || offset < 0 {
+		apiErr := e.NewBadRequestApiError("invalid offset value")
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil || limit <= 0 {
+		apiErr := e.NewBadRequestApiError("invalid limit value")
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	posts, apiErr := ctrl.postService.GetPosts(c.Request.Context(), offset, limit)
 	if apiErr != nil {
 		c.JSON(apiErr.Status(), apiErr)
 		return
