@@ -18,8 +18,8 @@ type PostService interface {
     GetPosts(ctx context.Context, offset, limit int) ([]dto.PostResponseDTO, e.ApiError)
     GetPostsByUserID(ctx context.Context, userID int) ([]dto.PostResponseDTO, e.ApiError)
     DeletePostByID(ctx context.Context, id int, userID int) e.ApiError
-    SearchPosts(ctx context.Context, query string, offset, limit int) ([]dto.SearchPostResponseDTO, e.ApiError)}
-
+    SearchPosts(ctx context.Context, query string, offset, limit int) ([]dto.SearchPostResponseDTO, e.ApiError)
+}
 
 type postService struct {
     postRepo repository.PostRepository
