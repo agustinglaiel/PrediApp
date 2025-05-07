@@ -24,6 +24,7 @@ type CreateSessionDTO struct {
 }
 
 type UpdateSessionDTO struct {
+    WeekendID         *int       `json:"weekend_id,omitempty"`
     CircuitKey        *int       `json:"circuit_key,omitempty"`
     CircuitShortName  *string    `json:"circuit_short_name,omitempty"`
     CountryCode       *string    `json:"country_code,omitempty"`
@@ -58,7 +59,7 @@ type ResponseSessionDTO struct {
     SessionName      string    `json:"session_name"`
     SessionType      string    `json:"session_type"`
     Year             int       `json:"year"`
-    DFastLap         *int      `json:"d_fast_lap"`
+    // DFastLap         *int      `json:"d_fast_lap"`
     VSC              *bool     `json:"vsc"`
     SF               *bool     `json:"sf"`
     DNF              *int      `json:"dnf"`

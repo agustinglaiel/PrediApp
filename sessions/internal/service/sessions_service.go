@@ -67,7 +67,7 @@ func (s *sessionService) CreateSession(ctx context.Context, request dto.CreateSe
     }
 
     // Para todas las sesiones que no son "Race", estos campos deben ser nulos
-    var dnf, dFastLap *int
+    var dnf *int
     var vsc, sf *bool
 
     if request.SessionType == "Race" && request.SessionName == "Race" {
@@ -75,7 +75,7 @@ func (s *sessionService) CreateSession(ctx context.Context, request dto.CreateSe
         dnf = nil
         vsc = nil
         sf = nil
-        dFastLap = nil
+        // dFastLap = nil
     }
 
     // Validar que no exista ya una combinación idéntica para el mismo fin de semana (mismo location, year, session_name y session_type)
@@ -123,7 +123,7 @@ func (s *sessionService) CreateSession(ctx context.Context, request dto.CreateSe
         DNF:               dnf,       // Número de pilotos que no terminaron
         VSC:               vsc,       // Indica si hubo VSC
         SF:                sf,        // Indica si hubo SC
-        DFastLap:          dFastLap,  // ID del piloto que hizo la vuelta más rápida
+        // DFastLap:          dFastLap,  // ID del piloto que hizo la vuelta más rápida
         CreatedAt:         time.Now(),
         UpdatedAt:         time.Now(),
     }
@@ -150,7 +150,7 @@ func (s *sessionService) CreateSession(ctx context.Context, request dto.CreateSe
         DNF:              newSession.DNF,
         VSC:              newSession.VSC,
         SF:               newSession.SF,
-        DFastLap:         newSession.DFastLap,  // Actualizar con el nombre correcto
+        // DFastLap:         newSession.DFastLap,  // Actualizar con el nombre correcto
     }
 
     return response, nil
@@ -178,7 +178,7 @@ func (s *sessionService) GetSessionById(ctx context.Context, sessionID int) (dto
         SessionName:      session.SessionName,
         SessionType:      session.SessionType,
         Year:             session.Year,
-        DFastLap:         session.DFastLap, // Siempre incluir, incluso si es nil
+        // DFastLap:         session.DFastLap, // Siempre incluir, incluso si es nil
         VSC:              session.VSC,      // Siempre incluir, incluso si es nil
         SF:               session.SF,       // Siempre incluir, incluso si es nil
         DNF:              session.DNF,      // Siempre incluir, incluso si es nil
@@ -242,6 +242,9 @@ func (s *sessionService) UpdateSessionById(ctx context.Context, sessionID int, r
     }
 
     // Actualiza solo los campos que están presentes en el DTO de actualización
+    if request.WeekendID != nil {
+        session.WeekendID = *request.WeekendID
+    }
     if request.CircuitKey != nil {
         session.CircuitKey = *request.CircuitKey
     }
@@ -291,7 +294,7 @@ func (s *sessionService) UpdateSessionById(ctx context.Context, sessionID int, r
             session.SF = request.SF
         }
         if request.DFastLap != nil {
-            session.DFastLap = request.DFastLap
+            // session.DFastLap = request.DFastLap
         }
     }
 
@@ -318,7 +321,7 @@ func (s *sessionService) UpdateSessionById(ctx context.Context, sessionID int, r
         DNF:              session.DNF,
         VSC:              session.VSC,
         SF:               session.SF,
-        DFastLap:         session.DFastLap,
+        // DFastLap:         session.DFastLap,
     }
 
     return response, nil
@@ -367,7 +370,7 @@ func (s *sessionService) ListSessionsByYear(ctx context.Context, year int) ([]dt
             SessionType:      session.SessionType,
             Year:             session.Year,
             // Puedes incluir aquí los campos adicionales si es relevante
-            DFastLap:         session.DFastLap,
+            // DFastLap:         session.DFastLap,
             VSC:              session.VSC,
             SF:               session.SF,
             DNF:              session.DNF,
@@ -655,7 +658,7 @@ func (s *sessionService) GetRaceResultsById(ctx context.Context, sessionID int) 
         DNF:          session.DNF,
         VSC:          session.VSC,
         SF:           session.SF,
-        DFastLap:     session.DFastLap,
+        // DFastLap:     session.DFastLap,
     }
 
     return response, nil
@@ -804,7 +807,7 @@ func (s *sessionService) UpdateDFastLap(ctx context.Context, sessionID int) e.Ap
     }
 
     // Asignar el ID del piloto que hizo la vuelta más rápida
-    session.DFastLap = &fastestLapResult.Driver.ID
+    // session.DFastLap = &fastestLapResult.Driver.ID
 
     // Actualizar la sesión utilizando la función UpdateSessionById
     apiErr = s.sessionsRepo.UpdateSessionById(ctx, session)

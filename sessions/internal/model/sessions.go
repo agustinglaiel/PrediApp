@@ -21,7 +21,7 @@ type Session struct {
 	DateStart        time.Time      `json:"date_start"`           // Fecha y hora de inicio de la sesión
 	DateEnd          time.Time      `json:"date_end"`             // Fecha y hora de fin de la sesión
 	Year             int            `json:"year"`                 // Año en el que ocurre la sesión
-	DFastLap         *int           `json:"d_fast_lap,omitempty"` // ID del piloto que hizo la vuelta más rápida (solo relevante para "Race")
+	// DFastLap         *int           `json:"d_fast_lap,omitempty"` // ID del piloto que hizo la vuelta más rápida (solo relevante para "Race")
 	VSC              *bool          `json:"vsc,omitempty"`        // Indica si hubo VSC (solo relevante para "Race")
 	SF               *bool          `json:"sf,omitempty"`         // Indica si hubo SC (solo relevante para "Race")
 	DNF              *int           `json:"dnf,omitempty"`        // Número de pilotos que no terminaron (solo relevante para "Race")

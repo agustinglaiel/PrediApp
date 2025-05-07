@@ -63,10 +63,50 @@ func (s *sessionRepository) GetSessionById(ctx context.Context, sessionID int)(*
 }
 
 func (s *sessionRepository) UpdateSessionById(ctx context.Context, session *model.Session) e.ApiError {
-	if err := s.db.WithContext(ctx).Save(session).Error; err !=nil{
-		return e.NewInternalServerApiError("Error actualizando la sesión", err)
-	}
-	return nil
+    // Asegurarse de que el ID esté presente
+    if session.ID == 0 {
+        return e.NewBadRequestApiError("El ID de la sesión no puede estar vacío")
+    }
+
+    // Usar Updates con un mapa para especificar los campos a actualizar
+    updates := map[string]interface{}{
+        "weekend_id":        session.WeekendID,
+        "circuit_key":       session.CircuitKey,
+        "circuit_short_name": session.CircuitShortName,
+        "country_code":      session.CountryCode,
+        "country_key":       session.CountryKey,
+        "country_name":      session.CountryName,
+        "date_start":        session.DateStart,
+        "date_end":          session.DateEnd,
+        "location":          session.Location,
+        "session_key":       session.SessionKey,
+        "session_name":      session.SessionName,
+        "session_type":      session.SessionType,
+        "year":              session.Year,
+        "dnf":               session.DNF,         // Incluir siempre DNF, incluso si es nil
+        "vsc":               session.VSC,         // Incluir siempre VSC, incluso si es nil
+        "sf":                session.SF,          // Incluir siempre SF, incluso si es nil
+        // "d_fast_lap":        session.DFastLap, // Incluir si lo usas
+    }
+
+    // Ejecutar la actualización
+    result := s.db.WithContext(ctx).Model(&model.Session{}).Where("id = ?", session.ID).Updates(updates)
+    if result.Error != nil {
+        return e.NewInternalServerApiError("Error actualizando la sesión", result.Error)
+    }
+
+    // Verificar si se actualizó alguna fila
+    if result.RowsAffected == 0 {
+        return e.NewNotFoundApiError("No se encontró la sesión para actualizar")
+    }
+
+    // Verificar los datos actualizados en la base de datos
+    updatedSession := &model.Session{}
+    if err := s.db.WithContext(ctx).First(updatedSession, session.ID).Error; err != nil {
+        return e.NewInternalServerApiError("Error verificando la sesión actualizada", err)
+    }
+
+    return nil
 }
 
 func (s *sessionRepository) DeleteSessionById(ctx context.Context, sessionID int) e.ApiError {
