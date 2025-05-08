@@ -190,15 +190,23 @@ func (sc *SessionController) ListUpcomingSessions(c *gin.Context) {
 }
 
 func (sc *SessionController) ListPastSessions(c *gin.Context) {
-	// Llamar al servicio para obtener las sesiones pasadas de este mismo año
-	response, apiErr := sc.sessionService.ListPastSessions(c.Request.Context())
-	if apiErr != nil {
-		c.JSON(apiErr.Status(), apiErr)
-		return
-	}
+    // Obtener el parámetro year de la ruta
+    yearStr := c.Param("year")
+    year, err := strconv.Atoi(yearStr)
+    if err != nil || year < 1900 || year > 2100 { // Validación básica del año
+        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Año inválido"))
+        return
+    }
 
-	// Responder con el listado de sesiones pasadas
-	c.JSON(http.StatusOK, response)
+    // Llamar al servicio para obtener las sesiones pasadas del año especificado
+    response, apiErr := sc.sessionService.ListPastSessions(c.Request.Context(), year)
+    if apiErr != nil {
+        c.JSON(apiErr.Status(), apiErr)
+        return
+    }
+
+    // Responder con el listado de sesiones pasadas
+    c.JSON(http.StatusOK, response)
 }
 
 func (sc *SessionController) ListSessionsBetweenDates(c *gin.Context) {

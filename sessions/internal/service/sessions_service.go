@@ -27,7 +27,7 @@ type SessionServiceInterface interface{
 	ListSessionsByCircuitKey(ctx context.Context, circuitKey int) ([]dto.ResponseSessionDTO, e.ApiError)
 	ListSessionsByCountryCode(ctx context.Context, countryCode string) ([]dto.ResponseSessionDTO, e.ApiError)
 	ListUpcomingSessions(ctx context.Context) ([]dto.ResponseSessionDTO, e.ApiError)
-    ListPastSessions(ctx context.Context) ([]dto.ResponseSessionDTO, e.ApiError)
+    ListPastSessions(ctx context.Context, year int) ([]dto.ResponseSessionDTO, e.ApiError)
 	ListSessionsBetweenDates(ctx context.Context, startDate time.Time, endDate time.Time) ([]dto.ResponseSessionDTO, e.ApiError)
 	FindSessionsByNameAndType(ctx context.Context, sessionName string, sessionType string) ([]dto.ResponseSessionDTO, e.ApiError)
 	GetAllSessions(ctx context.Context) ([]dto.ResponseSessionDTO, e.ApiError)
@@ -491,9 +491,9 @@ func (s *sessionService) ListUpcomingSessions(ctx context.Context) ([]dto.Respon
     return response, nil
 }
 
-func (s *sessionService) ListPastSessions(ctx context.Context) ([]dto.ResponseSessionDTO, e.ApiError){
-    // Llamar al repositorio para obtener las sesiones pasadas
-    sessions, err := s.sessionsRepo.GetPastSessions(ctx)
+func (s *sessionService) ListPastSessions(ctx context.Context, year int) ([]dto.ResponseSessionDTO, e.ApiError) {
+    // Llamar al repositorio para obtener las sesiones pasadas del año especificado
+    sessions, err := s.sessionsRepo.GetPastSessions(ctx, year)
     if err != nil {
         return nil, err
     }
