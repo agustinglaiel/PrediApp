@@ -3,12 +3,15 @@ package api
 import (
 	dto "drivers/internal/dto"
 	service "drivers/internal/service"
+	"drivers/pkg/utils"
 	e "drivers/pkg/utils"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator"
 )
 
 type DriverController struct {
@@ -24,7 +27,22 @@ func NewDriverController(driversService service.DriverService) *DriverController
 func (c *DriverController) CreateDriver(ctx *gin.Context) {
 	var request dto.CreateDriverDTO
 	if err := ctx.ShouldBindJSON(&request); err != nil {
-		ctx.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Invalid request payload"))
+		// Convertir el error en un mensaje detallado
+		validationErrors := make([]interface{}, 0)
+		if ve, ok := err.(validator.ValidationErrors); ok {
+			for _, fieldErr := range ve {
+				// Construir el mensaje de error manualmente
+				errorMessage := fmt.Sprintf("Field %s: validation failed on tag '%s'", fieldErr.Field(), fieldErr.Tag())
+				if fieldErr.Param() != "" {
+					errorMessage += fmt.Sprintf(" with parameter '%s'", fieldErr.Param())
+				}
+				validationErrors = append(validationErrors, errorMessage)
+			}
+		} else {
+			validationErrors = append(validationErrors, err.Error())
+		}
+		apiErr := utils.NewValidationApiError("Invalid request payload", "bad_request", validationErrors)
+		ctx.JSON(apiErr.Status(), apiErr)
 		return
 	}
 

@@ -35,7 +35,7 @@ func NewDriverRepository(db *gorm.DB) DriverRepository {
 func (r *driverRepository) CreateDriver(ctx context.Context, driver *model.Driver) e.ApiError {
     if err := r.db.WithContext(ctx).Create(driver).Error; err != nil {
         return e.NewInternalServerApiError("Error creando el piloto", err)
-    }
+    }                 
     return nil
 }
 

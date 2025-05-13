@@ -10,7 +10,7 @@ type CreateDriverDTO struct {
     NameAcronym    string `json:"name_acronym" binding:"required"`
     HeadshotURL    string `json:"headshot_url,omitempty"`
     TeamName       string `json:"team_name" binding:"required"`
-    Activo         bool   `json:"activo" binding:"required"`
+    Activo         bool   `json:"activo"`
 }
 
 type UpdateDriverDTO struct {
