@@ -59,6 +59,7 @@ func (s *driverService) CreateDriver(ctx context.Context, request dto.CreateDriv
 		LastName:       request.LastName,
 		FullName:       request.FullName,
 		NameAcronym:    request.NameAcronym,
+		HeadshotURL:    request.HeadshotURL,
 		TeamName:       request.TeamName,
 		Activo:         request.Activo,
 	}
@@ -77,6 +78,7 @@ func (s *driverService) CreateDriver(ctx context.Context, request dto.CreateDriv
 		LastName:       newDriver.LastName,
 		FullName:       newDriver.FullName,
 		NameAcronym:    newDriver.NameAcronym,
+		HeadshotURL:    newDriver.HeadshotURL,
 		TeamName:       newDriver.TeamName,
 		Activo:         newDriver.Activo,
 	}
@@ -100,6 +102,7 @@ func (s *driverService) GetDriverByID(ctx context.Context, driverID int) (dto.Re
 		LastName:       driver.LastName,
 		FullName:       driver.FullName,
 		NameAcronym:    driver.NameAcronym,
+		HeadshotURL:    driver.HeadshotURL,
 		TeamName:       driver.TeamName,
 		Activo:         driver.Activo,
 	}
@@ -135,6 +138,9 @@ func (s *driverService) UpdateDriver(ctx context.Context, driverID int, request 
 	if request.NameAcronym != "" {
 		driver.NameAcronym = request.NameAcronym
 	}
+	if request.HeadshotURL != "" {
+		driver.HeadshotURL = request.HeadshotURL
+	}
 	if request.TeamName != "" {
 		driver.TeamName = request.TeamName
 	}
@@ -156,6 +162,7 @@ func (s *driverService) UpdateDriver(ctx context.Context, driverID int, request 
 		LastName:       driver.LastName,
 		FullName:       driver.FullName,
 		NameAcronym:    driver.NameAcronym,
+		HeadshotURL:    driver.HeadshotURL,
 		TeamName:       driver.TeamName,
 		Activo:         driver.Activo,
 	}
@@ -196,6 +203,7 @@ func (s *driverService) ListDrivers(ctx context.Context) ([]dto.ResponseDriverDT
 			LastName:       driver.LastName,
 			FullName:       driver.FullName,
 			NameAcronym:    driver.NameAcronym,
+			HeadshotURL:    driver.HeadshotURL,
 			TeamName:       driver.TeamName,
 			Activo:         driver.Activo,
 		})
@@ -221,6 +229,7 @@ func (s *driverService) ListDriversByTeam(ctx context.Context, teamName string) 
 			LastName:       driver.LastName,
 			FullName:       driver.FullName,
 			NameAcronym:    driver.NameAcronym,
+			HeadshotURL:    driver.HeadshotURL,
 			TeamName:       driver.TeamName,
 			Activo: 	    driver.Activo,
 		})
@@ -247,6 +256,7 @@ func (s *driverService) ListDriversByCountry(ctx context.Context, countryCode st
 			LastName:       driver.LastName,
 			FullName:       driver.FullName,
 			NameAcronym:    driver.NameAcronym,
+			HeadshotURL:    driver.HeadshotURL,
 			TeamName:       driver.TeamName,
 			Activo: 	    driver.Activo,
 		})
@@ -273,6 +283,7 @@ func (s *driverService) ListDriversByFullName(ctx context.Context, fullName stri
 			LastName:       driver.LastName,
 			FullName:       driver.FullName,
 			NameAcronym:    driver.NameAcronym,
+			HeadshotURL:    driver.HeadshotURL,
 			TeamName:       driver.TeamName,
 			Activo: 	    driver.Activo,
 		})
@@ -298,6 +309,7 @@ func (s *driverService) ListDriversByAcronym(ctx context.Context, acronym string
 			LastName:       driver.LastName,
 			FullName:       driver.FullName,
 			NameAcronym:    driver.NameAcronym,
+			HeadshotURL:    driver.HeadshotURL,
 			TeamName:       driver.TeamName,
 			Activo: 	    driver.Activo,
 		})
@@ -341,6 +353,7 @@ func (s *driverService) FetchAllDriversFromExternalAPI(ctx context.Context) ([]d
                 LastName:       driver.LastName,
                 FullName:       driver.FullName,
                 NameAcronym:    driver.NameAcronym,
+				HeadshotURL:    driver.HeadshotURL,
                 TeamName:       driver.TeamName,
 				Activo: 	    driver.Activo,
             }
@@ -360,6 +373,7 @@ func (s *driverService) FetchAllDriversFromExternalAPI(ctx context.Context) ([]d
                 LastName:       newDriver.LastName,
                 FullName:       newDriver.FullName,
                 NameAcronym:    newDriver.NameAcronym,
+				HeadshotURL:    newDriver.HeadshotURL,
                 TeamName:       newDriver.TeamName,
 				Activo: 	    newDriver.Activo,
             })
@@ -407,6 +421,7 @@ func (s *driverService) GetDriverByNumber(ctx context.Context, driverNumber int)
 		LastName:       driver.LastName,
 		FullName:       driver.FullName,
 		NameAcronym:    driver.NameAcronym,
+		HeadshotURL:    driver.HeadshotURL,
 		TeamName:       driver.TeamName,
 		Activo: 	    driver.Activo,
 	}

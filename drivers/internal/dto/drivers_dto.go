@@ -8,6 +8,7 @@ type CreateDriverDTO struct {
     LastName       string `json:"last_name" binding:"required"`
     FullName       string `json:"full_name" binding:"required"`
     NameAcronym    string `json:"name_acronym" binding:"required"`
+    HeadshotURL    string `json:"headshot_url,omitempty"`
     TeamName       string `json:"team_name" binding:"required"`
     Activo         bool   `json:"activo" binding:"required"`
 }
@@ -20,6 +21,7 @@ type UpdateDriverDTO struct {
     LastName       string `json:"last_name,omitempty"`
     FullName       string `json:"full_name,omitempty"`
     NameAcronym    string `json:"name_acronym,omitempty"`
+    HeadshotURL    string `json:"headshot_url,omitempty"`
     TeamName       string `json:"team_name,omitempty"`
     Activo         *bool   `json:"activo,omitempty"`
 }
@@ -33,6 +35,7 @@ type ResponseDriverDTO struct {
     LastName       string `json:"last_name"`
     FullName       string `json:"full_name"`
     NameAcronym    string `json:"name_acronym"`
+    HeadshotURL    string `json:"headshot_url"`
     TeamName       string `json:"team_name"`
     Activo         bool   `json:"activo"`
 }
