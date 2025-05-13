@@ -42,17 +42,16 @@ type HttpClient struct {
 
 // NewHttpClient crea una nueva instancia de HttpClient con una base URL
 func NewHttpClient(baseURL string) *HttpClient {
-    if !strings.HasPrefix(baseURL, "http://") && !strings.HasPrefix(baseURL, "https://") {
-        panic("BaseURL must start with http:// or https://")
-    }
-    return &HttpClient{
-        BaseURL: baseURL,
-        HTTPClient: &http.Client{
-            Timeout: time.Second * 30,
-        },
-    }
+	if !strings.HasPrefix(baseURL, "http://") && !strings.HasPrefix(baseURL, "https://") {
+		panic("BaseURL must start with http:// or https://")
+	}
+	return &HttpClient{
+		BaseURL: baseURL,
+		HTTPClient: &http.Client{
+			Timeout: time.Second * 30,
+		},
+	}
 }
-
 
 func (c *HttpClient) SetJWTToken(token string) {
 	c.JWTToken = token
@@ -60,37 +59,35 @@ func (c *HttpClient) SetJWTToken(token string) {
 
 // Get realiza una solicitud GET a la API de destino
 func (c *HttpClient) Get(endpoint string) ([]byte, error) {
-    // Verificar si el endpoint ya es una URL completa
-    url := endpoint
-    if !strings.HasPrefix(endpoint, "http://") && !strings.HasPrefix(endpoint, "https://") {
-        url = fmt.Sprintf("%s%s", c.BaseURL, endpoint)
-    }
+	// Verificar si el endpoint ya es una URL completa
+	url := endpoint
+	if !strings.HasPrefix(endpoint, "http://") && !strings.HasPrefix(endpoint, "https://") {
+		url = fmt.Sprintf("%s%s", c.BaseURL, endpoint)
+	}
 
-    req, err := http.NewRequest("GET", url, nil)
-    if err != nil {
-        return nil, fmt.Errorf("error creating GET request: %w", err)
-    }
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating GET request: %w", err)
+	}
 
-    // Agregar el token JWT si está configurado
-    if c.JWTToken != "" {
-        req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.JWTToken))
-    }
+	// Agregar el token JWT si está configurado
+	if c.JWTToken != "" {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.JWTToken))
+	}
 
-    resp, err := c.HTTPClient.Do(req)
-    if err != nil {
-        return nil, fmt.Errorf("error making GET request: %w", err)
-    }
-    defer resp.Body.Close()
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("error making GET request: %w", err)
+	}
+	defer resp.Body.Close()
 
-    if resp.StatusCode != http.StatusOK {
-        body, _ := ioutil.ReadAll(resp.Body)
-        return nil, fmt.Errorf("received non-200 response code: %d, body: %s", resp.StatusCode, body)
-    }
+	if resp.StatusCode != http.StatusOK {
+		body, _ := ioutil.ReadAll(resp.Body)
+		return nil, fmt.Errorf("received non-200 response code: %d, body: %s", resp.StatusCode, body)
+	}
 
-    return ioutil.ReadAll(resp.Body)
+	return ioutil.ReadAll(resp.Body)
 }
-
-
 
 // Post realiza una solicitud POST a la API de destino
 func (c *HttpClient) Post(endpoint string, data interface{}) ([]byte, error) {
@@ -125,7 +122,6 @@ func (c *HttpClient) Post(endpoint string, data interface{}) ([]byte, error) {
 
 	return ioutil.ReadAll(resp.Body)
 }
-
 
 // Put realiza una solicitud PUT a la API de destino
 func (c *HttpClient) Put(endpoint string, data interface{}) ([]byte, error) {
@@ -170,7 +166,6 @@ func (c *HttpClient) Put(endpoint string, data interface{}) ([]byte, error) {
 	return body, nil
 }
 
-
 // Delete realiza una solicitud DELETE a la API de destino
 func (c *HttpClient) Delete(endpoint string) error {
 	fullURL := fmt.Sprintf("%s%s", c.BaseURL, endpoint)
@@ -201,51 +196,50 @@ func (c *HttpClient) Delete(endpoint string) error {
 	return nil
 }
 
-
 // GetPositions obtiene las posiciones de los pilotos desde la API externa para una sesión específica
 func (c *HttpClient) GetPositions(sessionKey int) ([]dto.Position, error) {
-    // Construir la URL completa para la solicitud de posiciones
-    endpoint := fmt.Sprintf("https://api.openf1.org/v1/position?session_key=%d", sessionKey)
+	// Construir la URL completa para la solicitud de posiciones
+	endpoint := fmt.Sprintf("https://api.openf1.org/v1/position?session_key=%d", sessionKey)
 	println("Endpoint: ", endpoint)
 
-    body, err := c.Get(endpoint)
-    if err != nil {
-        return nil, fmt.Errorf("error fetching positions: %w", err)
-    }
+	body, err := c.Get(endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("error fetching positions: %w", err)
+	}
 
-    var positions []dto.Position
-    if err := json.Unmarshal(body, &positions); err != nil {
-        return nil, fmt.Errorf("error decoding positions response: %w", err)
-    }
+	var positions []dto.Position
+	if err := json.Unmarshal(body, &positions); err != nil {
+		return nil, fmt.Errorf("error decoding positions response: %w", err)
+	}
 
-    return positions, nil
+	return positions, nil
 }
 
 // GetLaps obtiene las vueltas rápidas de un piloto específico desde la API externa
 func (c *HttpClient) GetLaps(sessionKey int, driverNumber int) ([]dto.Lap, error) {
-    // Construir la URL completa para la solicitud de laps
-    endpoint := fmt.Sprintf("https://api.openf1.org/v1/laps?session_key=%d&driver_number=%d", sessionKey, driverNumber)
+	// Construir la URL completa para la solicitud de laps
+	endpoint := fmt.Sprintf("https://api.openf1.org/v1/laps?session_key=%d&driver_number=%d", sessionKey, driverNumber)
 	println("Endpoint: ", endpoint)
 
-    body, err := c.Get(endpoint)
-    if err != nil {
-        return nil, fmt.Errorf("error fetching laps: %w", err)
-    }
+	body, err := c.Get(endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("error fetching laps: %w", err)
+	}
 
-    var laps []dto.Lap
-    if err := json.Unmarshal(body, &laps); err != nil {
-        return nil, fmt.Errorf("error decoding laps response: %w", err)
-    }
+	var laps []dto.Lap
+	if err := json.Unmarshal(body, &laps); err != nil {
+		return nil, fmt.Errorf("error decoding laps response: %w", err)
+	}
 
-    // Filtrar las vueltas con lap_duration nulo o igual a 0
-    validLaps := make([]dto.Lap, 0)
-    for _, lap := range laps {
-        if lap.LapDuration > 0 {
-            validLaps = append(validLaps, lap)
-        }
-    }
+	// Filtrar las vueltas con lap_duration nulo o igual a 0
+	validLaps := make([]dto.Lap, 0)
+	for _, lap := range laps {
+		if lap.LapDuration > 0 {
+			validLaps = append(validLaps, lap)
+		}
+	}
 
-    return validLaps, nil
+	return validLaps, nil
 }
 
 // Función para obtener sessionKey utilizando sessionId
@@ -266,7 +260,6 @@ func (c *HttpClient) GetSessionKeyBySessionID(sessionID int) (int, error) {
 
 	return response.SessionKey, nil
 }
-
 
 // GetDriverByNumber obtiene la información de un piloto basado en su driver_number
 func (c *HttpClient) GetDriverByNumber(driverNumber int) (dto.ResponseDriverDTO, error) {
@@ -297,22 +290,22 @@ func (c *HttpClient) GetDriverByNumber(driverNumber int) (dto.ResponseDriverDTO,
 
 // Función para obtener la información de una sesión completa utilizando sessionId
 func (c *HttpClient) GetSessionByID(sessionID int) (dto.ResponseSessionDTO, error) {
-    // Usar la URL correcta del microservicio de sessions
-    endpoint := c.buildURL(fmt.Sprintf("/sessions/%d", sessionID))
+	// Usar la URL correcta del microservicio de sessions
+	endpoint := c.buildURL(fmt.Sprintf("/sessions/%d", sessionID))
 
-    // Hacer la solicitud GET utilizando el cliente HTTP con autenticación
-    body, err := c.GetWithAuth(endpoint) // Usar la función que maneja el token JWT
-    if err != nil {
-        return dto.ResponseSessionDTO{}, fmt.Errorf("error fetching session by ID: %w", err)
-    }
+	// Hacer la solicitud GET utilizando el cliente HTTP con autenticación
+	body, err := c.GetWithAuth(endpoint) // Usar la función que maneja el token JWT
+	if err != nil {
+		return dto.ResponseSessionDTO{}, fmt.Errorf("error fetching session by ID: %w", err)
+	}
 
-    // Deserializar la respuesta para obtener la sesión
-    var session dto.ResponseSessionDTO
-    if err := json.Unmarshal(body, &session); err != nil {
-        return dto.ResponseSessionDTO{}, fmt.Errorf("error decoding session response: %w", err)
-    }
+	// Deserializar la respuesta para obtener la sesión
+	var session dto.ResponseSessionDTO
+	if err := json.Unmarshal(body, &session); err != nil {
+		return dto.ResponseSessionDTO{}, fmt.Errorf("error decoding session response: %w", err)
+	}
 
-    return session, nil
+	return session, nil
 }
 
 func (c *HttpClient) GetWithAuth(endpoint string) ([]byte, error) {
@@ -358,7 +351,6 @@ func (c *HttpClient) GetWithAuth(endpoint string) ([]byte, error) {
 
 	return body, nil
 }
-
 
 func (c *HttpClient) buildURL(endpoint string) string {
 	// Si el endpoint ya es una URL completa, devolverlo tal cual

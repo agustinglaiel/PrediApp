@@ -6,7 +6,7 @@ toolchain go1.23.7
 
 require (
 	github.com/gin-gonic/gin v1.10.0
-	github.com/golang-jwt/jwt/v4 v4.5.1
+	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/json-iterator/go v1.1.12
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/gorm v1.25.12
