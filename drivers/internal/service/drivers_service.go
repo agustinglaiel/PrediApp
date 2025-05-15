@@ -325,10 +325,10 @@ func (s *driverService) FetchAllDriversFromExternalAPI(ctx context.Context) ([]d
         return nil, e.NewInternalServerApiError("Error fetching drivers from external API", err)
     }
 
-    // 2. Eliminar duplicados por 'NameAcronym'
+    // 2. Eliminar duplicados por 'FirstName y LastName'
     uniqueDrivers := uniqueDrivers(drivers)
 
-    // 3. Obtener todos los pilotos existentes en la base de datos (usando NameAcronym para comparar)
+    // 3. Obtener todos los pilotos existentes en la base de datos
     existingDrivers, err := s.driverRepo.ListDrivers(ctx)
     if err != nil {
         return nil, e.NewInternalServerApiError("Error fetching drivers from database", err)
@@ -337,63 +337,70 @@ func (s *driverService) FetchAllDriversFromExternalAPI(ctx context.Context) ([]d
     // 4. Crear un mapa para los pilotos existentes (para verificar más rápido)
     existingDriverMap := make(map[string]bool)
     for _, driver := range existingDrivers {
-        existingDriverMap[driver.NameAcronym] = true
+        key := driver.FirstName + "|" + driver.LastName
+        existingDriverMap[key] = true
     }
 
-    // 5. Insertar solo los pilotos que no están en la base de datos
-    var insertedDrivers []dto.ResponseDriverDTO
-    for _, driver := range uniqueDrivers {
-        if _, exists := existingDriverMap[driver.NameAcronym]; !exists {
-            // Convertir DTO a modelo
-            newDriver := &model.Driver{
-                BroadcastName:  driver.BroadcastName,
-                CountryCode:    driver.CountryCode,
-                DriverNumber:   driver.DriverNumber,
-                FirstName:      driver.FirstName,
-                LastName:       driver.LastName,
-                FullName:       driver.FullName,
-                NameAcronym:    driver.NameAcronym,
-				HeadshotURL:    driver.HeadshotURL,
-                TeamName:       driver.TeamName,
-				Activo: 	    driver.Activo,
-            }
+    // 5. Preparar la lista de pilotos nuevos para insertar
+	var newDrivers []*model.Driver
+	for _, driver := range uniqueDrivers {
+		key := driver.FirstName + "|" + driver.LastName
+		if _, exists := existingDriverMap[key]; !exists {
+			newDriver := &model.Driver{
+				BroadcastName: driver.BroadcastName,
+				CountryCode:   driver.CountryCode,
+				DriverNumber:  driver.DriverNumber,
+				FirstName:     driver.FirstName,
+				LastName:      driver.LastName,
+				FullName:      driver.FullName,
+				NameAcronym:   driver.NameAcronym,
+				HeadshotURL:   driver.HeadshotURL,
+				TeamName:      driver.TeamName,
+				Activo:        true,
+			}
+			newDrivers = append(newDrivers, newDriver)
+			existingDriverMap[key] = true
+		}
+	}
 
-            // Insertar el piloto en la base de datos
-            if err := s.driverRepo.CreateDriver(ctx, newDriver); err != nil {
-                return nil, e.NewInternalServerApiError("Error inserting driver into database", err)
-            }
+	// 6. Insertar los pilotos nuevos usando una transacción en el repositorio
+	insertedModels, err := s.driverRepo.CreateDriversTransaction(ctx, newDrivers)
+	if err != nil {
+		return nil, e.NewInternalServerApiError("Error inserting new drivers", err)
+	}
 
-            // Añadir a la lista de pilotos insertados para la respuesta
-            insertedDrivers = append(insertedDrivers, dto.ResponseDriverDTO{
-				ID:			    newDriver.ID,
-                BroadcastName:  newDriver.BroadcastName,
-                CountryCode:    newDriver.CountryCode,
-                DriverNumber:   newDriver.DriverNumber,
-                FirstName:      newDriver.FirstName,
-                LastName:       newDriver.LastName,
-                FullName:       newDriver.FullName,
-                NameAcronym:    newDriver.NameAcronym,
-				HeadshotURL:    newDriver.HeadshotURL,
-                TeamName:       newDriver.TeamName,
-				Activo: 	    newDriver.Activo,
-            })
-        }
-    }
+	// 8. Convertir los modelos insertados a DTOs de respuesta
+	var insertedDrivers []dto.ResponseDriverDTO
+	for _, driver := range insertedModels {
+		insertedDrivers = append(insertedDrivers, dto.ResponseDriverDTO{
+			ID:            driver.ID,
+			BroadcastName: driver.BroadcastName,
+			CountryCode:   driver.CountryCode,
+			DriverNumber:  driver.DriverNumber,
+			FirstName:     driver.FirstName,
+			LastName:      driver.LastName,
+			FullName:      driver.FullName,
+			NameAcronym:   driver.NameAcronym,
+			HeadshotURL:   driver.HeadshotURL,
+			TeamName:      driver.TeamName,
+			Activo:        false,
+		})
+	}
 
-    // 6. Retornar los pilotos que se insertaron para el frontend
     return insertedDrivers, nil
 }
 
-// Función auxiliar para eliminar pilotos duplicados basados en 'NameAcronym'
+// Función auxiliar para eliminar pilotos duplicados basados en 'First name y Last name'
 func uniqueDrivers(drivers []dto.ResponseDriverDTO) []dto.ResponseDriverDTO {
-    seen := make(map[string]bool) // Mapa para rastrear los pilotos que ya hemos visto
-    unique := []dto.ResponseDriverDTO{}   // Slice para almacenar los pilotos únicos
+    seen := make(map[string]bool)
+    unique := []dto.ResponseDriverDTO{}
 
     for _, driver := range drivers {
-        // Si el piloto con el mismo 'NameAcronym' no ha sido visto antes
-        if _, ok := seen[driver.NameAcronym]; !ok {
-            seen[driver.NameAcronym] = true // Marcar como visto
-            unique = append(unique, driver) // Agregar a la lista de únicos
+        // Crear una clave única combinando FirstName y LastName
+        key := driver.FirstName + "|" + driver.LastName
+        if _, ok := seen[key]; !ok {
+            seen[key] = true
+            unique = append(unique, driver)
         }
     }
 

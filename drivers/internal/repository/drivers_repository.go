@@ -5,6 +5,7 @@ import (
 	model "drivers/internal/model"
 	e "drivers/pkg/utils"
 	"fmt"
+	"strings"
 
 	"gorm.io/gorm"
 )
@@ -15,6 +16,7 @@ type driverRepository struct {
 
 type DriverRepository interface {
 	CreateDriver(ctx context.Context, driver *model.Driver) e.ApiError
+	CreateDriversTransaction(ctx context.Context, drivers []*model.Driver) ([]*model.Driver, e.ApiError) // Nuevo método
 	GetDriverByID(ctx context.Context, driverID int) (*model.Driver, e.ApiError)
 	UpdateDriver(ctx context.Context, driver *model.Driver) e.ApiError
 	DeleteDriver(ctx context.Context, driverID int) e.ApiError
@@ -37,6 +39,31 @@ func (r *driverRepository) CreateDriver(ctx context.Context, driver *model.Drive
         return e.NewInternalServerApiError("Error creando el piloto", err)
     }                 
     return nil
+}
+
+func (r *driverRepository) CreateDriversTransaction(ctx context.Context, drivers []*model.Driver) ([]*model.Driver, e.ApiError) {
+	var insertedDrivers []*model.Driver
+
+	// Usar la variable global DB para iniciar una transacción
+	err := e.DB.Transaction(func(tx *gorm.DB) error {
+		for _, driver := range drivers {
+			if err := tx.WithContext(ctx).Create(driver).Error; err != nil {
+				// Si hay un error de duplicado (por ejemplo, si hay una restricción única), ignorar y continuar
+				if strings.Contains(err.Error(), "1062") {
+					continue
+				}
+				return err
+			}
+			insertedDrivers = append(insertedDrivers, driver)
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, e.NewInternalServerApiError("Error during transaction", err)
+	}
+
+	return insertedDrivers, nil
 }
 
 func (r *driverRepository) GetDriverByID(ctx context.Context, driverID int) (*model.Driver, e.ApiError) {
