@@ -30,6 +30,16 @@ func (sc *SessionController) CreateSession(c *gin.Context) {
 		return
 	}
 
+	// Validar que las fechas estén en UTC
+    if !request.DateStart.IsZero() && request.DateStart.Location().String() != "UTC" {
+        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("DateStart debe estar en UTC"))
+        return
+    }
+    if !request.DateEnd.IsZero() && request.DateEnd.Location().String() != "UTC" {
+        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("DateEnd debe estar en UTC"))
+        return
+    }
+
 	// Llamar al servicio para crear la sesión
 	response, apiErr := sc.sessionService.CreateSession(c.Request.Context(), request)
 	if apiErr != nil {
@@ -74,6 +84,16 @@ func (sc *SessionController) UpdateSessionById(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Datos inválidos"))
 		return
 	}
+
+	// Validar que las fechas estén en UTC si se proporcionan
+    if request.DateStart != nil && request.DateStart.Location().String() != "UTC" {
+        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("DateStart debe estar en UTC"))
+        return
+    }
+    if request.DateEnd != nil && request.DateEnd.Location().String() != "UTC" {
+        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("DateEnd debe estar en UTC"))
+        return
+    }
 
 	// Llamar al servicio para actualizar la sesión
 	response, apiErr := sc.sessionService.UpdateSessionById(c.Request.Context(), sessionID, request)
@@ -210,32 +230,40 @@ func (sc *SessionController) ListPastSessions(c *gin.Context) {
 }
 
 func (sc *SessionController) ListSessionsBetweenDates(c *gin.Context) {
-	// Obtener las fechas desde los parámetros de la URL o el query
-	startDateStr := c.Query("start_date")
-	endDateStr := c.Query("end_date")
+    // Obtener las fechas desde los parámetros de la URL o el query
+    startDateStr := c.Query("start_date")
+    endDateStr := c.Query("end_date")
 
-	// Parsear las fechas a time.Time
-	startDate, err := time.Parse(time.RFC3339, startDateStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Fecha de inicio inválida"))
-		return
-	}
+    // Parsear las fechas a time.Time
+    startDate, err := time.Parse(time.RFC3339, startDateStr)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Formato de fecha de inicio inválido"))
+        return
+    }
+    if startDate.Location().String() != "UTC" {
+        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Fecha de inicio debe estar en UTC"))
+        return
+    }
 
-	endDate, err := time.Parse(time.RFC3339, endDateStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Fecha de fin inválida"))
-		return
-	}
+    endDate, err := time.Parse(time.RFC3339, endDateStr)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Formato de fecha de fin inválido"))
+        return
+    }
+    if endDate.Location().String() != "UTC" {
+        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Fecha de fin debe estar en UTC"))
+        return
+    }
 
-	// Llamar al servicio para obtener las sesiones entre las fechas especificadas
-	response, apiErr := sc.sessionService.ListSessionsBetweenDates(c.Request.Context(), startDate, endDate)
-	if apiErr != nil {
-		c.JSON(apiErr.Status(), apiErr)
-		return
-	}
+    // Llamar al servicio para obtener las sesiones entre las fechas especificadas
+    response, apiErr := sc.sessionService.ListSessionsBetweenDates(c.Request.Context(), startDate, endDate)
+    if apiErr != nil {
+        c.JSON(apiErr.Status(), apiErr)
+        return
+    }
 
-	// Responder con el listado de sesiones
-	c.JSON(http.StatusOK, response)
+    // Responder con el listado de sesiones
+    c.JSON(http.StatusOK, response)
 }
 
 func (sc *SessionController) FindSessionsByNameAndType(c *gin.Context) {
@@ -325,10 +353,16 @@ func (sc *SessionController) UpdateSessionData(c *gin.Context) {
         return
     }
 
-    // Vincular la carga útil JSON al DTO (si es necesario agregar más campos)
+    // Vincular la carga útil JSON al DTO
     var request dto.UpdateSessionDataDTO
     if err := c.ShouldBindJSON(&request); err != nil {
         c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Datos inválidos"))
+        return
+    }
+
+    // Validar que los parámetros de entrada sean válidos (aunque las fechas se manejan en el servicio)
+    if request.Location == "" || request.SessionName == "" || request.SessionType == "" || request.Year == 0 {
+        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Todos los campos son requeridos"))
         return
     }
 

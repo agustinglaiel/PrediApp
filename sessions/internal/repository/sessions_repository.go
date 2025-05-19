@@ -40,26 +40,27 @@ func NewSessionRepository(db *gorm.DB) SessionRepository{
 	return &sessionRepository{db: db}
 }
 
-func (s *sessionRepository) CreateSession(ctx context.Context, session *model.Session) e.ApiError{
-	if err := s.db.WithContext(ctx).Create(session).Error; err != nil {
+func (s *sessionRepository) CreateSession(ctx context.Context, session *model.Session) e.ApiError {
+    session.DateStart = session.DateStart.UTC() // Forzar UTC
+    session.DateEnd = session.DateEnd.UTC()     // Forzar UTC
+    if err := s.db.WithContext(ctx).Create(session).Error; err != nil {
         return e.NewInternalServerApiError("Error creando sesión", err)
     }
-
-    // Log para verificar el ID asignado
     fmt.Printf("Session created with ID: %d\n", session.ID)
-    
     return nil
 }
 
-func (s *sessionRepository) GetSessionById(ctx context.Context, sessionID int)(*model.Session, e.ApiError){
-	var session model.Session
-	if err := s.db.WithContext(ctx).First(&session, sessionID).Error; err != nil {
-		if err == gorm.ErrRecordNotFound{
-			return nil, e.NewNotFoundApiError("Sesion no encontrada")
-		}
-		return nil, e.NewInternalServerApiError("Error encontrando sesión", err)
-	}
-	return &session, nil
+func (s *sessionRepository) GetSessionById(ctx context.Context, sessionID int) (*model.Session, e.ApiError) {
+    var session model.Session
+    if err := s.db.WithContext(ctx).First(&session, sessionID).Error; err != nil {
+        if err == gorm.ErrRecordNotFound {
+            return nil, e.NewNotFoundApiError("Sesión no encontrada")
+        }
+        return nil, e.NewInternalServerApiError("Error encontrando sesión", err)
+    }
+    session.DateStart = session.DateStart.UTC() // Forzar UTC
+    session.DateEnd = session.DateEnd.UTC()     // Forzar UTC
+    return &session, nil
 }
 
 func (s *sessionRepository) UpdateSessionById(ctx context.Context, session *model.Session) e.ApiError {
@@ -76,8 +77,8 @@ func (s *sessionRepository) UpdateSessionById(ctx context.Context, session *mode
         "country_code":      session.CountryCode,
         "country_key":       session.CountryKey,
         "country_name":      session.CountryName,
-        "date_start":        session.DateStart,
-        "date_end":          session.DateEnd,
+        "date_start":        session.DateStart.UTC(),
+        "date_end":          session.DateEnd.UTC(),
         "location":          session.Location,
         "session_key":       session.SessionKey,
         "session_name":      session.SessionName,
@@ -154,8 +155,8 @@ func (s *sessionRepository) GetSessionsByCountryCode(ctx context.Context, countr
 
 func (s *sessionRepository) GetUpcomingSessions(ctx context.Context) ([]*model.Session, e.ApiError) {
     var sessions []*model.Session
-    currentTime := time.Now()
-    currentYear := currentTime.Year() // Obtiene el año actual (por ejemplo, 2025)
+    currentTime := time.Now().UTC()
+    currentYear := currentTime.Year()
 
     if err := s.db.WithContext(ctx).
         Where("date_start > ?", currentTime).
@@ -163,12 +164,18 @@ func (s *sessionRepository) GetUpcomingSessions(ctx context.Context) ([]*model.S
         Find(&sessions).Error; err != nil {
         return nil, e.NewInternalServerApiError("Error encontrando próximas sesiones", err)
     }
+
+    for _, session := range sessions {
+        session.DateStart = session.DateStart.UTC()
+        session.DateEnd = session.DateEnd.UTC()
+    }
+
     return sessions, nil
 }
 
 func (s *sessionRepository) GetPastSessions(ctx context.Context, year int) ([]*model.Session, e.ApiError) {
     var sessions []*model.Session
-    currentTime := time.Now()
+    currentTime := time.Now().UTC() 
 
     // Filtrar sesiones del año especificado cuya date_start sea anterior a la fecha actual
     if err := s.db.WithContext(ctx).
@@ -177,14 +184,32 @@ func (s *sessionRepository) GetPastSessions(ctx context.Context, year int) ([]*m
         Find(&sessions).Error; err != nil {
         return nil, e.NewInternalServerApiError("Error encontrando sesiones pasadas", err)
     }
+
+    for _, session := range sessions {
+        session.DateStart = session.DateStart.UTC()
+        session.DateEnd = session.DateEnd.UTC()
+    }
+
     return sessions, nil
 }
 
 func (s *sessionRepository) GetSessionsBetweenDates(ctx context.Context, startDate time.Time, endDate time.Time) ([]*model.Session, e.ApiError) {
+    startDate = startDate.UTC()
+    endDate = endDate.UTC()
+
     var sessions []*model.Session
-    if err := s.db.WithContext(ctx).Where("date_start >= ? AND date_end <= ?", startDate, endDate).Find(&sessions).Error; err != nil {
+    if err := s.db.WithContext(ctx).
+        Where("date_start >= ? AND date_end <= ?", startDate, endDate).
+        Find(&sessions).Error; err != nil {
         return nil, e.NewInternalServerApiError("Error encontrando sesiones entre fechas", err)
     }
+
+    // Asegurarse de que DateStart y DateEnd estén en UTC al devolverlas
+    for _, session := range sessions {
+        session.DateStart = session.DateStart.UTC()
+        session.DateEnd = session.DateEnd.UTC()
+    }
+
     return sessions, nil
 }
 

@@ -83,16 +83,6 @@ func (s *sessionService) CreateSession(ctx context.Context, request dto.CreateSe
     if err != nil {
         return dto.ResponseSessionDTO{}, e.NewInternalServerApiError("Error validando sesiones existentes", err)
     }
-
-    // // Imprimir información de las sesiones existentes como JSON para depuración
-    // for _, session := range existingSessions {
-    //     sessionJSON, err := json.Marshal(session)
-    //     if err != nil {
-    //         fmt.Printf("Error marshaling session to JSON: %v\n", err)
-    //         continue
-    //     }
-    //     fmt.Printf("Existing Session: %s\n", sessionJSON)
-    // }
     
     // Verificar si ya existe una sesión con el mismo SessionName, SessionType y Year para este location
     for _, session := range existingSessions {
@@ -113,19 +103,18 @@ func (s *sessionService) CreateSession(ctx context.Context, request dto.CreateSe
         CircuitShortName:  request.CircuitShortName,
         CountryCode:       request.CountryCode,
         CountryName:       request.CountryName,
-        DateStart:         request.DateStart,
-        DateEnd:           request.DateEnd,
+        DateStart:         request.DateStart.UTC(),
+        DateEnd:           request.DateEnd.UTC(),
         Location:          request.Location,
         SessionKey:        nil,
         SessionName:       request.SessionName,
         SessionType:       request.SessionType,
         Year:              request.Year,
-        DNF:               dnf,       // Número de pilotos que no terminaron
-        VSC:               vsc,       // Indica si hubo VSC
-        SF:                sf,        // Indica si hubo SC
-        // DFastLap:          dFastLap,  // ID del piloto que hizo la vuelta más rápida
-        CreatedAt:         time.Now(),
-        UpdatedAt:         time.Now(),
+        DNF:               dnf,       
+        VSC:               vsc,       
+        SF:                sf,        
+        CreatedAt:         time.Now().UTC(),
+        UpdatedAt:         time.Now().UTC(),
     }
 
     if err := s.sessionsRepo.CreateSession(ctx, newSession); err != nil {
@@ -140,8 +129,8 @@ func (s *sessionService) CreateSession(ctx context.Context, request dto.CreateSe
         CircuitShortName: newSession.CircuitShortName,
         CountryCode:      newSession.CountryCode,
         CountryName:      newSession.CountryName,
-        DateStart:        newSession.DateStart,
-        DateEnd:          newSession.DateEnd,
+        DateStart:        newSession.DateStart.UTC(),
+        DateEnd:          newSession.DateEnd.UTC(),
         Location:         newSession.Location,
         SessionKey:       newSession.SessionKey,
         SessionName:      newSession.SessionName,
@@ -150,7 +139,6 @@ func (s *sessionService) CreateSession(ctx context.Context, request dto.CreateSe
         DNF:              newSession.DNF,
         VSC:              newSession.VSC,
         SF:               newSession.SF,
-        // DFastLap:         newSession.DFastLap,  // Actualizar con el nombre correcto
     }
 
     return response, nil
@@ -171,8 +159,8 @@ func (s *sessionService) GetSessionById(ctx context.Context, sessionID int) (dto
         CircuitShortName: session.CircuitShortName,
         CountryCode:      session.CountryCode,
         CountryName:      session.CountryName,
-        DateStart:        session.DateStart,
-        DateEnd:          session.DateEnd,
+        DateStart:        session.DateStart.UTC(),
+        DateEnd:          session.DateEnd.UTC(),
         Location:         session.Location,
         SessionKey:       session.SessionKey,
         SessionName:      session.SessionName,
@@ -261,10 +249,10 @@ func (s *sessionService) UpdateSessionById(ctx context.Context, sessionID int, r
         session.CountryName = *request.CountryName
     }
     if request.DateStart != nil {
-        session.DateStart = *request.DateStart
+        session.DateStart = (*request.DateStart).UTC() 
     }
     if request.DateEnd != nil {
-        session.DateEnd = *request.DateEnd
+        session.DateEnd = (*request.DateEnd).UTC() 
     }
     if request.Location != nil {
         session.Location = *request.Location
@@ -311,8 +299,8 @@ func (s *sessionService) UpdateSessionById(ctx context.Context, sessionID int, r
         CircuitShortName: session.CircuitShortName,
         CountryCode:      session.CountryCode,
         CountryName:      session.CountryName,
-        DateStart:        session.DateStart,
-        DateEnd:          session.DateEnd,
+        DateStart:        session.DateStart.UTC(),
+        DateEnd:          session.DateEnd.UTC(),
         Location:         session.Location,
         SessionKey:       session.SessionKey,
         SessionName:      session.SessionName,
@@ -362,8 +350,8 @@ func (s *sessionService) ListSessionsByYear(ctx context.Context, year int) ([]dt
             CircuitShortName: session.CircuitShortName,
             CountryCode:      session.CountryCode,
             CountryName:      session.CountryName,
-            DateStart:        session.DateStart,
-            DateEnd:          session.DateEnd,
+            DateStart:        session.DateStart.UTC(),
+            DateEnd:          session.DateEnd.UTC(),
             Location:         session.Location,
             SessionKey:       session.SessionKey,
             SessionName:      session.SessionName,
@@ -413,8 +401,8 @@ func (s *sessionService) ListSessionsByCircuitKey(ctx context.Context, circuitKe
             CircuitShortName: session.CircuitShortName,
             CountryCode:      session.CountryCode,
             CountryName:      session.CountryName,
-            DateStart:        session.DateStart,
-            DateEnd:          session.DateEnd,
+            DateStart:        session.DateStart.UTC(),
+            DateEnd:          session.DateEnd.UTC(),
             Location:         session.Location,
             SessionKey:       session.SessionKey,
             SessionName:      session.SessionName,
@@ -443,8 +431,8 @@ func (s *sessionService) ListSessionsByCountryCode(ctx context.Context, countryC
             CircuitShortName: session.CircuitShortName,
             CountryCode:      session.CountryCode,
             CountryName:      session.CountryName,
-            DateStart:        session.DateStart,
-            DateEnd:          session.DateEnd,
+            DateStart:        session.DateStart.UTC(),
+            DateEnd:          session.DateEnd.UTC(),
             Location:         session.Location,
             SessionKey:       session.SessionKey,
             SessionName:      session.SessionName,
@@ -473,8 +461,8 @@ func (s *sessionService) ListUpcomingSessions(ctx context.Context) ([]dto.Respon
             CircuitShortName: session.CircuitShortName,
             CountryCode:      session.CountryCode,
             CountryName:      session.CountryName,
-            DateStart:        session.DateStart,
-            DateEnd:          session.DateEnd,
+            DateStart:        session.DateStart.UTC(),
+            DateEnd:          session.DateEnd.UTC(),
             Location:         session.Location,
             SessionKey:       session.SessionKey,
             SessionName:      session.SessionName,
@@ -508,8 +496,8 @@ func (s *sessionService) ListPastSessions(ctx context.Context, year int) ([]dto.
             CircuitShortName: session.CircuitShortName,
             CountryCode:      session.CountryCode,
             CountryName:      session.CountryName,
-            DateStart:        session.DateStart,
-            DateEnd:          session.DateEnd,
+            DateStart:        session.DateStart.UTC(),
+            DateEnd:          session.DateEnd.UTC(),
             Location:         session.Location,
             SessionKey:       session.SessionKey,
             SessionName:      session.SessionName,
@@ -532,6 +520,10 @@ func (s *sessionService) ListSessionsBetweenDates(ctx context.Context, startDate
 		return nil, e.NewBadRequestApiError("La fecha de finalización no puede ser anterior a la fecha de inicio")
 	}
 
+    // Forzar que las fechas sean en UTC
+    startDate = startDate.UTC()
+    endDate = endDate.UTC()
+
 	// Llamar a la función del repository para obtener las sesiones entre las fechas especificadas
 	sessions, err := s.sessionsRepo.GetSessionsBetweenDates(ctx, startDate, endDate)
 	if err != nil {
@@ -548,8 +540,8 @@ func (s *sessionService) ListSessionsBetweenDates(ctx context.Context, startDate
 			CircuitShortName: session.CircuitShortName,
 			CountryCode:      session.CountryCode,
 			CountryName:      session.CountryName,
-			DateStart:        session.DateStart,
-			DateEnd:          session.DateEnd,
+			DateStart:        session.DateStart.UTC(),
+			DateEnd:          session.DateEnd.UTC(),
 			Location:         session.Location,
 			SessionKey:       session.SessionKey,
 			SessionName:      session.SessionName,
@@ -588,8 +580,8 @@ func (s *sessionService) FindSessionsByNameAndType(ctx context.Context, sessionN
             CircuitShortName: session.CircuitShortName,
             CountryCode:      session.CountryCode,
             CountryName:      session.CountryName,
-            DateStart:        session.DateStart,
-            DateEnd:          session.DateEnd,
+            DateStart:        session.DateStart.UTC(),
+            DateEnd:          session.DateEnd.UTC(),
             Location:         session.Location,
             SessionKey:       session.SessionKey,
             SessionName:      session.SessionName,
@@ -623,8 +615,8 @@ func (s *sessionService) GetAllSessions(ctx context.Context) ([]dto.ResponseSess
             CircuitShortName: session.CircuitShortName,
             CountryCode:      session.CountryCode,
             CountryName:      session.CountryName,
-            DateStart:        session.DateStart,
-            DateEnd:          session.DateEnd,
+            DateStart:        session.DateStart.UTC(),
+            DateEnd:          session.DateEnd.UTC(),
             Location:         session.Location,
             SessionKey:       session.SessionKey,
             SessionName:      session.SessionName,
@@ -745,8 +737,8 @@ func (s *sessionService) UpdateSessionData(ctx context.Context, sessionID int, l
 
         // Actualizar los campos session_key, date_start y date_end de la sesión
         session.SessionKey = sessionData.SessionKey
-        session.DateStart = *sessionData.DateStart
-        session.DateEnd = *sessionData.DateEnd
+        session.DateStart = (*sessionData.DateStart).UTC()
+        session.DateEnd = (*sessionData.DateEnd).UTC()
         session.CountryKey = *sessionData.CountryKey
         session.CircuitKey = *sessionData.CircuitKey
         

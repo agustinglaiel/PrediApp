@@ -16,6 +16,7 @@ import (
 )
 
 func main() {
+	time.Local = time.UTC // Establecer la zona horaria a UTC
 	// Obtener el puerto de la variable de entorno PORT
 	port := os.Getenv("PORT")
 	if port == "" {

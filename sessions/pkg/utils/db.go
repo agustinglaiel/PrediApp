@@ -36,8 +36,17 @@ func DisconnectDB() {
 }
 
 // StartDbEngine migrates the database tables
-func StartDbEngine() {
-    DB.AutoMigrate(&model.Session{})
-    // Agrega otras migraciones aquí si es necesario
+func StartDbEngine() error {
+    // Migrar las tablas
+    if err := DB.AutoMigrate(&model.Session{}); err != nil {
+        return fmt.Errorf("error during database migration: %v", err)
+    }
+
+    // Establecer la zona horaria de la sesión a UTC
+    if err := DB.Exec("SET time_zone = 'UTC'").Error; err != nil {
+        return fmt.Errorf("error setting timezone to UTC: %v", err)
+    }
+
     fmt.Println("Finishing Migration Database Tables")
+    return nil
 }
