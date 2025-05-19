@@ -21,7 +21,6 @@ func InitDB() (*gorm.DB, error) {
     }
 
     DB = db
-
     return db, nil
 }
 
@@ -33,6 +32,7 @@ func DisconnectDB() {
         return
     }
     sqlDB.Close()
+    fmt.Println("Database connection closed successfully")
 }
 
 // StartDbEngine migrates the database tables
@@ -47,6 +47,30 @@ func StartDbEngine() error {
         return fmt.Errorf("error setting timezone to UTC: %v", err)
     }
 
+    // Verificar y agregar índices o restricciones únicos
+    if err := checkAndCreateUniqueConstraint(DB, "sessions", "uni_sessions_session_key", "session_key"); err != nil {
+        return fmt.Errorf("error creating unique constraint: %v", err)
+    }
+
     fmt.Println("Finishing Migration Database Tables")
+    return nil
+}
+
+func checkAndCreateUniqueConstraint(db *gorm.DB, tableName, indexName, columnName string) error {
+    var exists int64
+    query := fmt.Sprintf("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = '%s' AND index_name = '%s'", tableName, indexName)
+    if err := db.Raw(query).Scan(&exists).Error; err != nil {
+        return fmt.Errorf("error checking unique constraint %s: %v", indexName, err)
+    }
+
+    if exists == 0 {
+        err := db.Exec(fmt.Sprintf("ALTER TABLE %s ADD CONSTRAINT %s UNIQUE (%s)", tableName, indexName, columnName)).Error
+        if err != nil {
+            return fmt.Errorf("error creating unique constraint %s: %v", indexName, err)
+        }
+        fmt.Printf("Unique constraint `%s` created successfully.\n", indexName)
+    } else {
+        fmt.Printf("Unique constraint `%s` already exists, skipping creation.\n", indexName)
+    }
     return nil
 }

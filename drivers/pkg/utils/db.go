@@ -21,7 +21,6 @@ func InitDB() (*gorm.DB, error) {
     }
 
     DB = db
-
     return db, nil
 }
 
@@ -33,39 +32,25 @@ func DisconnectDB() {
         return
     }
     sqlDB.Close()
+    fmt.Println("Database connection closed successfully")
 }
 
 // StartDbEngine migrates the database tables
-func StartDbEngine() {
-	err := DB.AutoMigrate(
-		&modelD.Driver{},        // Migrar el modelo Driver
-		//&modelD.DriverEvent{},   // Migrar el modelo DriverEvent (asegúrate de tenerlo definido)
-	)
-	if err != nil {
-		fmt.Printf("Error migrating database tables: %v\n", err)
-		return
-	}
+func StartDbEngine() error {
+    // Migrar las tablas controladas por este microservicio
+    err := DB.AutoMigrate(
+        &modelD.Driver{},        // Migrar el modelo Driver
+        //&modelD.DriverEvent{}, // Descomentar si DriverEvent existe
+    )
+    if err != nil {
+        return fmt.Errorf("error migrating database tables: %v", err)
+    }
 
-	// Verificar y agregar índices o restricciones únicos
-	checkAndCreateUniqueConstraint(DB, "sessions", "uni_sessions_session_key", "session_key")
+    // Establecer la zona horaria de la sesión a UTC
+    if err := DB.Exec("SET time_zone = 'UTC'").Error; err != nil {
+        return fmt.Errorf("error setting timezone to UTC: %v", err)
+    }
 
-	fmt.Println("Finished migrating database tables")
-}
-
-// checkAndCreateUniqueConstraint verifica si existe un índice único y lo crea si no existe
-func checkAndCreateUniqueConstraint(db *gorm.DB, tableName, indexName, columnName string) {
-	var exists int64
-	query := fmt.Sprintf("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = '%s' AND index_name = '%s'", tableName, indexName)
-	db.Raw(query).Scan(&exists)
-
-	if exists == 0 {
-		err := db.Exec(fmt.Sprintf("ALTER TABLE %s ADD CONSTRAINT %s UNIQUE (%s)", tableName, indexName, columnName)).Error
-		if err != nil {
-			fmt.Printf("Error creating unique constraint: %v\n", err)
-		} else {
-			fmt.Printf("Unique constraint `%s` created successfully.\n", indexName)
-		}
-	} else {
-		fmt.Printf("Unique constraint `%s` already exists, skipping creation.\n", indexName)
-	}
+    fmt.Println("Finished migrating database tables")
+    return nil
 }

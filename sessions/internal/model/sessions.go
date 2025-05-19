@@ -18,8 +18,8 @@ type Session struct {
 	SessionKey       *int           `json:"session_key"`          
 	SessionName      string         `json:"session_name"`         
 	SessionType      string         `json:"session_type"`         
-	DateStart        time.Time      `json:"date_start" gorm:"type:timestamp with time zone"`           
-	DateEnd          time.Time      `json:"date_end" gorm:"type:timestamp with time zone"`             
+	DateStart        time.Time      `json:"date_start" gorm:"type:timestamp"`           
+	DateEnd          time.Time      `json:"date_end" gorm:"type:timestamp"`             
 	Year             int            `json:"year"`                 
 	VSC              *bool          `json:"vsc,omitempty"`        
 	SF               *bool          `json:"sf,omitempty"`         

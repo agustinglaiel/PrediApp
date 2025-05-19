@@ -15,13 +15,14 @@ var DB *gorm.DB
 func InitDB() (*gorm.DB, error) {
     dsn := config.DBConnectionURL
 
-    db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+    db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
+        DisableForeignKeyConstraintWhenMigrating: true, // Evita que GORM cree tablas o claves foráneas automáticamente
+    })
     if err != nil {
         return nil, fmt.Errorf("error connecting to the database: %v", err)
     }
 
     DB = db
-
     return db, nil
 }
 
@@ -36,31 +37,39 @@ func DisconnectDB() {
 }
 
 // StartDbEngine migrates the database tables
-func StartDbEngine() {
+func StartDbEngine() error {
     // Migraciones automáticas de GORM
     if err := DB.AutoMigrate(&model.Result{}); err != nil {
-        fmt.Printf("Error migrating database tables: %v\n", err)
-        return
+        return fmt.Errorf("error migrating database tables: %v", err)
+    }
+
+    // Establecer la zona horaria de la sesión a UTC
+    if err := DB.Exec("SET time_zone = 'UTC'").Error; err != nil {
+        return fmt.Errorf("error setting timezone to UTC: %v", err)
     }
 
     // Migraciones personalizadas en SQL en bruto
-    addForeignKeys()
+    if err := addForeignKeys(); err != nil {
+        return fmt.Errorf("error adding foreign keys: %v", err)
+    }
+
     fmt.Println("Finishing Migration Database Tables")
+    return nil
 }
 
 // addForeignKeys agrega relaciones personalizadas entre las tablas
-func addForeignKeys() {
+func addForeignKeys() error {
     // Verificar y agregar la clave foránea para `results -> sessions`
-    err := addForeignKeyIfNotExists("results", "fk_results_sessions", "session_id", "sessions", "id")
-    if err != nil {
-        fmt.Printf("Error adding foreign key for sessions: %v\n", err)
+    if err := addForeignKeyIfNotExists("results", "fk_results_sessions", "session_id", "sessions", "id"); err != nil {
+        return fmt.Errorf("error adding foreign key for sessions: %v", err)
     }
 
     // Verificar y agregar la clave foránea para `results -> drivers`
-    err = addForeignKeyIfNotExists("results", "fk_results_drivers", "driver_id", "drivers", "id")
-    if err != nil {
-        fmt.Printf("Error adding foreign key for drivers: %v\n", err)
+    if err := addForeignKeyIfNotExists("results", "fk_results_drivers", "driver_id", "drivers", "id"); err != nil {
+        return fmt.Errorf("error adding foreign key for drivers: %v", err)
     }
+
+    return nil
 }
 
 // addForeignKeyIfNotExists verifica si existe una clave foránea y la agrega si no existe
