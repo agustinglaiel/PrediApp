@@ -747,6 +747,8 @@ func (s *sessionService) UpdateSessionData(ctx context.Context, sessionID int, l
         session.SessionKey = sessionData.SessionKey
         session.DateStart = *sessionData.DateStart
         session.DateEnd = *sessionData.DateEnd
+        session.CountryKey = *sessionData.CountryKey
+        session.CircuitKey = *sessionData.CircuitKey
         
         if apiErr := s.sessionsRepo.UpdateSessionById(ctx, session); apiErr != nil {
             return apiErr

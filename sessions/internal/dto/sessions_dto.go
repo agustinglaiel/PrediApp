@@ -108,6 +108,8 @@ type SessionKeyResponseDTO struct {
 	SessionKey *int       `json:"session_key"`
 	DateStart  *time.Time `json:"date_start"`
 	DateEnd    *time.Time `json:"date_end"`
+    CountryKey *int       `json:"country_key"`
+    CircuitKey *int       `json:"circuit_key"`
 }
 
 type UpdateSessionKeyDTO struct {
