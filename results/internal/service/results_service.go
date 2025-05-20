@@ -9,6 +9,7 @@ import (
 	"results/internal/model"
 	"results/internal/repository"
 	e "results/pkg/utils"
+	"sort"
 
 	"gorm.io/gorm"
 )
@@ -60,27 +61,59 @@ func (s *resultService) FetchResultsFromExternalAPI(ctx context.Context, session
 
     // Mapa para quedarnos con la última posición reportada (driverNumber -> *int)
     finalPositions := make(map[int]*int)
+    
+    // Agrupar posiciones por driverNumber y ordenar por date para obtener la última posición
+    positionsByDriver := make(map[int][]dto.Position)
     for _, pos := range positions {
-        // pos.Position es *int
-        finalPositions[pos.DriverNumber] = pos.Position
+        positionsByDriver[pos.DriverNumber] = append(positionsByDriver[pos.DriverNumber], pos)
     }
+
+    // Ordenar posiciones por date y tomar la última para cada piloto
+    for driverNumber, driverPositions := range positionsByDriver {
+        sort.Slice(driverPositions, func(i, j int) bool {
+            return driverPositions[i].Date < driverPositions[j].Date
+        })
+        if len(driverPositions) > 0 {
+            finalPositions[driverNumber] = driverPositions[len(driverPositions)-1].Position
+        }
+    }
+
+    // 3. Encontrar al piloto en posición 1 para determinar el número total de vueltas
+    var position1DriverNumber int
+    for driverNumber, position := range finalPositions {
+        if position != nil && *position == 1 {
+            position1DriverNumber = driverNumber
+            break
+        }
+    }
+
+    // Si no encontramos un piloto en posición 1, no podemos determinar las vueltas totales
+    if position1DriverNumber == 0 {
+        return nil, e.NewInternalServerApiError("No se encontró un piloto en posición 1 para determinar las vueltas totales", nil)
+    }
+
+    // Obtener las vueltas del piloto en posición 1
+    position1Laps, err := s.client.GetLaps(sessionKey, position1DriverNumber)
+    if err != nil {
+        return nil, e.NewInternalServerApiError(fmt.Sprintf("Error obteniendo vueltas del piloto en posición 1 (driver %d): %v", position1DriverNumber, err), err)
+    }
+
+    totalSessionLaps := len(position1Laps)
 
     var responseResults []dto.ResponseResultDTO
 
-    // 3. Para cada driverNumber, determinamos la vuelta más rápida y actualizamos/insertamos en DB
+    // 4. Para cada driverNumber, determinamos la vuelta más rápida y actualizamos/insertamos en DB
     for driverNumber, positionPtr := range finalPositions {
         laps, err := s.client.GetLaps(sessionKey, driverNumber)
         if err != nil {
-            // Simplemente mostramos en consola y continuamos
             fmt.Printf("Error obteniendo vueltas para driver %d: %v\n", driverNumber, err)
             continue
         }
 
-        // 4. Encontrar la vuelta más rápida o asignar DNS si no hay vueltas
+        // 5. Encontrar la vuelta más rápida o asignar 0 si no hay vueltas
         var fastestLap float64
         if len(laps) == 0 {
-            // Si no hay vueltas válidas, asignamos DNS
-            fastestLap = 0 // O podrías usar nil si prefieres, pero 0 es más explícito
+            fastestLap = 0
         } else {
             for _, lap := range laps {
                 if fastestLap == 0 || lap.LapDuration < fastestLap {
@@ -89,31 +122,33 @@ func (s *resultService) FetchResultsFromExternalAPI(ctx context.Context, session
             }
         }
 
-        // 5. Obtener info completa del driver desde microservicio de drivers
+        // 6. Determinar el status basado en las vueltas
+        var status string
+        if len(laps) == 0 {
+            status = "DNS" // Did Not Start
+        } else if len(laps) < totalSessionLaps {
+            status = "DNF" // Did Not Finish
+        } else {
+            status = "FINISHED" // Completó todas las vueltas
+        }
+
+        // 7. Obtener info completa del driver desde microservicio de drivers
         driverInfo, err := s.client.GetDriverByNumber(driverNumber)
         if err != nil {
             fmt.Printf("Error obteniendo info del driver_number %d: %v\n", driverNumber, err)
             continue
         }
 
-        // 6. Ver si ya existe un resultado para (driver, session)
+        // 8. Ver si ya existe un resultado para (driver, session)
         existingResult, _ := s.resultRepo.GetResultByDriverAndSession(ctx, driverInfo.ID, sessionID)
-
-        // Definir status según si hay o no position o vueltas
-        status := "DNS" // Default a DNS si no hay vueltas
-        if positionPtr != nil {
-            status = "FINISHED"
-        } else if len(laps) > 0 {
-            status = "DNF" // Solo DNF si hay vueltas pero no posición
-        }
 
         if existingResult == nil {
             // Crear nuevo result
             newResult := &model.Result{
                 SessionID:      sessionID,
                 DriverID:       driverInfo.ID,
-                Position:       positionPtr,   // *int
-                Status:         status,        // "FINISHED", "DNF" o "DNS"
+                Position:       positionPtr,
+                Status:         status,
                 FastestLapTime: fastestLap,
             }
             if err := s.resultRepo.CreateResult(ctx, newResult); err != nil {
@@ -130,13 +165,13 @@ func (s *resultService) FetchResultsFromExternalAPI(ctx context.Context, session
             }
         }
 
-        // 7. Obtener la info de la sesión para armar el DTO de respuesta
+        // 9. Obtener la info de la sesión para armar el DTO de respuesta
         sessionData, err := s.client.GetSessionByID(sessionID)
         if err != nil {
             return nil, e.NewInternalServerApiError("Error fetching session data", err)
         }
 
-        // 8. Construir el DTO
+        // 10. Construir el DTO
         responseResult := dto.ResponseResultDTO{
             ID:             existingResult.ID,
             Position:       existingResult.Position,

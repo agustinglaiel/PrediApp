@@ -57,6 +57,7 @@ type ResponseDriverDTO struct {
 type Position struct {
 	DriverNumber int       `json:"driver_number"`
 	Position     *int      `json:"position"`
+	Date         string    `json:"date"`
 }
 
 type Lap struct {
