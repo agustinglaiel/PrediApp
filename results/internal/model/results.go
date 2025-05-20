@@ -8,16 +8,16 @@ import (
 
 // Result representa los resultados de una sesión para un piloto
 type Result struct {
-    ID             int    `gorm:"primaryKey" json:"id"`
-    SessionID      int       `json:"session_id"` 
-    Session        Session   `gorm:"foreignKey:SessionID;constraint:OnDelete:CASCADE;OnUpdate:CASCADE;"`
-    DriverID       int       `json:"driver_id" gorm:"type:int"`
-    Driver         Driver    `gorm:"foreignKey:DriverID;constraint:OnDelete:CASCADE;OnUpdate:CASCADE;"`
-    Position       *int       `json:"position"`   
-    Status         string    `json:"status"` 
-    FastestLapTime float64   `json:"fastest_lap_time"`
-    CreatedAt      time.Time `gorm:"autoCreateTime" json:"created_at"`
-    UpdatedAt      time.Time `gorm:"autoUpdateTime" json:"updated_at"`
+	ID              int            `gorm:"primaryKey" json:"id"`
+	SessionID       int            `gorm:"index" json:"session_id"`
+	Session         *Session       `gorm:"foreignKey:SessionID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE" json:"-"` // Relación definida aquí
+	DriverID        int            `gorm:"index" json:"driver_id"`
+	Driver          *Driver        `gorm:"foreignKey:DriverID;references:ID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE" json:"-"` // Relación definida aquí
+	Position        *int            `json:"position"`
+	FastestLapTime  float64        `json:"fastest_lap_time"`
+	CreatedAt       time.Time      `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt       time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
+	Status          string         `gorm:"type:longtext" json:"status"`
 }
 
 // Definir el modelo Driver solo con los campos que necesitas para el preload
@@ -27,7 +27,7 @@ type Driver struct {
 	CountryCode   string `json:"country_code" gorm:"type:varchar(10)"`
 	DriverNumber  int    `json:"driver_number"`
 	FirstName     string `json:"first_name" gorm:"type:varchar(50);index:idx_driver_name,priority:1"`
-    LastName      string `json:"last_name" gorm:"type:varchar(50);index:idx_driver_name,priority:2"`
+	LastName      string `json:"last_name" gorm:"type:varchar(50);index:idx_driver_name,priority:2"`
 	FullName      string `json:"full_name" gorm:"type:varchar(100)"`
 	NameAcronym   string `json:"name_acronym" gorm:"type:varchar(10)"`
 	HeadshotURL   string `json:"headshot_url" gorm:"type:varchar(200)"` // Añadimos el campo de la foto
