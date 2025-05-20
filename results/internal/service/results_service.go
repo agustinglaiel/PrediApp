@@ -76,18 +76,16 @@ func (s *resultService) FetchResultsFromExternalAPI(ctx context.Context, session
             continue
         }
 
-        if len(laps) == 0 {
-            // Si no hay vueltas válidas, tal vez significa que ni empezó. Podrías hacer Status="DNS".
-            // Aquí simplemente skip, o generas un result con fastestLap=0, etc.
-            fmt.Printf("No valid laps found for driver %d\n", driverNumber)
-            continue
-        }
-
-        // 4. Encontrar la vuelta más rápida
+        // 4. Encontrar la vuelta más rápida o asignar DNS si no hay vueltas
         var fastestLap float64
-        for _, lap := range laps {
-            if fastestLap == 0 || lap.LapDuration < fastestLap {
-                fastestLap = lap.LapDuration
+        if len(laps) == 0 {
+            // Si no hay vueltas válidas, asignamos DNS
+            fastestLap = 0 // O podrías usar nil si prefieres, pero 0 es más explícito
+        } else {
+            for _, lap := range laps {
+                if fastestLap == 0 || lap.LapDuration < fastestLap {
+                    fastestLap = lap.LapDuration
+                }
             }
         }
 
@@ -101,12 +99,12 @@ func (s *resultService) FetchResultsFromExternalAPI(ctx context.Context, session
         // 6. Ver si ya existe un resultado para (driver, session)
         existingResult, _ := s.resultRepo.GetResultByDriverAndSession(ctx, driverInfo.ID, sessionID)
 
-        // Definir status según si hay o no position
-        //   - Si positionPtr != nil => FINISHED
-        //   - Si positionPtr == nil => "DNF" (o "DNS", según tu preferencia)
-        status := "DNF"
+        // Definir status según si hay o no position o vueltas
+        status := "DNS" // Default a DNS si no hay vueltas
         if positionPtr != nil {
             status = "FINISHED"
+        } else if len(laps) > 0 {
+            status = "DNF" // Solo DNF si hay vueltas pero no posición
         }
 
         if existingResult == nil {
@@ -115,7 +113,7 @@ func (s *resultService) FetchResultsFromExternalAPI(ctx context.Context, session
                 SessionID:      sessionID,
                 DriverID:       driverInfo.ID,
                 Position:       positionPtr,   // *int
-                Status:         status,        // "FINISHED" o "DNF"
+                Status:         status,        // "FINISHED", "DNF" o "DNS"
                 FastestLapTime: fastestLap,
             }
             if err := s.resultRepo.CreateResult(ctx, newResult); err != nil {
