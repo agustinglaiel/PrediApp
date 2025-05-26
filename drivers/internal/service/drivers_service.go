@@ -28,6 +28,7 @@ type DriverService interface {
 	ListDriversByAcronym(ctx context.Context, acronym string) ([]dto.ResponseDriverDTO, e.ApiError)
 	FetchAllDriversFromExternalAPI(ctx context.Context) ([]dto.ResponseDriverDTO, e.ApiError)
 	GetDriverByNumber(ctx context.Context, driverNumber int) (dto.ResponseDriverDTO, e.ApiError)
+	GetDriverByFirstAndLastName(ctx context.Context, firstName, lastName string) (dto.ResponseDriverDTO, e.ApiError)
 }
 
 func NewDriverService(driverRepo repository.DriverRepository, client *client.HttpClient) DriverService {
@@ -434,4 +435,35 @@ func (s *driverService) GetDriverByNumber(ctx context.Context, driverNumber int)
 	}
 
 	return response, nil
+}
+
+
+func (s *driverService) GetDriverByFirstAndLastName(ctx context.Context, firstName, lastName string) (dto.ResponseDriverDTO, e.ApiError) {
+    // Llamar al repositorio para buscar el piloto por first_name y last_name
+    driver, err := s.driverRepo.GetDriverByName(ctx, firstName, lastName)
+    if err != nil {
+        return dto.ResponseDriverDTO{}, err
+    }
+
+    // Verificar si el driver es nil (no encontrado)
+    if driver == nil {
+        return dto.ResponseDriverDTO{}, e.NewNotFoundApiError(fmt.Sprintf("Driver with name %s %s not found", firstName, lastName))
+    }
+
+    // Convertir el modelo a DTO de respuesta
+    response := dto.ResponseDriverDTO{
+        ID:            driver.ID,
+        BroadcastName: driver.BroadcastName,
+        CountryCode:   driver.CountryCode,
+        DriverNumber:  driver.DriverNumber,
+        FirstName:     driver.FirstName,
+        LastName:      driver.LastName,
+        FullName:      driver.FullName,
+        NameAcronym:   driver.NameAcronym,
+        HeadshotURL:   driver.HeadshotURL,
+        TeamName:      driver.TeamName,
+        Activo:        driver.Activo,
+    }
+
+    return response, nil
 }

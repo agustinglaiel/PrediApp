@@ -10,6 +10,7 @@ import (
 	"results/internal/repository"
 	e "results/pkg/utils"
 	"sort"
+	"strings"
 
 	"gorm.io/gorm"
 )
@@ -21,6 +22,7 @@ type resultService struct {
 
 type ResultService interface {
 	FetchResultsFromExternalAPI(ctx context.Context, sessionId int) ([]dto.ResponseResultDTO, e.ApiError)
+    FetchNonRaceSessionResults(ctx context.Context, sessionId int) ([]dto.ResponseResultDTO, e.ApiError)
 	UpdateResult(ctx context.Context, resultID int, request dto.UpdateResultDTO) (dto.ResponseResultDTO, e.ApiError)
 	GetResultsOrderedByPosition(ctx context.Context, sessionID int) ([]dto.ResponseResultDTO, e.ApiError)
 	GetFastestLapInSession(ctx context.Context, sessionID int) (dto.ResponseResultDTO, e.ApiError)
@@ -202,6 +204,121 @@ func (s *resultService) FetchResultsFromExternalAPI(ctx context.Context, session
 
     return responseResults, nil
 }
+
+func (s *resultService) FetchNonRaceSessionResults(ctx context.Context, sessionId int) ([]dto.ResponseResultDTO, e.ApiError){
+    // 1. Obtener información de la sesión para verificar que no es Race
+	sessionData, err := s.client.GetSessionByID(sessionId)
+	if err != nil {
+		return nil, e.NewInternalServerApiError("Error fetching session data", err)
+	}
+
+	// Verificar que session_name y session_type no sean "Race"
+	if strings.ToLower(sessionData.SessionName) == "race" || strings.ToLower(sessionData.SessionType) == "race" {
+		return nil, e.NewBadRequestApiError("Este endpoint solo soporta sesiones no Race")
+	}
+
+	// 2. Obtener sessionKey llamando al microservicio de sessions
+	sessionKey, err := s.client.GetSessionKeyBySessionID(sessionId)
+	if err != nil {
+		return nil, e.NewInternalServerApiError("Error obteniendo session key", err)
+	}
+
+	// 3. Obtener las posiciones desde la API externa
+	positions, err := s.client.GetPositions(sessionKey)
+	if err != nil {
+		return nil, e.NewInternalServerApiError("Error fetching positions from external API", err)
+	}
+
+	// Mapa para quedarnos con la última posición reportada (driverNumber -> *int)
+	finalPositions := make(map[int]*int)
+
+	// Agrupar posiciones por driverNumber y ordenar por date para obtener la última posición
+	positionsByDriver := make(map[int][]dto.Position)
+	for _, pos := range positions {
+		positionsByDriver[pos.DriverNumber] = append(positionsByDriver[pos.DriverNumber], pos)
+	}
+
+	// Ordenar posiciones por date y tomar la última para cada piloto
+	for driverNumber, driverPositions := range positionsByDriver {
+		sort.Slice(driverPositions, func(i, j int) bool {
+			return driverPositions[i].Date < driverPositions[j].Date
+		})
+		if len(driverPositions) > 0 {
+			finalPositions[driverNumber] = driverPositions[len(driverPositions)-1].Position
+		}
+	}
+
+	var responseResults []dto.ResponseResultDTO
+
+	// 4. Procesar cada piloto y sus posiciones
+	for driverNumber, positionPtr := range finalPositions {
+		// Obtener info completa del driver desde microservicio de drivers
+		driverInfo, err := s.client.GetDriverByNumber(driverNumber)
+		if err != nil {
+			fmt.Printf("Error obteniendo info del driver_number %d: %v\n", driverNumber, err)
+			continue
+		}
+
+		// Verificar si ya existe un resultado para (driver, session)
+		existingResult, _ := s.resultRepo.GetResultByDriverAndSession(ctx, driverInfo.ID, sessionId)
+
+		// Status por defecto para sesiones no Race
+		status := "FINISHED"
+
+		if existingResult == nil {
+			newResult := &model.Result{
+				SessionID:      sessionId,
+				DriverID:       driverInfo.ID,
+				Position:       positionPtr,
+				Status:         status,
+				FastestLapTime: 0, // No se consideran vueltas
+			}
+			if err := s.resultRepo.CreateResult(ctx, newResult); err != nil {
+				return nil, e.NewInternalServerApiError("Error inserting result", err)
+			}
+			existingResult = newResult
+		} else {
+			// Actualizar
+			existingResult.Position = positionPtr
+			existingResult.Status = status
+			existingResult.FastestLapTime = 0 // No se consideran vueltas
+			if err := s.resultRepo.UpdateResult(ctx, existingResult); err != nil {
+				return nil, e.NewInternalServerApiError("Error updating existing result", err)
+			}
+		}
+
+		// Construir el DTO
+		responseResult := dto.ResponseResultDTO{
+			ID:             existingResult.ID,
+			Position:       existingResult.Position,
+			Status:         existingResult.Status,
+			FastestLapTime: existingResult.FastestLapTime,
+			Driver: dto.ResponseDriverDTO{
+				ID:          driverInfo.ID,
+				FirstName:   driverInfo.FirstName,
+				LastName:    driverInfo.LastName,
+				FullName:    driverInfo.FullName,
+				NameAcronym: driverInfo.NameAcronym,
+				TeamName:    driverInfo.TeamName,
+			},
+			Session: dto.ResponseSessionDTO{
+				ID:               sessionData.ID,
+				CircuitShortName: sessionData.CircuitShortName,
+				CountryName:      sessionData.CountryName,
+				Location:         sessionData.Location,
+				SessionName:      sessionData.SessionName,
+				SessionType:      sessionData.SessionType,
+				DateStart:        sessionData.DateStart,
+			},
+			CreatedAt: existingResult.CreatedAt,
+			UpdatedAt: existingResult.UpdatedAt,
+		}
+		responseResults = append(responseResults, responseResult)
+	}
+
+	return responseResults, nil
+}
+
 
 //ESTO SOLO SIRVE PARA CREAR UN RESULTADO A LA VEZ
 // CreateResult crea un nuevo resultado

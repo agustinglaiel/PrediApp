@@ -192,3 +192,16 @@ func (c *DriverController) GetDriverByNumber(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, response)
 }
+
+func (c *DriverController) GetDriverByFirstAndLastName(ctx *gin.Context) {
+	firstName := ctx.Param("first_name")
+	lastName := ctx.Param("last_name")
+
+	response, apiErr := c.driversService.GetDriverByFirstAndLastName(ctx.Request.Context(), firstName, lastName)
+	if apiErr != nil {
+		ctx.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, response)
+}

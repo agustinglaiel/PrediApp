@@ -18,6 +18,7 @@ func MapUrls(engine *gin.Engine, resultController *api.ResultController) {
 
 	// Rutas relacionadas con resultados
 	engine.GET("/results/api/:sessionId", resultController.FetchResultsFromExternalAPI)           // Obtener resultados de la API externa para una sesión
+	engine.GET("/results/session/api/:sessionId", resultController.FetchNonRaceSessionResults)
 	engine.POST("/results", resultController.CreateResult)                                      // Crear un nuevo resultado
     engine.POST("/results/admin", resultController.CreateSessionResultsAdmin)                    // Crear los resultados de una session CUALQUIERA siendo ADMIN
 	// engine.GET("/results/:id", resultController.GetResultByID)                                   // Obtener un resultado por su ID

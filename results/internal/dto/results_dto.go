@@ -84,3 +84,18 @@ type CreateResultItemDTO struct {
 	Status         string `json:"status,omitempty"`
 	FastestLapTime float64 `json:"fastest_lap_time,omitempty"`
 }
+
+type ExternalDriverDetails struct {
+	MeetingKey int   `json:"meeting_key"`
+	SessionKey int   `json:"session_key"`
+	DriverNumber int   `json:"driver_number"`
+	BroadcastName string `json:"broadcast_name"`
+	FullName string `json:"full_name"`
+	NameAcronym string `json:"name_acronym"`
+	TeamName string `json:"team_name"`
+	TeamColor string `json:"team_color"`	
+	FirstName string `json:"first_name"`		
+	LastName string `json:"last_name"`
+	HeadshotUrl string `json:"headshot_url"`
+	CountryCode string `json:"country_code"`
+}

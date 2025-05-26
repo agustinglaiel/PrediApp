@@ -24,8 +24,6 @@ func NewResultController(resultService service.ResultService) *ResultController 
 
 // FetchResultsFromExternalAPI obtiene los resultados desde una API externa y los inserta o actualiza
 func (rc *ResultController) FetchResultsFromExternalAPI(c *gin.Context) {
-	fmt.Println("Controller: Iniciando FetchResultsFromExternalAPI")
-
     // Obtener el parámetro sessionId desde la URL
     sessionIDStr := c.Param("sessionId")
 
@@ -46,6 +44,29 @@ func (rc *ResultController) FetchResultsFromExternalAPI(c *gin.Context) {
 	}
 
 	// fmt.Println("Controller: Resultados obtenidos:", results)
+	c.JSON(http.StatusOK, results)
+}
+
+func (rc *ResultController) FetchNonRaceSessionResults(c *gin.Context) {
+	// Obtener el parámetro sessionId desde la URL
+	sessionIDStr := c.Param("sessionId")
+
+	// Convertir sessionId de string a int
+	sessionID, err := strconv.Atoi(sessionIDStr)
+	if err != nil {
+		fmt.Println("Controller: Error al parsear sessionId", err)
+		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de sesión inválido"))
+		return
+	}
+
+	// Llamar al servicio para hacer fetch de los resultados de sesiones no Race
+	results, apiErr := rc.resultService.FetchNonRaceSessionResults(c.Request.Context(), sessionID)
+	if apiErr != nil {
+		fmt.Println("Controller: Error en servicio FetchNonRaceSessionResults", apiErr)
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
 	c.JSON(http.StatusOK, results)
 }
 
