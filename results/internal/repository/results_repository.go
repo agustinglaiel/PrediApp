@@ -140,6 +140,7 @@ func (r *resultRepository) GetFastestLapInSession(ctx context.Context, sessionID
 /*
 obtiene todos los resultados de una sesión específica (incluyendo detalles de piloto y sesión) y los ordena por posición.
 */
+
 func (r *resultRepository) GetResultsOrderedByPosition(ctx context.Context, sessionID int) ([]*model.Result, e.ApiError) {
     var results []*model.Result
     if err := r.db.WithContext(ctx).
