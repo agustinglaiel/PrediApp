@@ -432,14 +432,6 @@ func (s *resultService) UpdateResult(ctx context.Context, resultID int, request 
             result.Status = "FINISHED"
         }
         result.Position = request.Position
-    } else {
-        // Si Position es nil en request, no necesariamente la borras:
-        //  - Podrías dejarla tal cual, o
-        //  - Si explicitamente deseas "quitársela", significaría un status != FINISHED
-        //    Depende de tu negocio. Un approach:
-        // if request.Status == "DNF" { 
-        //   result.Position = nil 
-        // }
     }
 
     // 4. Actualizar fastestLapTime si != 0
@@ -1066,17 +1058,24 @@ func (s *resultService) CreateSessionResultsAdmin(ctx context.Context, bulkReque
     }
 
     var resultsToCreate []*model.Result
+    var resultsToUpdate []*model.Result
 
-    // 2. Definir un set de status válidos (o puedes usar "FINISHED" por defecto si Position != nil)
+    // 2. Definir un set de status válidos
     validStatuses := map[string]bool{"FINISHED": true, "DNF": true, "DNS": true, "DSQ": true}
 
-    // 3. Recorrer cada ítem
-    for _, item := range bulkRequest.Results {
-        // item.Position es *int en tu `CreateResultItemDTO` si lo ajustaste; si sigue int, 
-        //   tendrás que adaptarlo. Asumamos que lo cambiaste a *int.  
-        //   OJO: en tu snippet actual `CreateResultItemDTO` está "Position int binding:'required'".
-        //   Cambia a Position *int si quieres permitir nulos.
+    // 3. Obtener resultados existentes para la sesión
+    existingResults, err := s.resultRepo.GetResultsBySessionID(ctx, bulkRequest.SessionID)
+    if err != nil {
+        return nil, e.NewInternalServerApiError("Error obteniendo resultados existentes", err)
+    }
 
+    existingResultsMap := make(map[int]*model.Result)
+    for _, r := range existingResults {
+        existingResultsMap[r.DriverID] = r
+    }
+
+    // 4. Recorrer cada ítem
+    for _, item := range bulkRequest.Results {
         // Validar si el status no viene, asumimos algo en base a la position
         if item.Status == "" {
             if item.Position != nil {
@@ -1117,42 +1116,49 @@ func (s *resultService) CreateSessionResultsAdmin(ctx context.Context, bulkReque
         }
 
         // Verificar si ya existe un resultado para (driver, session)
-        existingResult, _ := s.resultRepo.GetResultByDriverAndSession(ctx, item.DriverID, bulkRequest.SessionID)
-        if existingResult != nil {
-            return nil, e.NewBadRequestApiError(
-                fmt.Sprintf("Ya existe un resultado para driver_id %d en la sesión %d", item.DriverID, bulkRequest.SessionID),
-            )
+        if existingResult, exists := existingResultsMap[item.DriverID]; exists {
+            // Actualizar resultado existente
+            existingResult.Position = item.Position
+            existingResult.Status = item.Status
+            existingResult.FastestLapTime = item.FastestLapTime
+            resultsToUpdate = append(resultsToUpdate, existingResult)
+        } else {
+            // Crear nuevo resultado
+            newResult := &model.Result{
+                SessionID:      bulkRequest.SessionID,
+                DriverID:       item.DriverID,
+                Position:       item.Position,
+                Status:         item.Status,
+                FastestLapTime: item.FastestLapTime,
+            }
+            resultsToCreate = append(resultsToCreate, newResult)
         }
-
-        // Crear el objeto
-        newResult := &model.Result{
-            SessionID:      bulkRequest.SessionID,
-            DriverID:       item.DriverID,
-            Position:       item.Position,
-            Status:         item.Status,
-            FastestLapTime: item.FastestLapTime,
-        }
-        resultsToCreate = append(resultsToCreate, newResult)
     }
 
-    // 4. Insertar en DB usando un método de repositorio con Transaction
-    txErr := s.resultRepo.SessionCreateResultAdmin(ctx, resultsToCreate)
+    // 5. Ejecutar creación y actualización en una transacción
+    txErr := s.resultRepo.SessionCreateOrUpdateResultsAdmin(ctx, resultsToCreate, resultsToUpdate)
     if txErr != nil {
-        return nil, e.NewInternalServerApiError("Error creando resultados masivamente", txErr)
+        return nil, e.NewInternalServerApiError("Error creando o actualizando resultados masivamente", txErr)
     }
 
-    // 5. Convertir a DTO
+    // 6. Obtener todos los resultados actualizados para la sesión
+    updatedResults, err := s.resultRepo.GetResultsBySessionID(ctx, bulkRequest.SessionID)
+    if err != nil {
+        return nil, e.NewInternalServerApiError("Error obteniendo resultados actualizados", err)
+    }
+
+    // 7. Convertir a DTO
     var responseResults []dto.ResponseResultDTO
-    for _, r := range resultsToCreate {
+    for _, r := range updatedResults {
         responseResults = append(responseResults, dto.ResponseResultDTO{
             ID:             r.ID,
             Position:       r.Position,
             Status:         r.Status,
             FastestLapTime: r.FastestLapTime,
-            Driver: dto.ResponseDriverDTO{ ID: r.DriverID },
-            Session: dto.ResponseSessionDTO{ ID: r.SessionID },
-            CreatedAt: r.CreatedAt,
-            UpdatedAt: r.UpdatedAt,
+            Driver: dto.ResponseDriverDTO{ID: r.DriverID},
+            Session: dto.ResponseSessionDTO{ID: r.SessionID},
+            CreatedAt:      r.CreatedAt,
+            UpdatedAt:      r.UpdatedAt,
         })
     }
 

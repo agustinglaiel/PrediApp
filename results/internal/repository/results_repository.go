@@ -27,6 +27,7 @@ type ResultRepository interface {
 	GetResultsOrderedByPosition(ctx context.Context, sessionID int) ([]*model.Result, e.ApiError)
 	ExistsSessionInResults(ctx context.Context, sessionID int) (bool, e.ApiError)
 	SessionCreateResultAdmin(ctx context.Context, results []*model.Result) error 
+	SessionCreateOrUpdateResultsAdmin(ctx context.Context, resultsToCreate, resultsToUpdate []*model.Result) error 
 }
 
 func NewResultRepository(db *gorm.DB) ResultRepository {
@@ -165,6 +166,24 @@ func (r *resultRepository) SessionCreateResultAdmin(ctx context.Context, results
     return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
         if err := tx.Create(&results).Error; err != nil {
             return err
+        }
+        return nil
+    })
+}
+
+func (r *resultRepository) SessionCreateOrUpdateResultsAdmin(ctx context.Context, resultsToCreate, resultsToUpdate []*model.Result) error {
+    return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+        // Crear nuevos resultados
+        if len(resultsToCreate) > 0 {
+            if err := tx.Create(&resultsToCreate).Error; err != nil {
+                return err
+            }
+        }
+        // Actualizar resultados existentes
+        for _, result := range resultsToUpdate {
+            if err := tx.Save(result).Error; err != nil {
+                return err
+            }
         }
         return nil
     })
