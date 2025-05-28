@@ -527,7 +527,7 @@ func (s *prodeService) GetProdeByUserAndSession(ctx context.Context, userID, ses
             DNF:        prode.DNF,
             Score:      prode.Score,
         }
-        fmt.Printf("Found prode carrera for userID %d and sessionID %d: %+v\n", userID, sessionID, response)
+        // fmt.Printf("Found prode carrera for userID %d and sessionID %d: %+v\n", userID, sessionID, response)
         return response, nil, nil // Devolver solo el DTO de carrera, nil para sesión, y nil para error
     }
 

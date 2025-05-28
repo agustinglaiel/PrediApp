@@ -41,11 +41,10 @@ func ReverseProxy() gin.HandlerFunc {
         if strings.HasSuffix(proxyPath, "/") && len(proxyPath) > 1 {
             proxyPath = strings.TrimSuffix(proxyPath, "/")
         }
-
-        // 5. Parsear la URL base del microservicio (ej. "http://localhost:8051")
+        
+        // 5. Parsear la URL del target
         targetURL, err := url.Parse(target)
         if err != nil {
-            log.Printf("Error parsing target URL: %v", err)
             c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
             return
         }
@@ -55,10 +54,6 @@ func ReverseProxy() gin.HandlerFunc {
 
         // Director: manipula la request ANTES de mandarla al microservicio
         proxy.Director = func(req *http.Request) {
-            log.Printf("Original Request Path: %s", req.URL.Path)
-            log.Printf("Resolved Target URL: %s", targetURL.String())
-            log.Printf("Proxy Path: %s", proxyPath)
-
             // Ajustamos la request al target final
             req.URL.Scheme = targetURL.Scheme
             req.URL.Host = targetURL.Host
@@ -73,12 +68,9 @@ func ReverseProxy() gin.HandlerFunc {
 
             // Ajustamos el Host
             req.Host = targetURL.Host
-            log.Printf("Forwarding final request to: %s", req.URL.String())
         }
 
-        // ModifyResponse (OPCIONAL): Para manejar redirecciones o modificar la respuesta
         proxy.ModifyResponse = func(res *http.Response) error {
-            // Si el microservicio manda un 301/302/307...
             if res.StatusCode == http.StatusMovedPermanently || res.StatusCode == http.StatusFound {
                 location := res.Header.Get("Location")
                 if location != "" {
@@ -89,7 +81,6 @@ func ReverseProxy() gin.HandlerFunc {
             return nil
         }
 
-        // 7. Finalmente, servir la request al microservicio
         proxy.ServeHTTP(c.Writer, c.Request)
     }
 }
