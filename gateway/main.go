@@ -65,8 +65,7 @@ func main() {
 	// Rutas públicas
 	router.POST("/api/login", handlers.LoginHandler)
 	router.POST("/api/signup", handlers.SignupHandler)
-	router.POST("/api/refresh", handlers.RefreshTokenHandler)
-	router.POST("/api/signout", handlers.SignOutHandler)
+	router.GET("/api/auth/me", middleware.JwtAuthentication(""), handlers.MeHandler)
 
 	// Rutas proxy
 	router.Any("/users", proxy.ReverseProxy())

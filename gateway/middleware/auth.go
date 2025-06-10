@@ -18,7 +18,12 @@ import (
 
 type Claims struct {
 	UserID int `json:"user_id"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Username string `json:"username"`
+	Email string `json:"email"`
 	Role   string `json:"role"`
+	Score int `json:"score"`
 	jwt.RegisteredClaims
 }
 
@@ -87,6 +92,7 @@ func JwtAuthentication(requiredRole string) gin.HandlerFunc {
 
 		// Guardar el user_id en el contexto para su uso posterior
 		c.Set("user_id", claims.UserID)
+		c.Set("claims", claims)
 		c.Next()
 	}
 }

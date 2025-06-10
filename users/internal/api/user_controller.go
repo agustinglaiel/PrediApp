@@ -4,7 +4,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"time"
 	"users/internal/dto"
 	"users/internal/service"
 	e "users/pkg/utils"
@@ -199,98 +198,4 @@ func (ctrl *UserController) UpdateRoleByUserId(c *gin.Context) {
     }
 
     c.JSON(http.StatusOK, user)
-}
-
-func (ctrl *UserController) StoreRefreshToken(c *gin.Context) {
-    var request map[string]interface{}
-    if err := c.ShouldBindJSON(&request); err != nil {
-        apiErr := e.NewBadRequestApiError("invalid request")
-        c.JSON(apiErr.Status(), apiErr)
-        return
-    }
-
-    userIDFloat, ok := request["user_id"].(float64)
-    if !ok {
-        apiErr := e.NewBadRequestApiError("invalid user_id")
-        c.JSON(apiErr.Status(), apiErr)
-        return
-    }
-    userID := int(userIDFloat)
-    token, ok := request["token"].(string)
-    if !ok {
-        apiErr := e.NewBadRequestApiError("invalid token")
-        c.JSON(apiErr.Status(), apiErr)
-        return
-    }
-    expiresAtStr, ok := request["expires_at"].(string)
-    if !ok {
-        apiErr := e.NewBadRequestApiError("invalid expires_at")
-        c.JSON(apiErr.Status(), apiErr)
-        return
-    }
-    expiresAt, err := time.Parse(time.RFC3339, expiresAtStr)
-    if err != nil {
-        apiErr := e.NewBadRequestApiError("invalid expires_at format")
-        c.JSON(apiErr.Status(), apiErr)
-        return
-    }
-
-    apiErr := ctrl.userService.StoreRefreshToken(c.Request.Context(), userID, token, expiresAt)
-    if apiErr != nil {
-        c.JSON(apiErr.Status(), apiErr)
-        return
-    }
-
-    c.JSON(http.StatusCreated, nil)
-}
-
-func (ctrl *UserController) Refresh(c *gin.Context) {
-    var request map[string]interface{}
-    if err := c.ShouldBindJSON(&request); err != nil {
-        apiErr := e.NewBadRequestApiError("invalid request")
-        c.JSON(apiErr.Status(), apiErr)
-        return
-    }
-
-    refreshToken, ok := request["refresh_token"].(string)
-    if !ok {
-        apiErr := e.NewBadRequestApiError("invalid refresh_token")
-        c.JSON(apiErr.Status(), apiErr)
-        return
-    }
-
-    user, apiErr := ctrl.userService.ValidateRefreshToken(c.Request.Context(), refreshToken)
-    if apiErr != nil {
-        c.JSON(apiErr.Status(), apiErr)
-        return
-    }
-
-    c.JSON(http.StatusOK, gin.H{
-        "user_id": user.ID,
-        "role":    user.Role,
-    })
-}
-
-func (ctrl *UserController) SignOut(c *gin.Context) {
-    var request map[string]interface{}
-    if err := c.ShouldBindJSON(&request); err != nil {
-        apiErr := e.NewBadRequestApiError("invalid request")
-        c.JSON(apiErr.Status(), apiErr)
-        return
-    }
-
-    refreshToken, ok := request["refresh_token"].(string)
-    if !ok {
-        apiErr := e.NewBadRequestApiError("invalid refresh_token")
-        c.JSON(apiErr.Status(), apiErr)
-        return
-    }
-
-    apiErr := ctrl.userService.RevokeRefreshToken(c.Request.Context(), refreshToken)
-    if apiErr != nil {
-        c.JSON(apiErr.Status(), apiErr)
-        return
-    }
-
-    c.JSON(http.StatusNoContent, nil)
 }

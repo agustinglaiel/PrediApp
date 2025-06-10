@@ -27,15 +27,11 @@ func main() {
 		panic(err)
 	}
 	defer utils.DisconnectDB()
-
-	// Iniciar el motor de la base de datos y migrar tablas
 	utils.StartDbEngine()
 
-	// Inicializar repositorio y servicio
+	// Inicializar repositorio, servicio y controlador
 	userRepo := repository.NewUserRepository(db)
 	userService := service.NewUserService(userRepo)
-
-	// Inicializar controlador
 	userController := api.NewUserController(userService)
 
 	// Configurar router

@@ -26,12 +26,6 @@ type UserServiceInterface interface {
     DeleteUserById(ctx context.Context, id int) e.ApiError
     DeleteUserByUsername(ctx context.Context, username string) e.ApiError
     UpdateRoleByUserId(ctx context.Context, id int, request dto.UserUpdateRoleRequestDTO) (dto.UserResponseDTO, e.ApiError)
-
-    // Métodos para el Refresh Token
-    StoreRefreshToken(ctx context.Context, userID int, token string, expiresAt time.Time) e.ApiError
-    ValidateRefreshToken(ctx context.Context, refreshToken string) (*model.User, e.ApiError)
-    RevokeRefreshToken(ctx context.Context, refreshToken string) e.ApiError
-    
 }
 
 func NewUserService(userRepo repository.UserRepository) UserServiceInterface {
@@ -342,40 +336,4 @@ func (s *userService) UpdateRoleByUserId(ctx context.Context, id int, request dt
     }
 
     return response, nil
-}
-
-func (s *userService) StoreRefreshToken(ctx context.Context, userID int, token string, expiresAt time.Time) e.ApiError {
-    refreshToken := &model.RefreshToken{
-        UserID:    userID,
-        Token:     token,
-        ExpiresAt: expiresAt,
-    }
-    return s.userRepo.CreateRefreshToken(ctx, refreshToken)
-}
-
-// ValidateRefreshToken valida un refresh token y devuelve el usuario asociado
-func (s *userService) ValidateRefreshToken(ctx context.Context, refreshToken string) (*model.User, e.ApiError) {
-    rt, apiErr := s.userRepo.GetRefreshToken(ctx, refreshToken)
-    if apiErr != nil {
-        return nil, apiErr
-    }
-    if rt.ExpiresAt.Before(time.Now()) {
-        return nil, e.NewUnauthorizedApiError("expired refresh token")
-    }
-    user, apiErr := s.userRepo.GetUserByID(ctx, rt.UserID)
-    if apiErr != nil {
-        return nil, apiErr
-    }
-    return user, nil
-}
-
-// RevokeRefreshToken revoca un refresh token
-func (s *userService) RevokeRefreshToken(ctx context.Context, refreshToken string) e.ApiError {
-    // Verificar si el refreshToken existe
-    _, apiErr := s.userRepo.GetRefreshToken(ctx, refreshToken)
-    if apiErr != nil {
-        return apiErr
-    }
-    // Eliminar el refreshToken de la base de datos
-    return s.userRepo.DeleteRefreshToken(ctx, refreshToken)
 }

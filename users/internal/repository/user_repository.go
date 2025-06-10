@@ -25,12 +25,6 @@ type UserRepository interface {
 	UpdateUserByUsername(ctx context.Context, username string, user *model.User) e.ApiError
 	DeleteUserByID(ctx context.Context, id int) e.ApiError
 	DeleteUserByUsername(ctx context.Context, username string) e.ApiError
-
-	// Métodos para el Refresh Token
-	CreateRefreshToken(ctx context.Context, refreshToken *model.RefreshToken) e.ApiError
-	GetRefreshToken(ctx context.Context, token string) (*model.RefreshToken, e.ApiError)
-	UpdateRefreshToken(ctx context.Context, refreshToken *model.RefreshToken) e.ApiError
-	DeleteRefreshToken(ctx context.Context, token string) e.ApiError 
 }
 
 // NewUserRepository crea una nueva instancia de userRepository
@@ -131,44 +125,4 @@ func (r *userRepository) DeleteUserByUsername(ctx context.Context, username stri
 		return e.NewInternalServerApiError("error deleting user by username", err)
 	}
 	return nil
-}
-
-// Metodos para el Refresh Token
-func (r *userRepository) CreateRefreshToken(ctx context.Context, refreshToken *model.RefreshToken) e.ApiError {
-	if err := r.db.WithContext(ctx).Create(refreshToken).Error; err != nil {
-		log.Printf("Error creating refresh token: %v", err)
-		return e.NewInternalServerApiError("error creating refresh token", err)
-	}
-	return nil
-}
-
-// GetRefreshToken obtiene un refresh token por su valor
-func (r *userRepository) GetRefreshToken(ctx context.Context, token string) (*model.RefreshToken, e.ApiError) {
-	var refreshToken model.RefreshToken
-	if err := r.db.WithContext(ctx).Where("token = ?", token).First(&refreshToken).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, e.NewNotFoundApiError("refresh token not found")
-		}
-		log.Printf("Error finding refresh token: %v", err)
-		return nil, e.NewInternalServerApiError("error finding refresh token", err)
-	}
-	return &refreshToken, nil
-}
-
-// UpdateRefreshToken actualiza un refresh token en la base de datos
-func (r *userRepository) UpdateRefreshToken(ctx context.Context, refreshToken *model.RefreshToken) e.ApiError {
-	if err := r.db.WithContext(ctx).Save(refreshToken).Error; err != nil {
-		log.Printf("Error updating refresh token: %v", err)
-		return e.NewInternalServerApiError("error updating refresh token", err)
-	}
-	return nil
-}
-
-// DeleteRefreshToken elimina un refresh token de la base de datos
-func (r *userRepository) DeleteRefreshToken(ctx context.Context, token string) e.ApiError {
-    if err := r.db.WithContext(ctx).Where("token = ?", token).Delete(&model.RefreshToken{}).Error; err != nil {
-        log.Printf("Error deleting refresh token: %v", err)
-        return e.NewInternalServerApiError("error deleting refresh token", err)
-    }
-    return nil
 }

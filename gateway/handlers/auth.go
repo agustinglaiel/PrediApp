@@ -2,10 +2,7 @@ package handlers
 
 import (
 	"bytes"
-	"crypto/rand"
-	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -16,10 +13,13 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 )
 
-// Estructura para el JWT Payload
 type Claims struct {
-	UserID int   `json:"user_id"`
-	Role   string `json:"role"`
+	UserID    int    `json:"user_id"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Username  string `json:"username"`
+	Email     string `json:"email"`
+	Role      string `json:"role"`
 	jwt.RegisteredClaims
 }
 
@@ -31,375 +31,192 @@ type UserResponseDTO struct {
 	Username     string `json:"username"`
 	Email        string `json:"email"`
 	Role         string `json:"role"`
-	Token        string `json:"token"`        // JWT token
-	RefreshToken string `json:"refresh_token"` // Refresh token
+	Token        string `json:"token"`
 	CreatedAt    string `json:"created_at"`
 }
 
-func GenerateTokens(userID int, role string, secretKey string) (string, string, error) {
-	// Token de acceso (15 minutos)
+func GenerateTokens(id int, firstName, lastName, username, email, role, secretKey string) (string, error) {
 	claims := Claims{
-		UserID: userID,
-		Role:   role,
+		UserID:    id,
+		FirstName: firstName,
+		LastName:  lastName,
+		Username:  username,
+		Email:     email,
+		Role:      role,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(1 * time.Hour)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	accessToken, err := token.SignedString([]byte(secretKey))
-	if err != nil {
-		return "", "", fmt.Errorf("error generating access token: %w", err)
-	}
-
-	// Refresh token (7 días)
-	refreshTokenBytes := make([]byte, 32)
-	if _, err := rand.Read(refreshTokenBytes); err != nil {
-		return "", "", fmt.Errorf("error generating refresh token: %w", err)
-	}
-	refreshToken := base64.URLEncoding.EncodeToString(refreshTokenBytes)
-
-	return accessToken, refreshToken, nil
+	tok := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return tok.SignedString([]byte(secretKey))
 }
 
 func LoginHandler(c *gin.Context) {
-	// Define la URL del microservicio de usuarios
 	usersServiceURL := os.Getenv("USERS_SERVICE_URL")
 	secretKey := os.Getenv("JWT_SECRET")
 
-	// 1. Recibir la Solicitud de Login
-	var requestBody map[string]interface{}
-	if err := c.ShouldBindJSON(&requestBody); err != nil {
-		log.Printf("Error parsing request body: %v", err)
+	// 1. Capturar credenciales
+	var creds map[string]interface{}
+	if err := c.ShouldBindJSON(&creds); err != nil {
+		log.Printf("Login: payload inválido: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
 	}
 
-	// 2. Comunicarse con el Microservicio de Usuarios
-	jsonBody, err := json.Marshal(requestBody)
+	// 2. Enviar al users service
+	body, _ := json.Marshal(creds)
+	req, err := http.NewRequest("POST", usersServiceURL+"/users/login", bytes.NewBuffer(body))
 	if err != nil {
-		log.Printf("Error marshaling request body: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-		return
-	}
-
-	req, err := http.NewRequest("POST", usersServiceURL+"/users/login", bytes.NewBuffer(jsonBody))
-	if err != nil {
-		log.Printf("Error creating request to users service: %v", err)
+		log.Printf("Login: error creando request: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		log.Printf("Error sending request to users service: %v", err)
+		log.Printf("Login: error llamando al servicio de users: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
 	defer resp.Body.Close()
 
-	// 3. Validar la Respuesta del Microservicio
+	// 3. Validar estado
 	if resp.StatusCode != http.StatusOK {
-		body, _ := ioutil.ReadAll(resp.Body)
-		log.Printf("Error response from users service: %s", string(body))
-		c.JSON(resp.StatusCode, gin.H{"error": "invalid credentials"})
+		b, _ := ioutil.ReadAll(resp.Body)
+		log.Printf("Login: users service respondió %d: %s", resp.StatusCode, string(b))
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
 		return
 	}
 
-	// Leer la respuesta del microservicio
-	responseBody, err := ioutil.ReadAll(resp.Body)
+	// 4. Leer y parsear la respuesta de users service (sin tokens)
+	var userResp UserResponseDTO
+	raw, _ := ioutil.ReadAll(resp.Body)
+	if err := json.Unmarshal(raw, &userResp); err != nil {
+		log.Printf("Login: no pude parsear respuesta: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		return
+	}
+
+	// 5. Generar JWT
+	token, err := GenerateTokens(
+		userResp.ID,
+		userResp.FirstName,
+		userResp.LastName,
+		userResp.Username,
+		userResp.Email,
+		userResp.Role,
+		secretKey,
+	)
 	if err != nil {
-		log.Printf("Error reading response body: %v", err)
+		log.Printf("Login: fallo generando JWT: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
 
-	var userResponse UserResponseDTO
-	if err := json.Unmarshal(responseBody, &userResponse); err != nil {
-		log.Printf("Error unmarshaling response body: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-		return
-	}
-
-	// 4. Generar ambos tokens
-	accessToken, refreshToken, err := GenerateTokens(userResponse.ID, userResponse.Role, secretKey)
-	if err != nil {
-		log.Printf("Error generating tokens: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-		return
-	}
-
-	// 5. Almacenar el refresh token en el microservicio de users
-	refreshReqBody := map[string]interface{}{
-		"user_id":    userResponse.ID,
-		"token":      refreshToken,
-		"expires_at": time.Now().Add(7 * 24 * time.Hour).Format(time.RFC3339),
-	}
-	refreshJson, err := json.Marshal(refreshReqBody)
-	if err != nil {
-		log.Printf("Error marshaling refresh token body: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-		return
-	}
-
-	refreshReq, err := http.NewRequest("POST", usersServiceURL+"/users/refresh-token", bytes.NewBuffer(refreshJson))
-	if err != nil {
-		log.Printf("Error creating refresh token request: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-		return
-	}
-	refreshReq.Header.Set("Content-Type", "application/json")
-	refreshResp, err := client.Do(refreshReq)
-	if err != nil || refreshResp.StatusCode != http.StatusCreated {
-		log.Printf("Error storing refresh token: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-		return
-	}
-	defer refreshResp.Body.Close()
-
-	// 6. Asignar tokens a la respuesta
-	userResponse.Token = accessToken
-	userResponse.RefreshToken = refreshToken
-
-	// 7. Devolver la Respuesta con los tokens
-	c.JSON(http.StatusOK, userResponse)
-}
-
-func SignupHandler(c *gin.Context) {
-	// Define la URL del microservicio de usuarios
-	usersServiceURL := os.Getenv("USERS_SERVICE_URL")
-	secretKey := os.Getenv("JWT_SECRET")
-
-	// 1. Recibir la Solicitud de Signup
-	var requestBody map[string]interface{}
-	if err := c.ShouldBindJSON(&requestBody); err != nil {
-		log.Printf("Error parsing request body: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
-		return
-	}
-
-	// 2. Comunicarse con el Microservicio de Usuarios
-	jsonBody, err := json.Marshal(requestBody)
-	if err != nil {
-		log.Printf("Error marshaling request body: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-		return
-	}
-
-	req, err := http.NewRequest("POST", usersServiceURL+"/users/signup", bytes.NewBuffer(jsonBody))
-	if err != nil {
-		log.Printf("Error creating request to users service: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-		return
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Printf("Error sending request to users service: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-		return
-	}
-	defer resp.Body.Close()
-
-	// 3. Validar la Respuesta del Microservicio
-	if resp.StatusCode != http.StatusCreated {
-		body, _ := ioutil.ReadAll(resp.Body)
-		log.Printf("Error response from users service: %s", string(body))
-		c.JSON(resp.StatusCode, gin.H{"error": "signup failed"})
-		return
-	}
-
-	// Leer la respuesta del microservicio
-	responseBody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Printf("Error reading response body: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-		return
-	}
-
-	var userResponse UserResponseDTO
-	if err := json.Unmarshal(responseBody, &userResponse); err != nil {
-		log.Printf("Error unmarshaling response body: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-		return
-	}
-
-	// 4. Generar ambos tokens
-	accessToken, refreshToken, err := GenerateTokens(userResponse.ID, userResponse.Role, secretKey)
-	if err != nil {
-		log.Printf("Error generating tokens: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-		return
-	}
-
-	// 5. Almacenar el refresh token en el microservicio de users
-	refreshReqBody := map[string]interface{}{
-		"user_id":    userResponse.ID,
-		"token":      refreshToken,
-		"expires_at": time.Now().Add(7 * 24 * time.Hour).Format(time.RFC3339),
-	}
-	refreshJson, err := json.Marshal(refreshReqBody)
-	if err != nil {
-		log.Printf("Error marshaling refresh token body: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-		return
-	}
-
-	refreshReq, err := http.NewRequest("POST", usersServiceURL+"/users/refresh-token", bytes.NewBuffer(refreshJson))
-	if err != nil {
-		log.Printf("Error creating refresh token request: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-		return
-	}
-	refreshReq.Header.Set("Content-Type", "application/json")
-	refreshResp, err := client.Do(refreshReq)
-	if err != nil || refreshResp.StatusCode != http.StatusCreated {
-		log.Printf("Error storing refresh token: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-		return
-	}
-	defer refreshResp.Body.Close()
-
-	// 6. Asignar tokens a la respuesta
-	userResponse.Token = accessToken
-	userResponse.RefreshToken = refreshToken
-
-	// 7. Devolver la Respuesta con los tokens
-	c.JSON(http.StatusCreated, userResponse)
-}
-
-func RefreshTokenHandler(c *gin.Context) {
-	secretKey := os.Getenv("JWT_SECRET")
-	usersServiceURL := os.Getenv("USERS_SERVICE_URL")
-
-	// 1. Recibir el refresh token
-	var request struct {
-		RefreshToken string `json:"refresh_token" binding:"required"`
-	}
-	if err := c.ShouldBindJSON(&request); err != nil {
-		log.Printf("Error parsing refresh token request: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
-		return
-	}
-
-	// 2. Validar el refresh token con el microservicio de users
-	refreshReqBody := map[string]interface{}{
-		"refresh_token": request.RefreshToken,
-	}
-	refreshJson, err := json.Marshal(refreshReqBody)
-	if err != nil {
-		log.Printf("Error marshaling refresh token body: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-		return
-	}
-
-	req, err := http.NewRequest("POST", usersServiceURL+"/users/refresh", bytes.NewBuffer(refreshJson))
-	if err != nil {
-		log.Printf("Error creating refresh request: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-		return
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Printf("Error sending refresh request: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-		return
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := ioutil.ReadAll(resp.Body)
-		log.Printf("Error response from users service: %s", string(body))
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid refresh token"})
-		return
-	}
-
-	// 3. Leer la respuesta del microservicio
-	responseBody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Printf("Error reading refresh response body: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-		return
-	}
-
-	var refreshResponse struct {
-		UserID int    `json:"user_id"`
-		Role   string `json:"role"`
-	}
-	if err := json.Unmarshal(responseBody, &refreshResponse); err != nil {
-		log.Printf("Error unmarshaling refresh response body: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-		return
-	}
-
-	// 4. Generar un nuevo token de acceso
-	accessToken, _, err := GenerateTokens(refreshResponse.UserID, refreshResponse.Role, secretKey)
-	if err != nil {
-		log.Printf("Error generating new access token: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-		return
-	}
-
-	// 5. Devolver el nuevo token de acceso
+	// 6. Devolver solo el JWT y la info pública
 	c.JSON(http.StatusOK, gin.H{
-		"token": accessToken,
+		"id":          userResp.ID,
+		"first_name":  userResp.FirstName,
+		"last_name":   userResp.LastName,
+		"username":    userResp.Username,
+		"email":       userResp.Email,
+		"role":        userResp.Role,
+		"token":       token,
+		"created_at":  userResp.CreatedAt,
 	})
 }
 
-func SignOutHandler(c *gin.Context) {
+func SignupHandler(c *gin.Context) {
 	usersServiceURL := os.Getenv("USERS_SERVICE_URL")
+	secretKey := os.Getenv("JWT_SECRET")
 
-	// 1. Recibir el refresh token
-	var request struct {
-		RefreshToken string `json:"refresh_token" binding:"required"`
-	}
-	if err := c.ShouldBindJSON(&request); err != nil {
-		log.Printf("Error parsing signout request: %v", err)
+	// 1. Capturar datos de registro
+	var signUp map[string]interface{}
+	if err := c.ShouldBindJSON(&signUp); err != nil {
+		log.Printf("Signup: payload inválido: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
 	}
 
-	// 2. Enviar solicitud de revocación al microservicio de users
-	signoutReqBody := map[string]interface{}{
-		"refresh_token": request.RefreshToken,
-	}
-	signoutJson, err := json.Marshal(signoutReqBody)
+	// 2. Enviar al users service
+	body, _ := json.Marshal(signUp)
+	req, err := http.NewRequest("POST", usersServiceURL+"/users/signup", bytes.NewBuffer(body))
 	if err != nil {
-		log.Printf("Error marshaling signout body: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-		return
-	}
-
-	req, err := http.NewRequest("POST", usersServiceURL+"/users/signout", bytes.NewBuffer(signoutJson))
-	if err != nil {
-		log.Printf("Error creating signout request: %v", err)
+		log.Printf("Signup: error creando request: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		log.Printf("Error sending signout request: %v", err)
+		log.Printf("Signup: error llamando al servicio de users: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusNoContent {
-		body, _ := ioutil.ReadAll(resp.Body)
-		log.Printf("Error response from users service: %s", string(body))
+	// 3. Validar estado
+	if resp.StatusCode != http.StatusCreated {
+		b, _ := ioutil.ReadAll(resp.Body)
+		log.Printf("Signup: users service respondió %d: %s", resp.StatusCode, string(b))
+		c.JSON(http.StatusBadRequest, gin.H{"error": "signup failed"})
+		return
+	}
+
+	// 4. Leer y parsear la respuesta de users service
+	var userResp UserResponseDTO
+	raw, _ := ioutil.ReadAll(resp.Body)
+	if err := json.Unmarshal(raw, &userResp); err != nil {
+		log.Printf("Signup: no pude parsear respuesta: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
 
-	// 3. Devolver respuesta exitosa
-	c.JSON(http.StatusNoContent, nil)
+	// 5. Generar JWT
+	token, err := GenerateTokens(
+		userResp.ID,
+		userResp.FirstName,
+		userResp.LastName,
+		userResp.Username,
+		userResp.Email,
+		userResp.Role,
+		secretKey,
+	)
+	if err != nil {
+		log.Printf("Signup: fallo generando JWT: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		return
+	}
+
+	// 6. Devolver solo el JWT y la info pública
+	c.JSON(http.StatusCreated, gin.H{
+		"id":          userResp.ID,
+		"first_name":  userResp.FirstName,
+		"last_name":   userResp.LastName,
+		"username":    userResp.Username,
+		"email":       userResp.Email,
+		"role":        userResp.Role,
+		"token":       token,
+		"created_at":  userResp.CreatedAt,
+	})
+}
+
+func MeHandler(c *gin.Context) {
+	raw, ok := c.Get("claims")
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	claims := raw.(*Claims)
+	c.JSON(http.StatusOK, gin.H{
+		"id":         claims.UserID,
+		"first_name": claims.FirstName,
+		"last_name":  claims.LastName,
+		"username":   claims.Username,
+		"email":      claims.Email,
+		"role":       claims.Role,
+	})
 }

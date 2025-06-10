@@ -20,7 +20,6 @@ type UserSignUpResponseDTO struct {
     Email        string `json:"email"`
     Role         string `json:"role"`
     Token        string `json:"token"`        
-    RefreshToken string `json:"refresh_token"`
     CreatedAt    string `json:"created_at"`
 }
 
@@ -39,7 +38,6 @@ type UserLoginResponseDTO struct {
     Email        string `json:"email"`
     Role         string `json:"role"`
     Token        string `json:"token"`       
-    RefreshToken string `json:"refresh_token"`
 }
 
 // UserResponseDTO representa la respuesta general de un usuario
