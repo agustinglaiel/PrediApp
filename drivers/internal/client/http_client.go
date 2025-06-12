@@ -152,6 +152,7 @@ func (c *HttpClient) GetAllDriversFromExternalAPI() ([]dto.ResponseDriverDTO, er
         LastName       string `json:"last_name"`
         FullName       string `json:"full_name"`
         NameAcronym    string `json:"name_acronym"`
+		HeadshotURL    string `json:"headshot_url"`
         TeamName       string `json:"team_name"`
     }
 
@@ -170,6 +171,7 @@ func (c *HttpClient) GetAllDriversFromExternalAPI() ([]dto.ResponseDriverDTO, er
             LastName:       driver.LastName,
             FullName:       driver.FullName,
             NameAcronym:    driver.NameAcronym,
+			HeadshotURL:    driver.HeadshotURL,
             TeamName:       driver.TeamName,
 			Activo:         false,
         })
