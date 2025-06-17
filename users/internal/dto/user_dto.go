@@ -19,6 +19,7 @@ type UserSignUpResponseDTO struct {
     Username     string `json:"username"`
     Email        string `json:"email"`
     Role         string `json:"role"`
+    Score        int    `json:"score"`
     Token        string `json:"token"`        
     CreatedAt    string `json:"created_at"`
 }
@@ -37,6 +38,7 @@ type UserLoginResponseDTO struct {
     Username     string `json:"username"`
     Email        string `json:"email"`
     Role         string `json:"role"`
+    Score        int    `json:"score"`
     Token        string `json:"token"`       
 }
 

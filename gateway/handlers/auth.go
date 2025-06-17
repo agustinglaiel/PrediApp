@@ -20,6 +20,7 @@ type Claims struct {
 	Username  string `json:"username"`
 	Email     string `json:"email"`
 	Role      string `json:"role"`
+	Score     int    `json:"score"`
 	jwt.RegisteredClaims
 }
 
@@ -31,11 +32,12 @@ type UserResponseDTO struct {
 	Username     string `json:"username"`
 	Email        string `json:"email"`
 	Role         string `json:"role"`
+	Score		 int    `json:"score"`
 	Token        string `json:"token"`
 	CreatedAt    string `json:"created_at"`
 }
 
-func GenerateTokens(id int, firstName, lastName, username, email, role, secretKey string) (string, error) {
+func GenerateTokens(id int, firstName, lastName, username, email, role string, score int, secretKey string) (string, error) {
 	claims := Claims{
 		UserID:    id,
 		FirstName: firstName,
@@ -43,6 +45,7 @@ func GenerateTokens(id int, firstName, lastName, username, email, role, secretKe
 		Username:  username,
 		Email:     email,
 		Role:      role,
+		Score:     score,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(1 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -107,6 +110,7 @@ func LoginHandler(c *gin.Context) {
 		userResp.Username,
 		userResp.Email,
 		userResp.Role,
+		userResp.Score,
 		secretKey,
 	)
 	if err != nil {
@@ -123,6 +127,7 @@ func LoginHandler(c *gin.Context) {
 		"username":    userResp.Username,
 		"email":       userResp.Email,
 		"role":        userResp.Role,
+		"score":       userResp.Score,
 		"token":       token,
 		"created_at":  userResp.CreatedAt,
 	})
@@ -183,6 +188,7 @@ func SignupHandler(c *gin.Context) {
 		userResp.Username,
 		userResp.Email,
 		userResp.Role,
+		userResp.Score,
 		secretKey,
 	)
 	if err != nil {
@@ -199,6 +205,7 @@ func SignupHandler(c *gin.Context) {
 		"username":    userResp.Username,
 		"email":       userResp.Email,
 		"role":        userResp.Role,
+		"score":       userResp.Score,
 		"token":       token,
 		"created_at":  userResp.CreatedAt,
 	})
@@ -218,5 +225,6 @@ func MeHandler(c *gin.Context) {
 		"username":   claims.Username,
 		"email":      claims.Email,
 		"role":       claims.Role,
+		"score":      claims.Score,
 	})
 }

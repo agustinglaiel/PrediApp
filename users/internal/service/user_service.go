@@ -76,6 +76,7 @@ func (s *userService) SignUp(ctx context.Context, request dto.UserSignUpRequestD
 		Username:  newUser.Username,
 		Email:     newUser.Email,
 		Role:      newUser.Role,
+        Score:     newUser.Score,
         // Token:     token,
 		CreatedAt: newUser.CreatedAt.Format(time.RFC3339),
 	}
@@ -100,6 +101,7 @@ func (s *userService) Login(ctx context.Context, request dto.UserLoginRequestDTO
 		Username:  user.Username,
 		Email:     user.Email,
 		Role:      user.Role,
+        Score:     user.Score,
 	}
 
 	return response, nil

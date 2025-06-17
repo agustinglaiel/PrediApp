@@ -30,8 +30,6 @@ func (ctrl *UserController) SignUp(c *gin.Context) {
         return
     }
 
-    //log.Printf("Request received: %+v", request)
-
     response, apiErr := ctrl.userService.SignUp(c.Request.Context(), request)
     if apiErr != nil {
         log.Printf("Error in user service SignUp: %v", apiErr)
