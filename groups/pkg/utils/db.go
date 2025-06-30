@@ -36,8 +36,10 @@ func DisconnectDB() {
 }
 
 func StartDbEngine() {
-    DB.AutoMigrate(&model.Group{})
-    DB.AutoMigrate(&model.GroupXUsers{})
+    if err := DB.AutoMigrate(&model.Group{}, &model.GroupXUsers{}); err != nil {
+        panic(fmt.Sprintf("Error migrating tables: %v", err))
+    }
     fmt.Println("Finishing Migration Database Tables")
 }
+
 

@@ -31,7 +31,7 @@ type User struct {
 	FirstName string        `gorm:"size:255" json:"first_name"`
 	LastName  string        `gorm:"size:255" json:"last_name"`
 	Email     string        `gorm:"size:255;unique;not null" json:"email"`
-	Groups    []Group       `gorm:"many2many:group_x_users;foreignKey:ID;joinForeignKey:UserID;References:ID;joinReferences:GroupID" json:"groups"`
+	Groups    []Group       `gorm:"-" json:"groups"`
 	CreatedAt time.Time     `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt time.Time     `gorm:"autoUpdateTime" json:"updated_at"`
 }

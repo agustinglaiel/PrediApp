@@ -138,13 +138,6 @@ func (ctrl *UserController) UpdateUserByUsername(c *gin.Context) {
     c.JSON(http.StatusOK, user)
 }
 
-// @Summary Delete user by ID
-// @Description Deletes a user by their ID
-// @Tags Users
-// @Param id path int true "User ID"
-// @Success 204
-// @Failure 404 {object} utils.ApiError
-// @Router /users/{id} [delete]
 func (ctrl *UserController) DeleteUserByID(c *gin.Context) {
     id := c.Param("id")
     intID, err := strconv.Atoi(id) // Cambiado a Atoi para int

@@ -18,6 +18,7 @@ type groupService struct {
 type GroupServiceInterface interface {
 	CreateGroup(ctx context.Context, group dto.CreateGroupRequestDTO) (dto.GroupResponseDTO, e.ApiError)
 	GetGroupByID(ctx context.Context, id int) (dto.GroupResponseDTO, e.ApiError)
+	GetGroupsByUserId(ctx context.Context, userID int) ([]dto.GroupResponseDTO, e.ApiError) 
 	GetGroups(ctx context.Context) ([]dto.GroupListResponseDTO, e.ApiError)
 	DeleteGroupByID(ctx context.Context, id int) e.ApiError
 	JoinGroup(ctx context.Context, request dto.RequestJoinGroupDTO) e.ApiError
@@ -67,6 +68,44 @@ func (s *groupService) CreateGroup(ctx context.Context, request dto.CreateGroupR
 	}
 
 	return response, nil
+}
+
+func (s *groupService) GetGroupsByUserId(ctx context.Context, userID int) ([]dto.GroupResponseDTO, e.ApiError) {
+	groups, apiErr := s.groupRepo.GetGroupsByUserId(ctx, userID)
+	if apiErr != nil {
+		return nil, apiErr
+	}
+
+	usersClient := client.NewUsersClient()
+	var responses []dto.GroupResponseDTO
+
+	for _, g := range groups {
+		var users []dto.GroupUserResponseDTO
+
+		for _, gu := range g.GroupUsers {
+			score, err := usersClient.GetUserScore(gu.UserID)
+			if err != nil {
+				score = 0
+			}
+			users = append(users, dto.GroupUserResponseDTO{
+				UserID: gu.UserID,
+				Role:   gu.GroupRole,
+				Score:  &score,
+			})
+		}
+
+		responses = append(responses, dto.GroupResponseDTO{
+			ID:          g.ID,
+			GroupName:   g.GroupName,
+			Description: g.Description,
+			GroupCode:   g.GroupCode,
+			Users:       users,
+			CreatedAt:   g.CreatedAt.Format(time.RFC3339),
+			UpdatedAt:   g.UpdatedAt.Format(time.RFC3339),
+		})
+	}
+
+	return responses, nil
 }
 
 func (s *groupService) GetGroupByID(ctx context.Context, id int) (dto.GroupResponseDTO, e.ApiError) {
@@ -174,7 +213,6 @@ func (s *groupService) JoinGroup(ctx context.Context, request dto.RequestJoinGro
 	return nil
 }
 
-
 //Un usuario solicita unirse a un grupo mediante la ruta POST /groups/join. 
 ///En este momento, su estado en la tabla group_x_users queda como "invited".
 // Luego, el creador del grupo debe aceptar o rechazar la invitación usando POST /groups/manage-invitation.
@@ -220,4 +258,3 @@ func (s *groupService) ManageGroupInvitation(ctx context.Context, request dto.Ma
 
 	return nil
 }
-

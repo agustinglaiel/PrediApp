@@ -57,6 +57,23 @@ func (ctrl *GroupController) GetGroupByID(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+func (ctrl *GroupController) GetGroupsByUserId(c *gin.Context) {
+	userID, err := strconv.Atoi(c.Param("userId"))
+	if err != nil {
+		apiErr := e.NewBadRequestApiError("Invalid user ID")
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	responses, apiErr := ctrl.groupService.GetGroupsByUserId(c.Request.Context(), userID)
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	c.JSON(http.StatusOK, responses)
+}
+
 func (ctrl *GroupController) GetGroups(c *gin.Context) {
 	response, apiErr := ctrl.groupService.GetGroups(c.Request.Context())
 	if apiErr != nil {

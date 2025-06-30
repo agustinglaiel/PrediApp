@@ -17,6 +17,7 @@ type groupRepository struct {
 type GroupRepository interface {
 	CreateGroup(ctx context.Context, group *model.Group) e.ApiError
 	GetGroupByID(ctx context.Context, id int) (*model.Group, e.ApiError)
+	GetGroupsByUserId(ctx context.Context, userID int) ([]model.Group, e.ApiError)
 	GetGroupByGroupName(ctx context.Context, groupName string) (*model.Group, e.ApiError)
 	GetGroupByCode(ctx context.Context, code string) (*model.Group, e.ApiError)  
 	GetGroups(ctx context.Context) ([]*model.Group, e.ApiError)
@@ -38,11 +39,9 @@ func NewGroupRepository(db *gorm.DB) GroupRepository {
 func (r *groupRepository) CreateGroup(ctx context.Context, group *model.Group) e.ApiError {
 	for {
 		group.GroupCode = generateGroupCode() // Generar código aleatorio
-
-		// Verificar si el código ya existe
 		existingGroup, _ := r.GetGroupByCode(ctx, group.GroupCode)
 		if existingGroup == nil {
-			break // Si no existe, usamos este código
+			break
 		}
 	}
 
@@ -65,6 +64,22 @@ func (r *groupRepository) GetGroupByID(ctx context.Context, id int) (*model.Grou
 		return nil, e.NewInternalServerApiError("Error finding group by ID", err)
 	}
 	return &group, nil
+}
+
+func (r *groupRepository) GetGroupsByUserId(ctx context.Context, userID int) ([]model.Group, e.ApiError) {
+	var groups []model.Group
+	err := r.db.WithContext(ctx).
+		Preload("GroupUsers").
+		Joins("JOIN group_x_users ON group_x_users.group_id = groups.id").
+		Where("group_x_users.user_id = ?", userID).
+		Find(&groups).Error       // ⬅️ usamos Find (slice) en lugar de First
+	if err != nil {
+		return nil, e.NewInternalServerApiError("Error finding groups by user ID", err)
+	}
+	if len(groups) == 0 {
+		return nil, e.NewNotFoundApiError("No groups found for user")
+	}
+	return groups, nil
 }
 
 func (r *groupRepository) GetGroupByGroupName(ctx context.Context, groupName string) (*model.Group, e.ApiError) {
