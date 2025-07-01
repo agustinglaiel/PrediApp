@@ -2,10 +2,11 @@ package repository
 
 import (
 	"context"
-	model "drivers/internal/model"
-	e "drivers/pkg/utils"
 	"fmt"
 	"strings"
+
+	model "prediapp.local/drivers/internal/model"
+	e "prediapp.local/drivers/pkg/utils"
 
 	"gorm.io/gorm"
 )
@@ -35,10 +36,10 @@ func NewDriverRepository(db *gorm.DB) DriverRepository {
 }
 
 func (r *driverRepository) CreateDriver(ctx context.Context, driver *model.Driver) e.ApiError {
-    if err := r.db.WithContext(ctx).Create(driver).Error; err != nil {
-        return e.NewInternalServerApiError("Error creando el piloto", err)
-    }                 
-    return nil
+	if err := r.db.WithContext(ctx).Create(driver).Error; err != nil {
+		return e.NewInternalServerApiError("Error creando el piloto", err)
+	}
+	return nil
 }
 
 func (r *driverRepository) CreateDriversTransaction(ctx context.Context, drivers []*model.Driver) ([]*model.Driver, e.ApiError) {
@@ -122,7 +123,6 @@ func (r *driverRepository) GetDriverByNumber(ctx context.Context, driverNumber i
 	return &driver, nil
 }
 
-
 func (r *driverRepository) GetDriversByTeam(ctx context.Context, teamName string) ([]*model.Driver, e.ApiError) {
 	var model []*model.Driver
 	if err := r.db.WithContext(ctx).Where("team_name = ?", teamName).Find(&model).Error; err != nil {
@@ -162,4 +162,3 @@ func (r *driverRepository) BulkInsertDrivers(ctx context.Context, drivers []*mod
 	}
 	return nil
 }
-

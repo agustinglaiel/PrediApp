@@ -12,86 +12,72 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+
+	"prediapp.local/db"
 )
 
-var cmds []*exec.Cmd // Variable global para almacenar los comandos en ejecución
+var cmds []*exec.Cmd
 
-// Función para ejecutar main.go en cada servicio
 func runMain(dir string, envVars map[string]string) error {
 	cmd := exec.Command("go", "run", "main.go")
 	cmd.Dir = dir
-
-	// Configurar variables de entorno
 	env := os.Environ()
-	for key, value := range envVars {
-		env = append(env, key+"="+value)
+	for k, v := range envVars {
+		env = append(env, k+"="+v)
 	}
 	cmd.Env = env
-
-	// Conectar la salida del proceso a la terminal
 	cmd.Stdout = log.Writer()
 	cmd.Stderr = log.Writer()
-
-	// Ejecutar el comando en segundo plano
-	err := cmd.Start()
-	if err != nil {
-		log.Printf("Failed to start service in %s: %v", dir, err)
-		return err
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("starting %s: %w", dir, err)
 	}
-
-	cmds = append(cmds, cmd) // Agregar el comando en ejecución a la lista
+	cmds = append(cmds, cmd)
 	return nil
 }
 
-// Función para matar todos los procesos en ejecución
 func cleanup() {
-	for _, cmd := range cmds {
-		if cmd != nil && cmd.Process != nil {
-			log.Printf("Killing process for %s (PID: %d)", cmd.Path, cmd.Process.Pid)
-			cmd.Process.Kill() // Matar el proceso
+	for _, c := range cmds {
+		if c != nil && c.Process != nil {
+			c.Process.Kill()
 		}
 	}
 	log.Println("All services stopped.")
 }
 
 func main() {
-	// Construir la ruta al archivo .env
-	currentDir, err := os.Getwd()
+	// 1) Carga de .env
+	cwd, err := os.Getwd()
 	if err != nil {
-		fmt.Println("Error al obtener el directorio actual:", err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
-	envPath := filepath.Join(currentDir, ".env")
-
-	// Cargar el archivo .env para obtener el valor de ENV
-	err = godotenv.Load(envPath)
-	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
-	}
-
-	// Obtener el valor de ENV desde el archivo .env (o desde la variable de entorno si está definida)
+	godotenv.Load(filepath.Join(cwd, ".env"))
 	env := os.Getenv("ENV")
 	if env == "" {
-		log.Println("ENV not set in .env file, defaulting to 'stage'")
 		env = "stage"
 	}
+	godotenv.Load(filepath.Join(cwd, ".env."+env))
 
-	// Construir la ruta al archivo .env.stage o .env.prod según el valor de ENV
-	envFile := fmt.Sprintf(".env.%s", env)
-	envSpecificPath := filepath.Join(currentDir, envFile)
+	// 2) Construir DSN
+	user := os.Getenv("DB_USER")
+	pass := os.Getenv("DB_PASS")
+	host := os.Getenv("DB_HOST")
+	port := os.Getenv("DB_PORT")
+	name := os.Getenv("DB_NAME")
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+		user, pass, host, port, name,
+	)
 
-	// Cargar las variables de entorno específicas del ambiente
-	err = godotenv.Load(envSpecificPath)
-	if err != nil {
-		log.Printf("Error loading %s file: %v", envFile, err)
-		log.Println("Continuing with variables from .env or system environment")
+	// 3) Conectar + migrar
+	if err := db.Init(dsn); err != nil {
+		log.Fatalf("DB init failed: %v", err)
 	}
+	if err := db.AutoMigrate(); err != nil {
+		log.Fatalf("DB migrate failed: %v", err)
+	}
+	log.Println("DB connected and migrated ✔")
 
-	// Lista de servicios con sus respectivas variables de entorno para el puerto, en orden
-	services := []struct {
-		dir        string
-		serviceURL string
-	}{
+	// 4) Preparar URLs de servicios
+	services := []struct{ dir, url string }{
 		{"./users/cmd", os.Getenv("USERS_SERVICE_URL")},
 		{"./sessions/cmd", os.Getenv("SESSIONS_SERVICE_URL")},
 		{"./drivers/cmd", os.Getenv("DRIVERS_SERVICE_URL")},
@@ -101,54 +87,40 @@ func main() {
 		{"./posts/cmd", os.Getenv("POSTS_SERVICE_URL")},
 	}
 
-	// Obtener todas las variables de entorno actualizadas
-	envVars := make(map[string]string)
-	for _, env := range os.Environ() {
-		parts := strings.SplitN(env, "=", 2)
+	// 5) Recopilar env vars base
+	baseEnv := make(map[string]string)
+	for _, e := range os.Environ() {
+		parts := strings.SplitN(e, "=", 2)
 		if len(parts) == 2 {
-			envVars[parts[0]] = parts[1]
+			baseEnv[parts[0]] = parts[1]
 		}
 	}
 
-	// Ejecutar cada main.go secuencialmente con un retraso de 2 segundos
-	for i, service := range services {
-		// Extraer el puerto de la URL del microservicio
-		parts := strings.Split(service.serviceURL, ":")
+	// 6) Arrancar los microservicios
+	for i, svc := range services {
+		parts := strings.Split(svc.url, ":")
 		if len(parts) < 3 {
-			log.Printf("Invalid service URL for %s: %s", service.dir, service.serviceURL)
+			log.Printf("invalid URL for %s: %s", svc.dir, svc.url)
 			continue
 		}
-		port := parts[2]
-
-		// Configurar las variables de entorno para este microservicio
-		serviceEnvVars := make(map[string]string)
-		for k, v := range envVars {
-			serviceEnvVars[k] = v
+		svcEnv := map[string]string{}
+		for k, v := range baseEnv {
+			svcEnv[k] = v
 		}
-		serviceEnvVars["PORT"] = port
-
-		// Iniciar el microservicio
-		log.Printf("Starting service in %s on port %s...", service.dir, port)
-		err := runMain(service.dir, serviceEnvVars)
-		if err != nil {
-			log.Printf("Failed to run main.go in %s on port %s: %v", service.dir, port, err)
+		svcEnv["PORT"] = parts[2]
+		log.Printf("Starting %s on %s...", svc.dir, parts[2])
+		if err := runMain(svc.dir, svcEnv); err != nil {
+			log.Printf("error: %v", err)
 		}
-
-		// Esperar 2 segundos antes de iniciar el siguiente servicio (excepto el último)
 		if i < len(services)-1 {
-			log.Printf("Waiting 2 seconds before starting the next service...")
-			time.Sleep(1 * time.Second)
+			time.Sleep(time.Second)
 		}
 	}
 
-	// Capturar señales de interrupción (Ctrl+C)
+	// 7) Esperar Ctrl+C y limpiar
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-
-	// Esperar la señal de interrupción
 	<-sigs
-	log.Println("Interrupt signal received. Stopping services...")
-
-	// Limpiar procesos
+	log.Println("Stopping services…")
 	cleanup()
 }

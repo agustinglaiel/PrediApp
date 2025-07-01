@@ -2,14 +2,14 @@ package service
 
 import (
 	"context"
-	"groups/internal/client"
-	"groups/internal/dto"
-	"groups/internal/model"
-	"groups/internal/repository"
-	e "groups/pkg/utils"
 	"time"
-)
 
+	"prediapp.local/groups/internal/client"
+	"prediapp.local/groups/internal/dto"
+	"prediapp.local/groups/internal/model"
+	"prediapp.local/groups/internal/repository"
+	e "prediapp.local/groups/pkg/utils"
+)
 
 type groupService struct {
 	groupRepo repository.GroupRepository
@@ -18,7 +18,7 @@ type groupService struct {
 type GroupServiceInterface interface {
 	CreateGroup(ctx context.Context, group dto.CreateGroupRequestDTO) (dto.GroupResponseDTO, e.ApiError)
 	GetGroupByID(ctx context.Context, id int) (dto.GroupResponseDTO, e.ApiError)
-	GetGroupsByUserId(ctx context.Context, userID int) ([]dto.GroupResponseDTO, e.ApiError) 
+	GetGroupsByUserId(ctx context.Context, userID int) ([]dto.GroupResponseDTO, e.ApiError)
 	GetGroups(ctx context.Context) ([]dto.GroupListResponseDTO, e.ApiError)
 	DeleteGroupByID(ctx context.Context, id int) e.ApiError
 	JoinGroup(ctx context.Context, request dto.RequestJoinGroupDTO) e.ApiError
@@ -63,8 +63,8 @@ func (s *groupService) CreateGroup(ctx context.Context, request dto.CreateGroupR
 				Score:  nil, // Se traerá desde el microservicio de `users` en otra función
 			},
 		},
-		CreatedAt:   newGroup.CreatedAt.Format(time.RFC3339), // ✅ Convertimos a string ISO 8601
-		UpdatedAt:   newGroup.UpdatedAt.Format(time.RFC3339),
+		CreatedAt: newGroup.CreatedAt.Format(time.RFC3339), // ✅ Convertimos a string ISO 8601
+		UpdatedAt: newGroup.UpdatedAt.Format(time.RFC3339),
 	}
 
 	return response, nil
@@ -144,7 +144,6 @@ func (s *groupService) GetGroupByID(ctx context.Context, id int) (dto.GroupRespo
 	return response, nil
 }
 
-
 func (s *groupService) GetGroups(ctx context.Context) ([]dto.GroupListResponseDTO, e.ApiError) {
 	groups, err := s.groupRepo.GetGroups(ctx)
 	if err != nil {
@@ -213,11 +212,11 @@ func (s *groupService) JoinGroup(ctx context.Context, request dto.RequestJoinGro
 	return nil
 }
 
-//Un usuario solicita unirse a un grupo mediante la ruta POST /groups/join. 
-///En este momento, su estado en la tabla group_x_users queda como "invited".
+// Un usuario solicita unirse a un grupo mediante la ruta POST /groups/join.
+// /En este momento, su estado en la tabla group_x_users queda como "invited".
 // Luego, el creador del grupo debe aceptar o rechazar la invitación usando POST /groups/manage-invitation.
-//Si la acción es "accept", el usuario pasa a "member".
-//Si la acción es "reject", el usuario es eliminado del grupo.
+// Si la acción es "accept", el usuario pasa a "member".
+// Si la acción es "reject", el usuario es eliminado del grupo.
 func (s *groupService) ManageGroupInvitation(ctx context.Context, request dto.ManageGroupInvitationDTO) e.ApiError {
 	group, err := s.groupRepo.GetGroupByID(ctx, request.GroupID)
 	if err != nil {

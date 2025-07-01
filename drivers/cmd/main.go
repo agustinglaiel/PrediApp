@@ -1,15 +1,16 @@
 package main
 
 import (
-	"drivers/internal/api"
-	"drivers/internal/client"
-	"drivers/internal/repository"
-	"drivers/internal/router"
-	"drivers/internal/service"
-	"drivers/pkg/utils"
 	"fmt"
 	"log"
 	"os"
+
+	"prediapp.local/drivers/internal/api"
+	"prediapp.local/drivers/internal/client"
+	"prediapp.local/drivers/internal/repository"
+	"prediapp.local/drivers/internal/router"
+	"prediapp.local/drivers/internal/service"
+	"prediapp.local/drivers/pkg/utils"
 
 	"github.com/gin-gonic/gin"
 )

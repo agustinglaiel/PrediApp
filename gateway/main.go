@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
-	"gateway/handlers"
-	"gateway/middleware"
-	"gateway/proxy"
 	"log"
 	"os"
 	"path/filepath"
+
+	"prediapp.local/gateway/handlers"
+	"prediapp.local/gateway/middleware"
+	"prediapp.local/gateway/proxy"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"

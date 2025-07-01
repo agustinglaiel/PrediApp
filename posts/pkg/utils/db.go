@@ -2,8 +2,9 @@ package utils
 
 import (
 	"fmt"
-	"posts/internal/model"
-	"posts/pkg/config"
+
+	"prediapp.local/posts/internal/model"
+	"prediapp.local/posts/pkg/config"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"

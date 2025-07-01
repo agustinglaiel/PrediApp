@@ -2,10 +2,11 @@ package api
 
 import (
 	"net/http"
-	"posts/internal/dto"
-	"posts/internal/service"
-	e "posts/pkg/utils"
 	"strconv"
+
+	"prediapp.local/posts/internal/dto"
+	"prediapp.local/posts/internal/service"
+	e "prediapp.local/posts/pkg/utils"
 
 	"github.com/gin-gonic/gin"
 )

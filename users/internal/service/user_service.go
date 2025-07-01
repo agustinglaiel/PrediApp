@@ -3,35 +3,36 @@ package service
 import (
 	"context"
 	"time"
-	"users/internal/dto"
-	"users/internal/model"
-	"users/internal/repository"
-	e "users/pkg/utils"
+
+	"prediapp.local/users/internal/dto"
+	"prediapp.local/users/internal/model"
+	"prediapp.local/users/internal/repository"
+	e "prediapp.local/users/pkg/utils"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
 type userService struct {
-    userRepo repository.UserRepository
+	userRepo repository.UserRepository
 }
 
 type UserServiceInterface interface {
-    SignUp(ctx context.Context, request dto.UserSignUpRequestDTO) (dto.UserSignUpResponseDTO, e.ApiError)
-    Login(ctx context.Context, request dto.UserLoginRequestDTO) (dto.UserLoginResponseDTO, e.ApiError)
-    GetUserById(ctx context.Context, id int) (dto.UserResponseDTO, e.ApiError)
-    GetUserByUsername(ctx context.Context, username string) (dto.UserResponseDTO, e.ApiError)
-    GetUsers(ctx context.Context) ([]dto.UserResponseDTO, e.ApiError)
-    UpdateUserById(ctx context.Context, id int, request dto.UserUpdateRequestDTO) (dto.UserResponseDTO, e.ApiError)
-    UpdateUserByUsername(ctx context.Context, username string, request dto.UserUpdateRequestDTO) (dto.UserResponseDTO, e.ApiError)
-    DeleteUserById(ctx context.Context, id int) e.ApiError
-    DeleteUserByUsername(ctx context.Context, username string) e.ApiError
-    UpdateRoleByUserId(ctx context.Context, id int, request dto.UserUpdateRoleRequestDTO) (dto.UserResponseDTO, e.ApiError)
+	SignUp(ctx context.Context, request dto.UserSignUpRequestDTO) (dto.UserSignUpResponseDTO, e.ApiError)
+	Login(ctx context.Context, request dto.UserLoginRequestDTO) (dto.UserLoginResponseDTO, e.ApiError)
+	GetUserById(ctx context.Context, id int) (dto.UserResponseDTO, e.ApiError)
+	GetUserByUsername(ctx context.Context, username string) (dto.UserResponseDTO, e.ApiError)
+	GetUsers(ctx context.Context) ([]dto.UserResponseDTO, e.ApiError)
+	UpdateUserById(ctx context.Context, id int, request dto.UserUpdateRequestDTO) (dto.UserResponseDTO, e.ApiError)
+	UpdateUserByUsername(ctx context.Context, username string, request dto.UserUpdateRequestDTO) (dto.UserResponseDTO, e.ApiError)
+	DeleteUserById(ctx context.Context, id int) e.ApiError
+	DeleteUserByUsername(ctx context.Context, username string) e.ApiError
+	UpdateRoleByUserId(ctx context.Context, id int, request dto.UserUpdateRoleRequestDTO) (dto.UserResponseDTO, e.ApiError)
 }
 
 func NewUserService(userRepo repository.UserRepository) UserServiceInterface {
-    return &userService{
-        userRepo: userRepo,
-    }
+	return &userService{
+		userRepo: userRepo,
+	}
 }
 
 func (s *userService) SignUp(ctx context.Context, request dto.UserSignUpRequestDTO) (dto.UserSignUpResponseDTO, e.ApiError) {
@@ -48,9 +49,9 @@ func (s *userService) SignUp(ctx context.Context, request dto.UserSignUpRequestD
 		return dto.UserSignUpResponseDTO{}, e.NewInternalServerApiError("error hashing password", err)
 	}
 
-    if request.Role == "" {
-        request.Role = "user"
-    }
+	if request.Role == "" {
+		request.Role = "user"
+	}
 
 	newUser := &model.User{
 		FirstName:       request.FirstName,
@@ -76,8 +77,8 @@ func (s *userService) SignUp(ctx context.Context, request dto.UserSignUpRequestD
 		Username:  newUser.Username,
 		Email:     newUser.Email,
 		Role:      newUser.Role,
-        Score:     newUser.Score,
-        // Token:     token,
+		Score:     newUser.Score,
+		// Token:     token,
 		CreatedAt: newUser.CreatedAt.Format(time.RFC3339),
 	}
 
@@ -101,241 +102,241 @@ func (s *userService) Login(ctx context.Context, request dto.UserLoginRequestDTO
 		Username:  user.Username,
 		Email:     user.Email,
 		Role:      user.Role,
-        Score:     user.Score,
+		Score:     user.Score,
 	}
 
 	return response, nil
 }
 
 func (s *userService) GetUserById(ctx context.Context, id int) (dto.UserResponseDTO, e.ApiError) {
-    user, apiErr := s.userRepo.GetUserByID(ctx, id)
-    if apiErr != nil {
-        return dto.UserResponseDTO{}, apiErr
-    }
+	user, apiErr := s.userRepo.GetUserByID(ctx, id)
+	if apiErr != nil {
+		return dto.UserResponseDTO{}, apiErr
+	}
 
-    response := dto.UserResponseDTO{
-        ID:        user.ID,
-        FirstName: user.FirstName,
-        LastName:  user.LastName,
-        Username:  user.Username,
-        Email:     user.Email,
-        Role:      user.Role,
-        Score:     user.Score,
-        CreatedAt: user.CreatedAt.Format(time.RFC3339),
-        IsActive:  user.IsActive,
-    }
+	response := dto.UserResponseDTO{
+		ID:        user.ID,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Username:  user.Username,
+		Email:     user.Email,
+		Role:      user.Role,
+		Score:     user.Score,
+		CreatedAt: user.CreatedAt.Format(time.RFC3339),
+		IsActive:  user.IsActive,
+	}
 
-    return response, nil
+	return response, nil
 }
 
 func (s *userService) GetUserByUsername(ctx context.Context, username string) (dto.UserResponseDTO, e.ApiError) {
-    user, apiErr := s.userRepo.GetUserByUsername(ctx, username)
-    if apiErr != nil {
-        return dto.UserResponseDTO{}, apiErr
-    }
+	user, apiErr := s.userRepo.GetUserByUsername(ctx, username)
+	if apiErr != nil {
+		return dto.UserResponseDTO{}, apiErr
+	}
 
-    response := dto.UserResponseDTO{
-        ID:        user.ID,
-        FirstName: user.FirstName,
-        LastName:  user.LastName,
-        Username:  user.Username,
-        Email:     user.Email,
-        Role:      user.Role,
-        Score:     user.Score,
-        CreatedAt: user.CreatedAt.Format(time.RFC3339),
-        IsActive:  user.IsActive,
-    }
+	response := dto.UserResponseDTO{
+		ID:        user.ID,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Username:  user.Username,
+		Email:     user.Email,
+		Role:      user.Role,
+		Score:     user.Score,
+		CreatedAt: user.CreatedAt.Format(time.RFC3339),
+		IsActive:  user.IsActive,
+	}
 
-    return response, nil
+	return response, nil
 }
 
 func (s *userService) GetUsers(ctx context.Context) ([]dto.UserResponseDTO, e.ApiError) {
-    users, apiErr := s.userRepo.GetUsers(ctx)
-    if apiErr != nil {
-        return nil, apiErr
-    }
+	users, apiErr := s.userRepo.GetUsers(ctx)
+	if apiErr != nil {
+		return nil, apiErr
+	}
 
-    var response []dto.UserResponseDTO
-    for _, user := range users {
-        response = append(response, dto.UserResponseDTO{
-            ID:        user.ID,
-            FirstName: user.FirstName,
-            LastName:  user.LastName,
-            Username:  user.Username,
-            Email:     user.Email,
-            Role:      user.Role,
-            Score:     user.Score,
-            CreatedAt: user.CreatedAt.Format(time.RFC3339),
-            IsActive:  user.IsActive,
-        })
-    }
+	var response []dto.UserResponseDTO
+	for _, user := range users {
+		response = append(response, dto.UserResponseDTO{
+			ID:        user.ID,
+			FirstName: user.FirstName,
+			LastName:  user.LastName,
+			Username:  user.Username,
+			Email:     user.Email,
+			Role:      user.Role,
+			Score:     user.Score,
+			CreatedAt: user.CreatedAt.Format(time.RFC3339),
+			IsActive:  user.IsActive,
+		})
+	}
 
-    return response, nil
+	return response, nil
 }
 
 func (s *userService) UpdateUserById(ctx context.Context, id int, request dto.UserUpdateRequestDTO) (dto.UserResponseDTO, e.ApiError) {
-    user, apiErr := s.userRepo.GetUserByID(ctx, id)
-    if apiErr != nil {
-        return dto.UserResponseDTO{}, apiErr
-    }
+	user, apiErr := s.userRepo.GetUserByID(ctx, id)
+	if apiErr != nil {
+		return dto.UserResponseDTO{}, apiErr
+	}
 
-    // Actualizar solo los campos enviados en el request
-    if request.FirstName != "" {
-        user.FirstName = request.FirstName
-    }
-    if request.LastName != "" {
-        user.LastName = request.LastName
-    }
-    if request.Username != "" {
-        user.Username = request.Username
-    }
-    if request.Email != "" {
-        user.Email = request.Email
-    }
-    if request.Role != "" {
-        user.Role = request.Role
-    }
-    validRoles := map[string]bool{"user": true, "admin": true}
-    if request.Role != "" && !validRoles[request.Role] {
-        return dto.UserResponseDTO{}, e.NewBadRequestApiError("invalid role")
-    }
-    if request.Password != "" {
-        hashedPassword, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
-        if err != nil {
-            return dto.UserResponseDTO{}, e.NewInternalServerApiError("failed to hash password", err)
-        }
-        user.Password = string(hashedPassword)
-    }
-    if request.PhoneNumber != "" {
-        user.PhoneNumber = request.PhoneNumber
-    }
-    // Manejar booleanos como `IsActive` explícitamente
-    user.IsActive = request.IsActive
+	// Actualizar solo los campos enviados en el request
+	if request.FirstName != "" {
+		user.FirstName = request.FirstName
+	}
+	if request.LastName != "" {
+		user.LastName = request.LastName
+	}
+	if request.Username != "" {
+		user.Username = request.Username
+	}
+	if request.Email != "" {
+		user.Email = request.Email
+	}
+	if request.Role != "" {
+		user.Role = request.Role
+	}
+	validRoles := map[string]bool{"user": true, "admin": true}
+	if request.Role != "" && !validRoles[request.Role] {
+		return dto.UserResponseDTO{}, e.NewBadRequestApiError("invalid role")
+	}
+	if request.Password != "" {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return dto.UserResponseDTO{}, e.NewInternalServerApiError("failed to hash password", err)
+		}
+		user.Password = string(hashedPassword)
+	}
+	if request.PhoneNumber != "" {
+		user.PhoneNumber = request.PhoneNumber
+	}
+	// Manejar booleanos como `IsActive` explícitamente
+	user.IsActive = request.IsActive
 
-    // Actualizar el usuario en la base de datos
-    if apiErr := s.userRepo.UpdateUserByID(ctx, id, user); apiErr != nil {
-        return dto.UserResponseDTO{}, apiErr
-    }
+	// Actualizar el usuario en la base de datos
+	if apiErr := s.userRepo.UpdateUserByID(ctx, id, user); apiErr != nil {
+		return dto.UserResponseDTO{}, apiErr
+	}
 
-    // Crear la respuesta
-    response := dto.UserResponseDTO{
-        ID:        user.ID,
-        FirstName: user.FirstName,
-        LastName:  user.LastName,
-        Username:  user.Username,
-        Email:     user.Email,
-        Role:      user.Role,
-        Score:     user.Score,
-        CreatedAt: user.CreatedAt.Format(time.RFC3339),
-        IsActive:  user.IsActive,
-    }
+	// Crear la respuesta
+	response := dto.UserResponseDTO{
+		ID:        user.ID,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Username:  user.Username,
+		Email:     user.Email,
+		Role:      user.Role,
+		Score:     user.Score,
+		CreatedAt: user.CreatedAt.Format(time.RFC3339),
+		IsActive:  user.IsActive,
+	}
 
-    return response, nil
+	return response, nil
 }
 
 func (s *userService) UpdateUserByUsername(ctx context.Context, username string, request dto.UserUpdateRequestDTO) (dto.UserResponseDTO, e.ApiError) {
-    user, apiErr := s.userRepo.GetUserByUsername(ctx, username)
-    if apiErr != nil {
-        return dto.UserResponseDTO{}, apiErr
-    }
+	user, apiErr := s.userRepo.GetUserByUsername(ctx, username)
+	if apiErr != nil {
+		return dto.UserResponseDTO{}, apiErr
+	}
 
-    // Actualizar solo los campos enviados en el request
-    if request.FirstName != "" {
-        user.FirstName = request.FirstName
-    }
-    if request.LastName != "" {
-        user.LastName = request.LastName
-    }
-    if request.Username != "" {
-        user.Username = request.Username
-    }
-    if request.Email != "" {
-        user.Email = request.Email
-    }
-    if request.Role != "" {
-        user.Role = request.Role
-    }
-    validRoles := map[string]bool{"user": true, "admin": true}
-    if request.Role != "" && !validRoles[request.Role] {
-        return dto.UserResponseDTO{}, e.NewBadRequestApiError("invalid role")
-    }
-    if request.Password != "" {
-        hashedPassword, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
-        if err != nil {
-            return dto.UserResponseDTO{}, e.NewInternalServerApiError("failed to hash password", err)
-        }
-        user.Password = string(hashedPassword)
-    }
-    if request.PhoneNumber != "" {
-        user.PhoneNumber = request.PhoneNumber
-    }
-    // Manejar booleanos como `IsActive` explícitamente
-    user.IsActive = request.IsActive
+	// Actualizar solo los campos enviados en el request
+	if request.FirstName != "" {
+		user.FirstName = request.FirstName
+	}
+	if request.LastName != "" {
+		user.LastName = request.LastName
+	}
+	if request.Username != "" {
+		user.Username = request.Username
+	}
+	if request.Email != "" {
+		user.Email = request.Email
+	}
+	if request.Role != "" {
+		user.Role = request.Role
+	}
+	validRoles := map[string]bool{"user": true, "admin": true}
+	if request.Role != "" && !validRoles[request.Role] {
+		return dto.UserResponseDTO{}, e.NewBadRequestApiError("invalid role")
+	}
+	if request.Password != "" {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return dto.UserResponseDTO{}, e.NewInternalServerApiError("failed to hash password", err)
+		}
+		user.Password = string(hashedPassword)
+	}
+	if request.PhoneNumber != "" {
+		user.PhoneNumber = request.PhoneNumber
+	}
+	// Manejar booleanos como `IsActive` explícitamente
+	user.IsActive = request.IsActive
 
-    if apiErr := s.userRepo.UpdateUserByUsername(ctx, username, user); apiErr != nil {
-        return dto.UserResponseDTO{}, apiErr
-    }
+	if apiErr := s.userRepo.UpdateUserByUsername(ctx, username, user); apiErr != nil {
+		return dto.UserResponseDTO{}, apiErr
+	}
 
-    response := dto.UserResponseDTO{
-        ID:        user.ID,
-        FirstName: user.FirstName,
-        LastName:  user.LastName,
-        Username:  user.Username,
-        Email:     user.Email,
-        Role:      user.Role,
-        Score:     user.Score,
-        CreatedAt: user.CreatedAt.Format(time.RFC3339),
-        IsActive:  user.IsActive,
-    }
+	response := dto.UserResponseDTO{
+		ID:        user.ID,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Username:  user.Username,
+		Email:     user.Email,
+		Role:      user.Role,
+		Score:     user.Score,
+		CreatedAt: user.CreatedAt.Format(time.RFC3339),
+		IsActive:  user.IsActive,
+	}
 
-    return response, nil
+	return response, nil
 }
 
 func (s *userService) DeleteUserById(ctx context.Context, id int) e.ApiError {
-    // Verificar si el usuario existe
-    _ , err := s.userRepo.GetUserByID(ctx, id)
-    if err != nil {
-        return  e.NewBadRequestApiError("user not found")
-    }
+	// Verificar si el usuario existe
+	_, err := s.userRepo.GetUserByID(ctx, id)
+	if err != nil {
+		return e.NewBadRequestApiError("user not found")
+	}
 
-    if apiErr := s.userRepo.DeleteUserByID(ctx, id); apiErr != nil {
-        return apiErr
-    }
+	if apiErr := s.userRepo.DeleteUserByID(ctx, id); apiErr != nil {
+		return apiErr
+	}
 
-    return nil
+	return nil
 }
 
 func (s *userService) DeleteUserByUsername(ctx context.Context, username string) e.ApiError {
-    if apiErr := s.userRepo.DeleteUserByUsername(ctx, username); apiErr != nil {
-        return apiErr
-    }
+	if apiErr := s.userRepo.DeleteUserByUsername(ctx, username); apiErr != nil {
+		return apiErr
+	}
 
-    return nil
+	return nil
 }
 
 func (s *userService) UpdateRoleByUserId(ctx context.Context, id int, request dto.UserUpdateRoleRequestDTO) (dto.UserResponseDTO, e.ApiError) {
-    user, apiErr := s.userRepo.GetUserByID(ctx, id)
-    if apiErr != nil {
-        return dto.UserResponseDTO{}, apiErr
-    }
+	user, apiErr := s.userRepo.GetUserByID(ctx, id)
+	if apiErr != nil {
+		return dto.UserResponseDTO{}, apiErr
+	}
 
-    // Solo actualiza el rol, los demás campos permanecen iguales
-    user.Role = request.Role
-    if apiErr := s.userRepo.UpdateUserByID(ctx, id, user); apiErr != nil {
-        return dto.UserResponseDTO{}, apiErr
-    }
+	// Solo actualiza el rol, los demás campos permanecen iguales
+	user.Role = request.Role
+	if apiErr := s.userRepo.UpdateUserByID(ctx, id, user); apiErr != nil {
+		return dto.UserResponseDTO{}, apiErr
+	}
 
-    response := dto.UserResponseDTO{
-        ID:        user.ID,
-        FirstName: user.FirstName,
-        LastName:  user.LastName,
-        Username:  user.Username,
-        Email:     user.Email,
-        Role:      user.Role,
-        Score:     user.Score,
-        CreatedAt: user.CreatedAt.Format(time.RFC3339),
-        IsActive:  user.IsActive,
-    }
+	response := dto.UserResponseDTO{
+		ID:        user.ID,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Username:  user.Username,
+		Email:     user.Email,
+		Role:      user.Role,
+		Score:     user.Score,
+		CreatedAt: user.CreatedAt.Format(time.RFC3339),
+		IsActive:  user.IsActive,
+	}
 
-    return response, nil
+	return response, nil
 }

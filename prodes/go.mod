@@ -1,15 +1,16 @@
-module prodes
+module prediapp.local/prodes
 
-go 1.23.0
-
-toolchain go1.23.7
+go 1.23.7
 
 require (
+	prediapp.local/db v0.0.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/json-iterator/go v1.1.12
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/gorm v1.25.12
 )
+
+replace prediapp.local/db => ../db
 
 require (
 	github.com/bytedance/sonic v1.11.6 // indirect

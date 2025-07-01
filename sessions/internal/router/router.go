@@ -1,7 +1,7 @@
 package router
 
 import (
-	"sessions/internal/api"
+	"prediapp.local/sessions/internal/api"
 
 	"github.com/gin-gonic/gin"
 )

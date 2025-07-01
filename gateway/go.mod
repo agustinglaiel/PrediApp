@@ -1,14 +1,15 @@
-module gateway
+module prediapp.local/gateway
 
-go 1.23.0
-
-toolchain go1.23.7
+go 1.23.7
 
 require (
+	prediapp.local/db v0.0.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/joho/godotenv v1.5.1
 )
+
+replace prediapp.local/db => ../db
 
 require (
 	github.com/bytedance/sonic v1.11.6 // indirect

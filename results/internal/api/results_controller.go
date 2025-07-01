@@ -3,10 +3,11 @@ package api
 import (
 	"fmt"
 	"net/http"
-	"results/internal/dto"
-	"results/internal/service"
-	e "results/pkg/utils"
 	"strconv"
+
+	"prediapp.local/results/internal/dto"
+	"prediapp.local/results/internal/service"
+	e "prediapp.local/results/pkg/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -24,17 +25,17 @@ func NewResultController(resultService service.ResultService) *ResultController 
 
 // FetchResultsFromExternalAPI obtiene los resultados desde una API externa y los inserta o actualiza
 func (rc *ResultController) FetchResultsFromExternalAPI(c *gin.Context) {
-    // Obtener el parámetro sessionId desde la URL
-    sessionIDStr := c.Param("sessionId")
+	// Obtener el parámetro sessionId desde la URL
+	sessionIDStr := c.Param("sessionId")
 
-    // Convertir sessionId de string a int
-    sessionID, err := strconv.Atoi(sessionIDStr)
-    if err != nil {
-        fmt.Println("Controller: Error al parsear sessionId", err)
-        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de sesión inválido"))
-        return
-    }
-	
+	// Convertir sessionId de string a int
+	sessionID, err := strconv.Atoi(sessionIDStr)
+	if err != nil {
+		fmt.Println("Controller: Error al parsear sessionId", err)
+		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de sesión inválido"))
+		return
+	}
+
 	// Llamar al servicio para hacer fetch de los resultados desde la API externa
 	results, apiErr := rc.resultService.FetchResultsFromExternalAPI(c.Request.Context(), sessionID)
 	if apiErr != nil {
@@ -87,7 +88,7 @@ func (rc *ResultController) FetchNonRaceSessionResults(c *gin.Context) {
 // 	c.JSON(http.StatusOK, result)
 // }
 
-//ESTO SOLO SIRVE PARA CREAR UN RESULTADO A LA VEZ
+// ESTO SOLO SIRVE PARA CREAR UN RESULTADO A LA VEZ
 // CreateResult crea un nuevo resultado
 func (rc *ResultController) CreateResult(c *gin.Context) {
 	var request dto.CreateResultDTO
@@ -323,18 +324,18 @@ func (rc *ResultController) DeleteAllResultsForSession(c *gin.Context) {
 
 // CreateBulkResults crea múltiples resultados para una sesión en una sola operación
 func (rc *ResultController) CreateSessionResultsAdmin(c *gin.Context) {
-    var bulkRequest dto.CreateBulkResultsDTO
-    if err := c.ShouldBindJSON(&bulkRequest); err != nil {
-        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Datos inválidos para creación masiva"))
-        return
-    }
+	var bulkRequest dto.CreateBulkResultsDTO
+	if err := c.ShouldBindJSON(&bulkRequest); err != nil {
+		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Datos inválidos para creación masiva"))
+		return
+	}
 
-    createdResults, apiErr := rc.resultService.CreateSessionResultsAdmin(c.Request.Context(), bulkRequest)
-    if apiErr != nil {
-        c.JSON(apiErr.Status(), apiErr)
-        return
-    }
+	createdResults, apiErr := rc.resultService.CreateSessionResultsAdmin(c.Request.Context(), bulkRequest)
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
 
-    // Retornamos la lista de resultados creados
-    c.JSON(http.StatusCreated, createdResults)
+	// Retornamos la lista de resultados creados
+	c.JSON(http.StatusCreated, createdResults)
 }

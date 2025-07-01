@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"users/internal/api"
-	"users/internal/repository"
-	"users/internal/router"
-	"users/internal/service"
-	"users/pkg/utils"
+
+	"prediapp.local/users/internal/api"
+	"prediapp.local/users/internal/repository"
+	"prediapp.local/users/internal/router"
+	"prediapp.local/users/internal/service"
+	"prediapp.local/users/pkg/utils"
 
 	"github.com/gin-gonic/gin"
 )

@@ -2,18 +2,19 @@ package service
 
 import (
 	"context"
-	"drivers/internal/client"
-	dto "drivers/internal/dto"
-	model "drivers/internal/model"
-	repository "drivers/internal/repository"
-	e "drivers/pkg/utils"
 	"fmt"
 	"log"
+
+	"prediapp.local/drivers/internal/client"
+	dto "prediapp.local/drivers/internal/dto"
+	model "prediapp.local/drivers/internal/model"
+	repository "prediapp.local/drivers/internal/repository"
+	e "prediapp.local/drivers/pkg/utils"
 )
 
 type driverService struct {
 	driverRepo repository.DriverRepository
-	client       *client.HttpClient
+	client     *client.HttpClient
 }
 
 type DriverService interface {
@@ -34,7 +35,7 @@ type DriverService interface {
 func NewDriverService(driverRepo repository.DriverRepository, client *client.HttpClient) DriverService {
 	return &driverService{
 		driverRepo: driverRepo,
-		client:       client,  // Pasar el cliente HTTP
+		client:     client, // Pasar el cliente HTTP
 	}
 }
 
@@ -53,16 +54,16 @@ func (s *driverService) CreateDriver(ctx context.Context, request dto.CreateDriv
 
 	// Convert DTO to Model
 	newDriver := &model.Driver{
-		BroadcastName:  request.BroadcastName,
-		CountryCode:    request.CountryCode,
-		DriverNumber:   request.DriverNumber,
-		FirstName:      request.FirstName,
-		LastName:       request.LastName,
-		FullName:       request.FullName,
-		NameAcronym:    request.NameAcronym,
-		HeadshotURL:    request.HeadshotURL,
-		TeamName:       request.TeamName,
-		Activo:         request.Activo,
+		BroadcastName: request.BroadcastName,
+		CountryCode:   request.CountryCode,
+		DriverNumber:  request.DriverNumber,
+		FirstName:     request.FirstName,
+		LastName:      request.LastName,
+		FullName:      request.FullName,
+		NameAcronym:   request.NameAcronym,
+		HeadshotURL:   request.HeadshotURL,
+		TeamName:      request.TeamName,
+		Activo:        request.Activo,
 	}
 
 	if err := s.driverRepo.CreateDriver(ctx, newDriver); err != nil {
@@ -71,17 +72,17 @@ func (s *driverService) CreateDriver(ctx context.Context, request dto.CreateDriv
 
 	// Convert Model to Response DTO
 	response := dto.ResponseDriverDTO{
-		ID:             newDriver.ID,
-		BroadcastName:  newDriver.BroadcastName,
-		CountryCode:    newDriver.CountryCode,
-		DriverNumber:   newDriver.DriverNumber,
-		FirstName:      newDriver.FirstName,
-		LastName:       newDriver.LastName,
-		FullName:       newDriver.FullName,
-		NameAcronym:    newDriver.NameAcronym,
-		HeadshotURL:    newDriver.HeadshotURL,
-		TeamName:       newDriver.TeamName,
-		Activo:         newDriver.Activo,
+		ID:            newDriver.ID,
+		BroadcastName: newDriver.BroadcastName,
+		CountryCode:   newDriver.CountryCode,
+		DriverNumber:  newDriver.DriverNumber,
+		FirstName:     newDriver.FirstName,
+		LastName:      newDriver.LastName,
+		FullName:      newDriver.FullName,
+		NameAcronym:   newDriver.NameAcronym,
+		HeadshotURL:   newDriver.HeadshotURL,
+		TeamName:      newDriver.TeamName,
+		Activo:        newDriver.Activo,
 	}
 
 	return response, nil
@@ -95,17 +96,17 @@ func (s *driverService) GetDriverByID(ctx context.Context, driverID int) (dto.Re
 
 	// Convert Model to Response DTO
 	response := dto.ResponseDriverDTO{
-		ID:             driver.ID,
-		BroadcastName:  driver.BroadcastName,
-		CountryCode:    driver.CountryCode,
-		DriverNumber:   driver.DriverNumber,
-		FirstName:      driver.FirstName,
-		LastName:       driver.LastName,
-		FullName:       driver.FullName,
-		NameAcronym:    driver.NameAcronym,
-		HeadshotURL:    driver.HeadshotURL,
-		TeamName:       driver.TeamName,
-		Activo:         driver.Activo,
+		ID:            driver.ID,
+		BroadcastName: driver.BroadcastName,
+		CountryCode:   driver.CountryCode,
+		DriverNumber:  driver.DriverNumber,
+		FirstName:     driver.FirstName,
+		LastName:      driver.LastName,
+		FullName:      driver.FullName,
+		NameAcronym:   driver.NameAcronym,
+		HeadshotURL:   driver.HeadshotURL,
+		TeamName:      driver.TeamName,
+		Activo:        driver.Activo,
 	}
 
 	return response, nil
@@ -146,8 +147,8 @@ func (s *driverService) UpdateDriver(ctx context.Context, driverID int, request 
 		driver.TeamName = request.TeamName
 	}
 	if request.Activo != nil {
-        driver.Activo = *request.Activo
-    }
+		driver.Activo = *request.Activo
+	}
 
 	if err := s.driverRepo.UpdateDriver(ctx, driver); err != nil {
 		return dto.ResponseDriverDTO{}, e.NewInternalServerApiError("Error actualizando el piloto", err)
@@ -155,17 +156,17 @@ func (s *driverService) UpdateDriver(ctx context.Context, driverID int, request 
 
 	// Convert Model to Response DTO
 	response := dto.ResponseDriverDTO{
-		ID:             driver.ID,
-		BroadcastName:  driver.BroadcastName,
-		CountryCode:    driver.CountryCode,
-		DriverNumber:   driver.DriverNumber,
-		FirstName:      driver.FirstName,
-		LastName:       driver.LastName,
-		FullName:       driver.FullName,
-		NameAcronym:    driver.NameAcronym,
-		HeadshotURL:    driver.HeadshotURL,
-		TeamName:       driver.TeamName,
-		Activo:         driver.Activo,
+		ID:            driver.ID,
+		BroadcastName: driver.BroadcastName,
+		CountryCode:   driver.CountryCode,
+		DriverNumber:  driver.DriverNumber,
+		FirstName:     driver.FirstName,
+		LastName:      driver.LastName,
+		FullName:      driver.FullName,
+		NameAcronym:   driver.NameAcronym,
+		HeadshotURL:   driver.HeadshotURL,
+		TeamName:      driver.TeamName,
+		Activo:        driver.Activo,
 	}
 
 	return response, nil
@@ -196,17 +197,17 @@ func (s *driverService) ListDrivers(ctx context.Context) ([]dto.ResponseDriverDT
 	var response []dto.ResponseDriverDTO
 	for _, driver := range drivers {
 		response = append(response, dto.ResponseDriverDTO{
-			ID:             driver.ID,
-			BroadcastName:  driver.BroadcastName,
-			CountryCode:    driver.CountryCode,
-			DriverNumber:   driver.DriverNumber,
-			FirstName:      driver.FirstName,
-			LastName:       driver.LastName,
-			FullName:       driver.FullName,
-			NameAcronym:    driver.NameAcronym,
-			HeadshotURL:    driver.HeadshotURL,
-			TeamName:       driver.TeamName,
-			Activo:         driver.Activo,
+			ID:            driver.ID,
+			BroadcastName: driver.BroadcastName,
+			CountryCode:   driver.CountryCode,
+			DriverNumber:  driver.DriverNumber,
+			FirstName:     driver.FirstName,
+			LastName:      driver.LastName,
+			FullName:      driver.FullName,
+			NameAcronym:   driver.NameAcronym,
+			HeadshotURL:   driver.HeadshotURL,
+			TeamName:      driver.TeamName,
+			Activo:        driver.Activo,
 		})
 	}
 
@@ -222,17 +223,17 @@ func (s *driverService) ListDriversByTeam(ctx context.Context, teamName string) 
 	var response []dto.ResponseDriverDTO
 	for _, driver := range drivers {
 		response = append(response, dto.ResponseDriverDTO{
-			ID:             driver.ID,
-			BroadcastName:  driver.BroadcastName,
-			CountryCode:    driver.CountryCode,
-			DriverNumber:   driver.DriverNumber,
-			FirstName:      driver.FirstName,
-			LastName:       driver.LastName,
-			FullName:       driver.FullName,
-			NameAcronym:    driver.NameAcronym,
-			HeadshotURL:    driver.HeadshotURL,
-			TeamName:       driver.TeamName,
-			Activo: 	    driver.Activo,
+			ID:            driver.ID,
+			BroadcastName: driver.BroadcastName,
+			CountryCode:   driver.CountryCode,
+			DriverNumber:  driver.DriverNumber,
+			FirstName:     driver.FirstName,
+			LastName:      driver.LastName,
+			FullName:      driver.FullName,
+			NameAcronym:   driver.NameAcronym,
+			HeadshotURL:   driver.HeadshotURL,
+			TeamName:      driver.TeamName,
+			Activo:        driver.Activo,
 		})
 	}
 
@@ -249,17 +250,17 @@ func (s *driverService) ListDriversByCountry(ctx context.Context, countryCode st
 	var response []dto.ResponseDriverDTO
 	for _, driver := range drivers {
 		response = append(response, dto.ResponseDriverDTO{
-			ID:             driver.ID,
-			BroadcastName:  driver.BroadcastName,
-			CountryCode:    driver.CountryCode,
-			DriverNumber:   driver.DriverNumber,
-			FirstName:      driver.FirstName,
-			LastName:       driver.LastName,
-			FullName:       driver.FullName,
-			NameAcronym:    driver.NameAcronym,
-			HeadshotURL:    driver.HeadshotURL,
-			TeamName:       driver.TeamName,
-			Activo: 	    driver.Activo,
+			ID:            driver.ID,
+			BroadcastName: driver.BroadcastName,
+			CountryCode:   driver.CountryCode,
+			DriverNumber:  driver.DriverNumber,
+			FirstName:     driver.FirstName,
+			LastName:      driver.LastName,
+			FullName:      driver.FullName,
+			NameAcronym:   driver.NameAcronym,
+			HeadshotURL:   driver.HeadshotURL,
+			TeamName:      driver.TeamName,
+			Activo:        driver.Activo,
 		})
 	}
 	log.Printf("Drivers despues: %v", response)
@@ -276,17 +277,17 @@ func (s *driverService) ListDriversByFullName(ctx context.Context, fullName stri
 	var response []dto.ResponseDriverDTO
 	for _, driver := range drivers {
 		response = append(response, dto.ResponseDriverDTO{
-			ID:             driver.ID,
-			BroadcastName:  driver.BroadcastName,
-			CountryCode:    driver.CountryCode,
-			DriverNumber:   driver.DriverNumber,
-			FirstName:      driver.FirstName,
-			LastName:       driver.LastName,
-			FullName:       driver.FullName,
-			NameAcronym:    driver.NameAcronym,
-			HeadshotURL:    driver.HeadshotURL,
-			TeamName:       driver.TeamName,
-			Activo: 	    driver.Activo,
+			ID:            driver.ID,
+			BroadcastName: driver.BroadcastName,
+			CountryCode:   driver.CountryCode,
+			DriverNumber:  driver.DriverNumber,
+			FirstName:     driver.FirstName,
+			LastName:      driver.LastName,
+			FullName:      driver.FullName,
+			NameAcronym:   driver.NameAcronym,
+			HeadshotURL:   driver.HeadshotURL,
+			TeamName:      driver.TeamName,
+			Activo:        driver.Activo,
 		})
 	}
 
@@ -302,17 +303,17 @@ func (s *driverService) ListDriversByAcronym(ctx context.Context, acronym string
 	var response []dto.ResponseDriverDTO
 	for _, driver := range drivers {
 		response = append(response, dto.ResponseDriverDTO{
-			ID:             driver.ID,
-			BroadcastName:  driver.BroadcastName,
-			CountryCode:    driver.CountryCode,
-			DriverNumber:   driver.DriverNumber,
-			FirstName:      driver.FirstName,
-			LastName:       driver.LastName,
-			FullName:       driver.FullName,
-			NameAcronym:    driver.NameAcronym,
-			HeadshotURL:    driver.HeadshotURL,
-			TeamName:       driver.TeamName,
-			Activo: 	    driver.Activo,
+			ID:            driver.ID,
+			BroadcastName: driver.BroadcastName,
+			CountryCode:   driver.CountryCode,
+			DriverNumber:  driver.DriverNumber,
+			FirstName:     driver.FirstName,
+			LastName:      driver.LastName,
+			FullName:      driver.FullName,
+			NameAcronym:   driver.NameAcronym,
+			HeadshotURL:   driver.HeadshotURL,
+			TeamName:      driver.TeamName,
+			Activo:        driver.Activo,
 		})
 	}
 
@@ -320,29 +321,29 @@ func (s *driverService) ListDriversByAcronym(ctx context.Context, acronym string
 }
 
 func (s *driverService) FetchAllDriversFromExternalAPI(ctx context.Context) ([]dto.ResponseDriverDTO, e.ApiError) {
-    // 1. Obtener los pilotos desde la API externa
-    drivers, err := s.client.GetAllDriversFromExternalAPI()
-    if err != nil {
-        return nil, e.NewInternalServerApiError("Error fetching drivers from external API", err)
-    }
+	// 1. Obtener los pilotos desde la API externa
+	drivers, err := s.client.GetAllDriversFromExternalAPI()
+	if err != nil {
+		return nil, e.NewInternalServerApiError("Error fetching drivers from external API", err)
+	}
 
-    // 2. Eliminar duplicados por 'FirstName y LastName'
-    uniqueDrivers := uniqueDrivers(drivers)
+	// 2. Eliminar duplicados por 'FirstName y LastName'
+	uniqueDrivers := uniqueDrivers(drivers)
 
-    // 3. Obtener todos los pilotos existentes en la base de datos
-    existingDrivers, err := s.driverRepo.ListDrivers(ctx)
-    if err != nil {
-        return nil, e.NewInternalServerApiError("Error fetching drivers from database", err)
-    }
+	// 3. Obtener todos los pilotos existentes en la base de datos
+	existingDrivers, err := s.driverRepo.ListDrivers(ctx)
+	if err != nil {
+		return nil, e.NewInternalServerApiError("Error fetching drivers from database", err)
+	}
 
-    // 4. Crear un mapa para los pilotos existentes (para verificar más rápido)
-    existingDriverMap := make(map[string]bool)
-    for _, driver := range existingDrivers {
-        key := driver.FirstName + "|" + driver.LastName
-        existingDriverMap[key] = true
-    }
+	// 4. Crear un mapa para los pilotos existentes (para verificar más rápido)
+	existingDriverMap := make(map[string]bool)
+	for _, driver := range existingDrivers {
+		key := driver.FirstName + "|" + driver.LastName
+		existingDriverMap[key] = true
+	}
 
-    // 5. Preparar la lista de pilotos nuevos para insertar
+	// 5. Preparar la lista de pilotos nuevos para insertar
 	var newDrivers []*model.Driver
 	for _, driver := range uniqueDrivers {
 		key := driver.FirstName + "|" + driver.LastName
@@ -388,24 +389,24 @@ func (s *driverService) FetchAllDriversFromExternalAPI(ctx context.Context) ([]d
 		})
 	}
 
-    return insertedDrivers, nil
+	return insertedDrivers, nil
 }
 
 // Función auxiliar para eliminar pilotos duplicados basados en 'First name y Last name'
 func uniqueDrivers(drivers []dto.ResponseDriverDTO) []dto.ResponseDriverDTO {
-    seen := make(map[string]bool)
-    unique := []dto.ResponseDriverDTO{}
+	seen := make(map[string]bool)
+	unique := []dto.ResponseDriverDTO{}
 
-    for _, driver := range drivers {
-        // Crear una clave única combinando FirstName y LastName
-        key := driver.FirstName + "|" + driver.LastName
-        if _, ok := seen[key]; !ok {
-            seen[key] = true
-            unique = append(unique, driver)
-        }
-    }
+	for _, driver := range drivers {
+		// Crear una clave única combinando FirstName y LastName
+		key := driver.FirstName + "|" + driver.LastName
+		if _, ok := seen[key]; !ok {
+			seen[key] = true
+			unique = append(unique, driver)
+		}
+	}
 
-    return unique
+	return unique
 }
 
 func (s *driverService) GetDriverByNumber(ctx context.Context, driverNumber int) (dto.ResponseDriverDTO, e.ApiError) {
@@ -421,49 +422,48 @@ func (s *driverService) GetDriverByNumber(ctx context.Context, driverNumber int)
 
 	// Convert Model to Response DTO
 	response := dto.ResponseDriverDTO{
-		ID:             driver.ID,
-		BroadcastName:  driver.BroadcastName,
-		CountryCode:    driver.CountryCode,
-		DriverNumber:   driver.DriverNumber,
-		FirstName:      driver.FirstName,
-		LastName:       driver.LastName,
-		FullName:       driver.FullName,
-		NameAcronym:    driver.NameAcronym,
-		HeadshotURL:    driver.HeadshotURL,
-		TeamName:       driver.TeamName,
-		Activo: 	    driver.Activo,
+		ID:            driver.ID,
+		BroadcastName: driver.BroadcastName,
+		CountryCode:   driver.CountryCode,
+		DriverNumber:  driver.DriverNumber,
+		FirstName:     driver.FirstName,
+		LastName:      driver.LastName,
+		FullName:      driver.FullName,
+		NameAcronym:   driver.NameAcronym,
+		HeadshotURL:   driver.HeadshotURL,
+		TeamName:      driver.TeamName,
+		Activo:        driver.Activo,
 	}
 
 	return response, nil
 }
 
-
 func (s *driverService) GetDriverByFirstAndLastName(ctx context.Context, firstName, lastName string) (dto.ResponseDriverDTO, e.ApiError) {
-    // Llamar al repositorio para buscar el piloto por first_name y last_name
-    driver, err := s.driverRepo.GetDriverByName(ctx, firstName, lastName)
-    if err != nil {
-        return dto.ResponseDriverDTO{}, err
-    }
+	// Llamar al repositorio para buscar el piloto por first_name y last_name
+	driver, err := s.driverRepo.GetDriverByName(ctx, firstName, lastName)
+	if err != nil {
+		return dto.ResponseDriverDTO{}, err
+	}
 
-    // Verificar si el driver es nil (no encontrado)
-    if driver == nil {
-        return dto.ResponseDriverDTO{}, e.NewNotFoundApiError(fmt.Sprintf("Driver with name %s %s not found", firstName, lastName))
-    }
+	// Verificar si el driver es nil (no encontrado)
+	if driver == nil {
+		return dto.ResponseDriverDTO{}, e.NewNotFoundApiError(fmt.Sprintf("Driver with name %s %s not found", firstName, lastName))
+	}
 
-    // Convertir el modelo a DTO de respuesta
-    response := dto.ResponseDriverDTO{
-        ID:            driver.ID,
-        BroadcastName: driver.BroadcastName,
-        CountryCode:   driver.CountryCode,
-        DriverNumber:  driver.DriverNumber,
-        FirstName:     driver.FirstName,
-        LastName:      driver.LastName,
-        FullName:      driver.FullName,
-        NameAcronym:   driver.NameAcronym,
-        HeadshotURL:   driver.HeadshotURL,
-        TeamName:      driver.TeamName,
-        Activo:        driver.Activo,
-    }
+	// Convertir el modelo a DTO de respuesta
+	response := dto.ResponseDriverDTO{
+		ID:            driver.ID,
+		BroadcastName: driver.BroadcastName,
+		CountryCode:   driver.CountryCode,
+		DriverNumber:  driver.DriverNumber,
+		FirstName:     driver.FirstName,
+		LastName:      driver.LastName,
+		FullName:      driver.FullName,
+		NameAcronym:   driver.NameAcronym,
+		HeadshotURL:   driver.HeadshotURL,
+		TeamName:      driver.TeamName,
+		Activo:        driver.Activo,
+	}
 
-    return response, nil
+	return response, nil
 }

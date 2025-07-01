@@ -3,15 +3,16 @@ package repository
 import (
 	"context"
 	"log"
-	"users/internal/model"
-	e "users/pkg/utils"
+
+	"prediapp.local/users/internal/model"
+	e "prediapp.local/users/pkg/utils"
 
 	"gorm.io/gorm"
 )
 
 // userRepository es una estructura vacía que implementa la interfaz UserRepository
 type userRepository struct {
-    db *gorm.DB
+	db *gorm.DB
 }
 
 // UserRepository define los métodos que deben ser implementados por el repositorio de usuarios
@@ -106,17 +107,17 @@ func (r *userRepository) UpdateUserByUsername(ctx context.Context, username stri
 
 // DeleteUserByID elimina un usuario por su ID de la base de datos
 func (r *userRepository) DeleteUserByID(ctx context.Context, id int) e.ApiError {
-    var user model.User
-    if err := r.db.WithContext(ctx).First(&user, id).Error; err != nil {
-        if err == gorm.ErrRecordNotFound {
-            return e.NewNotFoundApiError("user not found")
-        }
-        return e.NewInternalServerApiError("error finding user by ID", err)
-    }
-    if err := r.db.WithContext(ctx).Unscoped().Delete(&user).Error; err != nil { // Unscoped para eliminación física
-        return e.NewInternalServerApiError("error deleting user by ID", err)
-    }
-    return nil
+	var user model.User
+	if err := r.db.WithContext(ctx).First(&user, id).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return e.NewNotFoundApiError("user not found")
+		}
+		return e.NewInternalServerApiError("error finding user by ID", err)
+	}
+	if err := r.db.WithContext(ctx).Unscoped().Delete(&user).Error; err != nil { // Unscoped para eliminación física
+		return e.NewInternalServerApiError("error deleting user by ID", err)
+	}
+	return nil
 }
 
 // DeleteUserByUsername elimina un usuario por su nombre de usuario de la base de datos

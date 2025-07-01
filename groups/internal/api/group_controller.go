@@ -1,12 +1,13 @@
 package api
 
 import (
-	"groups/internal/dto"
-	"groups/internal/service"
-	e "groups/pkg/utils"
 	"log"
 	"net/http"
 	"strconv"
+
+	"prediapp.local/groups/internal/dto"
+	"prediapp.local/groups/internal/service"
+	e "prediapp.local/groups/pkg/utils"
 
 	"github.com/gin-gonic/gin"
 )

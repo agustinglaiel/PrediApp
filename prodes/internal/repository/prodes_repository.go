@@ -4,15 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"prodes/internal/model"
 
-	// prodes "prodes/internal/model"
-	e "prodes/pkg/utils"
+	"prediapp.local/prodes/internal/model"
+	e "prediapp.local/prodes/pkg/utils"
 
 	"gorm.io/gorm"
 )
 
-type prodeRepository struct{
+type prodeRepository struct {
 	db *gorm.DB
 }
 
@@ -24,7 +23,7 @@ type ProdeRepository interface {
 	UpdateProdeCarrera(ctx context.Context, prode *model.ProdeCarrera) e.ApiError
 	UpdateProdeSession(ctx context.Context, prode *model.ProdeSession) e.ApiError
 	DeleteProdeCarreraByID(ctx context.Context, prodeID int, userID int) e.ApiError
-    DeleteProdeSessionByID(ctx context.Context, prodeID int, userID int) e.ApiError
+	DeleteProdeSessionByID(ctx context.Context, prodeID int, userID int) e.ApiError
 	// GetProdeByUserIDAndSessionID(ctx context.Context, userID int, sessionID int) (*model.ProdeCarrera, *model.ProdeSession, e.ApiError)
 	GetProdeCarreraBySessionIdAndUserId(ctx context.Context, userID int, sessionID int) (*model.ProdeCarrera, e.ApiError)
 	GetProdeSessionBySessionIdAndUserId(ctx context.Context, userID int, sessionID int) (*model.ProdeSession, e.ApiError)
@@ -100,25 +99,25 @@ func (r *prodeRepository) UpdateProdeSession(ctx context.Context, prode *model.P
 func (r *prodeRepository) DeleteProdeCarreraByID(ctx context.Context, prodeID int, userID int) e.ApiError {
 	// Validar si el userID es válido (no nulo o mayor a 0)
 	if userID <= 0 {
-		return e.NewBadRequestApiError("Invalid userID")	
-	}	
+		return e.NewBadRequestApiError("Invalid userID")
+	}
 
-    if err := r.db.WithContext(ctx).Where("id = ? AND user_id = ?", prodeID, userID).Delete(&model.ProdeCarrera{}).Error; err != nil {
-        return e.NewInternalServerApiError("error deleting prode by ID", err)
-    }
-    return nil
+	if err := r.db.WithContext(ctx).Where("id = ? AND user_id = ?", prodeID, userID).Delete(&model.ProdeCarrera{}).Error; err != nil {
+		return e.NewInternalServerApiError("error deleting prode by ID", err)
+	}
+	return nil
 }
 
 func (r *prodeRepository) DeleteProdeSessionByID(ctx context.Context, prodeID int, userID int) e.ApiError {
 	// Validar si el userID es válido (no nulo o mayor a 0)
 	if userID <= 0 {
-		return e.NewBadRequestApiError("Invalid userID")	
-	}	
+		return e.NewBadRequestApiError("Invalid userID")
+	}
 
-    if err := r.db.WithContext(ctx).Where("id = ? AND user_id = ?", prodeID, userID).Delete(&model.ProdeSession{}).Error; err != nil {
-        return e.NewInternalServerApiError("error deleting prode session by ID", err)
-    }
-    return nil
+	if err := r.db.WithContext(ctx).Where("id = ? AND user_id = ?", prodeID, userID).Delete(&model.ProdeSession{}).Error; err != nil {
+		return e.NewInternalServerApiError("error deleting prode session by ID", err)
+	}
+	return nil
 }
 
 // func (r *prodeRepository) GetProdeByUserIDAndSessionID(ctx context.Context, userID int, sessionID int) (*model.ProdeCarrera, *model.ProdeSession, e.ApiError) {
@@ -195,8 +194,6 @@ func (r *prodeRepository) GetProdeSessionBySessionIdAndUserId(ctx context.Contex
 	return &prodeSession, nil
 }
 
-
-
 func (r *prodeRepository) GetAllProdesBySessionID(ctx context.Context, sessionId int) ([]*model.ProdeCarrera, []*model.ProdeSession, e.ApiError) {
 	var prodesCarrera []*model.ProdeCarrera
 	var prodesSession []*model.ProdeSession
@@ -231,69 +228,69 @@ func (r *prodeRepository) GetProdesByUserID(ctx context.Context, userID int) ([]
 }
 
 func (r *prodeRepository) GetProdeCarreraByUserAndSession(ctx context.Context, userID, sessionID int) (*model.ProdeCarrera, e.ApiError) {
-    var prode model.ProdeCarrera
+	var prode model.ProdeCarrera
 
-    result := r.db.WithContext(ctx).Where("user_id = ? AND session_id = ?", userID, sessionID).First(&prode)
-    if result.Error != nil {
-        if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-            fmt.Printf("No prode carrera found for userID %d and sessionID %d\n", userID, sessionID)
-            return nil, nil // Devolver nil, nil para indicar no encontrado sin error HTTP
-        }
-        fmt.Printf("Database error for userID %d and sessionID %d: %v\n", userID, sessionID, result.Error)
-        fmt.Printf("SQL query for userID %d and sessionID %d: %s\n", userID, sessionID, r.db.ToSQL(func(tx *gorm.DB) *gorm.DB {
-            return tx.Where("user_id = ? AND session_id = ?", userID, sessionID).First(&model.ProdeCarrera{})
-        }))
-        return nil, e.NewInternalServerApiError("error finding prode carrera", result.Error)
-    }
+	result := r.db.WithContext(ctx).Where("user_id = ? AND session_id = ?", userID, sessionID).First(&prode)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			fmt.Printf("No prode carrera found for userID %d and sessionID %d\n", userID, sessionID)
+			return nil, nil // Devolver nil, nil para indicar no encontrado sin error HTTP
+		}
+		fmt.Printf("Database error for userID %d and sessionID %d: %v\n", userID, sessionID, result.Error)
+		fmt.Printf("SQL query for userID %d and sessionID %d: %s\n", userID, sessionID, r.db.ToSQL(func(tx *gorm.DB) *gorm.DB {
+			return tx.Where("user_id = ? AND session_id = ?", userID, sessionID).First(&model.ProdeCarrera{})
+		}))
+		return nil, e.NewInternalServerApiError("error finding prode carrera", result.Error)
+	}
 
-    fmt.Printf("Found prode carrera for userID %d and sessionID %d: %+v\n", userID, sessionID, prode)
-    return &prode, nil
+	fmt.Printf("Found prode carrera for userID %d and sessionID %d: %+v\n", userID, sessionID, prode)
+	return &prode, nil
 }
 
 func (r *prodeRepository) GetProdeSessionByUserAndSession(ctx context.Context, userID, sessionID int) (*model.ProdeSession, e.ApiError) {
-    var prode model.ProdeSession
+	var prode model.ProdeSession
 
-    result := r.db.WithContext(ctx).Where("user_id = ? AND session_id = ?", userID, sessionID).First(&prode)
-    if result.Error != nil {
-        if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-            fmt.Printf("No prode session found for userID %d and sessionID %d\n", userID, sessionID)
-            return nil, nil // Devolver nil, nil para indicar no encontrado sin error HTTP
-        }
-        fmt.Printf("Database error for userID %d and sessionID %d: %v\n", userID, sessionID, result.Error)
-        fmt.Printf("SQL query for userID %d and sessionID %d: %s\n", userID, sessionID, r.db.ToSQL(func(tx *gorm.DB) *gorm.DB {
-            return tx.Where("user_id = ? AND session_id = ?", userID, sessionID).First(&model.ProdeSession{})
-        }))
-        return nil, e.NewInternalServerApiError("error finding prode session", result.Error)
-    }
+	result := r.db.WithContext(ctx).Where("user_id = ? AND session_id = ?", userID, sessionID).First(&prode)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			fmt.Printf("No prode session found for userID %d and sessionID %d\n", userID, sessionID)
+			return nil, nil // Devolver nil, nil para indicar no encontrado sin error HTTP
+		}
+		fmt.Printf("Database error for userID %d and sessionID %d: %v\n", userID, sessionID, result.Error)
+		fmt.Printf("SQL query for userID %d and sessionID %d: %s\n", userID, sessionID, r.db.ToSQL(func(tx *gorm.DB) *gorm.DB {
+			return tx.Where("user_id = ? AND session_id = ?", userID, sessionID).First(&model.ProdeSession{})
+		}))
+		return nil, e.NewInternalServerApiError("error finding prode session", result.Error)
+	}
 
-    fmt.Printf("Found prode session for userID %d and sessionID %d: %+v\n", userID, sessionID, prode)
-    return &prode, nil
+	fmt.Printf("Found prode session for userID %d and sessionID %d: %+v\n", userID, sessionID, prode)
+	return &prode, nil
 }
 
 func (r *prodeRepository) GetRaceProdesBySession(ctx context.Context, sessionID int) ([]*model.ProdeCarrera, e.ApiError) {
-    var raceProdes []*model.ProdeCarrera
+	var raceProdes []*model.ProdeCarrera
 
-    // Usar Preload para cargar la información de la sesión relacionada
-    if err := r.db.WithContext(ctx).Preload("Session").Where("session_id = ?", sessionID).Find(&raceProdes).Error; err != nil {
-        if err == gorm.ErrRecordNotFound {
-            return nil, e.NewNotFoundApiError("No se encontraron pronósticos de carrera para la sesión")
-        }
-        return nil, e.NewInternalServerApiError("Error fetching race prodes for session", err)
-    }
+	// Usar Preload para cargar la información de la sesión relacionada
+	if err := r.db.WithContext(ctx).Preload("Session").Where("session_id = ?", sessionID).Find(&raceProdes).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, e.NewNotFoundApiError("No se encontraron pronósticos de carrera para la sesión")
+		}
+		return nil, e.NewInternalServerApiError("Error fetching race prodes for session", err)
+	}
 
-    return raceProdes, nil
+	return raceProdes, nil
 }
 
 func (r *prodeRepository) GetSessionProdesBySession(ctx context.Context, sessionID int) ([]*model.ProdeSession, e.ApiError) {
-    var prodesSession []*model.ProdeSession
+	var prodesSession []*model.ProdeSession
 
-    // Usar Preload para cargar la información de la sesión relacionada
-    if err := r.db.WithContext(ctx).Preload("Session").Where("session_id = ?", sessionID).Find(&prodesSession).Error; err != nil {
-        if err == gorm.ErrRecordNotFound {
-            return nil, e.NewNotFoundApiError("No se encontraron pronósticos de sesión para la sesión")
-        }
-        return nil, e.NewInternalServerApiError("Error fetching session prodes for session", err)
-    }
+	// Usar Preload para cargar la información de la sesión relacionada
+	if err := r.db.WithContext(ctx).Preload("Session").Where("session_id = ?", sessionID).Find(&prodesSession).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, e.NewNotFoundApiError("No se encontraron pronósticos de sesión para la sesión")
+		}
+		return nil, e.NewInternalServerApiError("Error fetching session prodes for session", err)
+	}
 
-    return prodesSession, nil
+	return prodesSession, nil
 }

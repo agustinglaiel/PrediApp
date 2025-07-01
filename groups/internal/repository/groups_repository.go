@@ -2,10 +2,11 @@ package repository
 
 import (
 	"context"
-	"groups/internal/model"
-	e "groups/pkg/utils"
 	"math/rand"
 	"time"
+
+	"prediapp.local/groups/internal/model"
+	e "prediapp.local/groups/pkg/utils"
 
 	"gorm.io/gorm"
 )
@@ -19,14 +20,14 @@ type GroupRepository interface {
 	GetGroupByID(ctx context.Context, id int) (*model.Group, e.ApiError)
 	GetGroupsByUserId(ctx context.Context, userID int) ([]model.Group, e.ApiError)
 	GetGroupByGroupName(ctx context.Context, groupName string) (*model.Group, e.ApiError)
-	GetGroupByCode(ctx context.Context, code string) (*model.Group, e.ApiError)  
+	GetGroupByCode(ctx context.Context, code string) (*model.Group, e.ApiError)
 	GetGroups(ctx context.Context) ([]*model.Group, e.ApiError)
 	DeleteGroupByID(ctx context.Context, id int) e.ApiError
 	DeleteGroupByGroupName(ctx context.Context, groupName string) e.ApiError
 
 	// Manejo de `groups_users`
-	AddUserToGroup(ctx context.Context, groupID int, userID int, role string) e.ApiError 
-	RemoveUserFromGroup(ctx context.Context, groupID int, userID int) e.ApiError         
+	AddUserToGroup(ctx context.Context, groupID int, userID int, role string) e.ApiError
+	RemoveUserFromGroup(ctx context.Context, groupID int, userID int) e.ApiError
 	UserExistsInGroup(ctx context.Context, groupID int, userID int) (bool, e.ApiError)
 	GetUserRoleInGroup(ctx context.Context, groupID int, userID int) (string, e.ApiError)
 	UpdateUserRoleInGroup(ctx context.Context, groupID int, userID int, newRole string) e.ApiError
@@ -72,7 +73,7 @@ func (r *groupRepository) GetGroupsByUserId(ctx context.Context, userID int) ([]
 		Preload("GroupUsers").
 		Joins("JOIN group_x_users ON group_x_users.group_id = groups.id").
 		Where("group_x_users.user_id = ?", userID).
-		Find(&groups).Error       // ⬅️ usamos Find (slice) en lugar de First
+		Find(&groups).Error // ⬅️ usamos Find (slice) en lugar de First
 	if err != nil {
 		return nil, e.NewInternalServerApiError("Error finding groups by user ID", err)
 	}

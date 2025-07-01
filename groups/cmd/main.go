@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
-	"groups/internal/api"
-	"groups/internal/repository"
-	"groups/internal/router"
-	"groups/internal/service"
-	"groups/pkg/utils"
 	"log"
 	"os"
+
+	"prediapp.local/groups/internal/api"
+	"prediapp.local/groups/internal/repository"
+	"prediapp.local/groups/internal/router"
+	"prediapp.local/groups/internal/service"
+	"prediapp.local/groups/pkg/utils"
 
 	"github.com/gin-gonic/gin"
 )

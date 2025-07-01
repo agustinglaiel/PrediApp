@@ -2,20 +2,21 @@ package api
 
 import (
 	"net/http"
-	dto "sessions/internal/dto"
-	service "sessions/internal/service"
-	e "sessions/pkg/utils"
 	"strconv"
 	"time"
+
+	dto "prediapp.local/sessions/internal/dto"
+	service "prediapp.local/sessions/internal/service"
+	e "prediapp.local/sessions/pkg/utils"
 
 	"github.com/gin-gonic/gin"
 )
 
-type SessionController struct{
+type SessionController struct {
 	sessionService service.SessionServiceInterface
 }
 
-func NewSessionController(sessionService service.SessionServiceInterface) *SessionController{
+func NewSessionController(sessionService service.SessionServiceInterface) *SessionController {
 	return &SessionController{
 		sessionService: sessionService,
 	}
@@ -31,14 +32,14 @@ func (sc *SessionController) CreateSession(c *gin.Context) {
 	}
 
 	// Validar que las fechas estén en UTC
-    if !request.DateStart.IsZero() && request.DateStart.Location().String() != "UTC" {
-        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("DateStart debe estar en UTC"))
-        return
-    }
-    if !request.DateEnd.IsZero() && request.DateEnd.Location().String() != "UTC" {
-        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("DateEnd debe estar en UTC"))
-        return
-    }
+	if !request.DateStart.IsZero() && request.DateStart.Location().String() != "UTC" {
+		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("DateStart debe estar en UTC"))
+		return
+	}
+	if !request.DateEnd.IsZero() && request.DateEnd.Location().String() != "UTC" {
+		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("DateEnd debe estar en UTC"))
+		return
+	}
 
 	// Llamar al servicio para crear la sesión
 	response, apiErr := sc.sessionService.CreateSession(c.Request.Context(), request)
@@ -86,14 +87,14 @@ func (sc *SessionController) UpdateSessionById(c *gin.Context) {
 	}
 
 	// Validar que las fechas estén en UTC si se proporcionan
-    if request.DateStart != nil && request.DateStart.Location().String() != "UTC" {
-        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("DateStart debe estar en UTC"))
-        return
-    }
-    if request.DateEnd != nil && request.DateEnd.Location().String() != "UTC" {
-        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("DateEnd debe estar en UTC"))
-        return
-    }
+	if request.DateStart != nil && request.DateStart.Location().String() != "UTC" {
+		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("DateStart debe estar en UTC"))
+		return
+	}
+	if request.DateEnd != nil && request.DateEnd.Location().String() != "UTC" {
+		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("DateEnd debe estar en UTC"))
+		return
+	}
 
 	// Llamar al servicio para actualizar la sesión
 	response, apiErr := sc.sessionService.UpdateSessionById(c.Request.Context(), sessionID, request)
@@ -210,60 +211,60 @@ func (sc *SessionController) ListUpcomingSessions(c *gin.Context) {
 }
 
 func (sc *SessionController) ListPastSessions(c *gin.Context) {
-    // Obtener el parámetro year de la ruta
-    yearStr := c.Param("year")
-    year, err := strconv.Atoi(yearStr)
-    if err != nil || year < 1900 || year > 2100 { // Validación básica del año
-        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Año inválido"))
-        return
-    }
+	// Obtener el parámetro year de la ruta
+	yearStr := c.Param("year")
+	year, err := strconv.Atoi(yearStr)
+	if err != nil || year < 1900 || year > 2100 { // Validación básica del año
+		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Año inválido"))
+		return
+	}
 
-    // Llamar al servicio para obtener las sesiones pasadas del año especificado
-    response, apiErr := sc.sessionService.ListPastSessions(c.Request.Context(), year)
-    if apiErr != nil {
-        c.JSON(apiErr.Status(), apiErr)
-        return
-    }
+	// Llamar al servicio para obtener las sesiones pasadas del año especificado
+	response, apiErr := sc.sessionService.ListPastSessions(c.Request.Context(), year)
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
 
-    // Responder con el listado de sesiones pasadas
-    c.JSON(http.StatusOK, response)
+	// Responder con el listado de sesiones pasadas
+	c.JSON(http.StatusOK, response)
 }
 
 func (sc *SessionController) ListSessionsBetweenDates(c *gin.Context) {
-    // Obtener las fechas desde los parámetros de la URL o el query
-    startDateStr := c.Query("start_date")
-    endDateStr := c.Query("end_date")
+	// Obtener las fechas desde los parámetros de la URL o el query
+	startDateStr := c.Query("start_date")
+	endDateStr := c.Query("end_date")
 
-    // Parsear las fechas a time.Time
-    startDate, err := time.Parse(time.RFC3339, startDateStr)
-    if err != nil {
-        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Formato de fecha de inicio inválido"))
-        return
-    }
-    if startDate.Location().String() != "UTC" {
-        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Fecha de inicio debe estar en UTC"))
-        return
-    }
+	// Parsear las fechas a time.Time
+	startDate, err := time.Parse(time.RFC3339, startDateStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Formato de fecha de inicio inválido"))
+		return
+	}
+	if startDate.Location().String() != "UTC" {
+		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Fecha de inicio debe estar en UTC"))
+		return
+	}
 
-    endDate, err := time.Parse(time.RFC3339, endDateStr)
-    if err != nil {
-        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Formato de fecha de fin inválido"))
-        return
-    }
-    if endDate.Location().String() != "UTC" {
-        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Fecha de fin debe estar en UTC"))
-        return
-    }
+	endDate, err := time.Parse(time.RFC3339, endDateStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Formato de fecha de fin inválido"))
+		return
+	}
+	if endDate.Location().String() != "UTC" {
+		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Fecha de fin debe estar en UTC"))
+		return
+	}
 
-    // Llamar al servicio para obtener las sesiones entre las fechas especificadas
-    response, apiErr := sc.sessionService.ListSessionsBetweenDates(c.Request.Context(), startDate, endDate)
-    if apiErr != nil {
-        c.JSON(apiErr.Status(), apiErr)
-        return
-    }
+	// Llamar al servicio para obtener las sesiones entre las fechas especificadas
+	response, apiErr := sc.sessionService.ListSessionsBetweenDates(c.Request.Context(), startDate, endDate)
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
 
-    // Responder con el listado de sesiones
-    c.JSON(http.StatusOK, response)
+	// Responder con el listado de sesiones
+	c.JSON(http.StatusOK, response)
 }
 
 func (sc *SessionController) FindSessionsByNameAndType(c *gin.Context) {
@@ -301,138 +302,138 @@ func (sc *SessionController) GetAllSessions(c *gin.Context) {
 }
 
 func (sc *SessionController) UpdateResultSCAndVSC(c *gin.Context) {
-    // Obtener el ID de la sesión desde los parámetros de la URL
-    sessionID, err := strconv.Atoi(c.Param("id"))
-    if err != nil {
-        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID inválido"))
-        return
-    }
+	// Obtener el ID de la sesión desde los parámetros de la URL
+	sessionID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID inválido"))
+		return
+	}
 
-    // Llamar al servicio para actualizar los resultados de SC y VSC
-    apiErr := sc.sessionService.UpdateResultSCAndVSC(c.Request.Context(), sessionID)
-    if apiErr != nil {
-        c.JSON(apiErr.Status(), apiErr)
-        return
-    }
+	// Llamar al servicio para actualizar los resultados de SC y VSC
+	apiErr := sc.sessionService.UpdateResultSCAndVSC(c.Request.Context(), sessionID)
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
 
-    // Responder con un estado 200 (OK) si la actualización fue exitosa
-    c.Status(http.StatusOK)
+	// Responder con un estado 200 (OK) si la actualización fue exitosa
+	c.Status(http.StatusOK)
 }
 
 func (sc *SessionController) UpdateDNF(c *gin.Context) {
-    // Obtener el ID de la sesión desde los parámetros de la URL
-    sessionID, err := strconv.Atoi(c.Param("id"))
-    if err != nil {
-        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID inválido"))
-        return
-    }
+	// Obtener el ID de la sesión desde los parámetros de la URL
+	sessionID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID inválido"))
+		return
+	}
 
-    // Vincular la carga útil JSON al DTO de actualización del DNF
-    var request dto.UpdateDNFDTO
-    if err := c.ShouldBindJSON(&request); err != nil {
-        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Datos inválidos"))
-        return
-    }
+	// Vincular la carga útil JSON al DTO de actualización del DNF
+	var request dto.UpdateDNFDTO
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Datos inválidos"))
+		return
+	}
 
-    // Llamar al servicio para actualizar el DNF
-    apiErr := sc.sessionService.UpdateDNFBySessionID(c.Request.Context(), sessionID, request.DNF)
-    if apiErr != nil {
-        c.JSON(apiErr.Status(), apiErr)
-        return
-    }
+	// Llamar al servicio para actualizar el DNF
+	apiErr := sc.sessionService.UpdateDNFBySessionID(c.Request.Context(), sessionID, request.DNF)
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
 
-    // Responder con un estado 200 (OK) si la actualización fue exitosa
-    c.Status(http.StatusOK)
+	// Responder con un estado 200 (OK) si la actualización fue exitosa
+	c.Status(http.StatusOK)
 }
 
 func (sc *SessionController) UpdateSessionData(c *gin.Context) {
-    // Obtener el ID de la sesión desde los parámetros de la URL
-    sessionID, err := strconv.Atoi(c.Param("id"))
-    if err != nil {
-        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de sesión inválido"))
-        return
-    }
+	// Obtener el ID de la sesión desde los parámetros de la URL
+	sessionID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de sesión inválido"))
+		return
+	}
 
-    // Vincular la carga útil JSON al DTO
-    var request dto.UpdateSessionDataDTO
-    if err := c.ShouldBindJSON(&request); err != nil {
-        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Datos inválidos"))
-        return
-    }
+	// Vincular la carga útil JSON al DTO
+	var request dto.UpdateSessionDataDTO
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Datos inválidos"))
+		return
+	}
 
-    // Validar que los parámetros de entrada sean válidos (aunque las fechas se manejan en el servicio)
-    if request.Location == "" || request.SessionName == "" || request.SessionType == "" || request.Year == 0 {
-        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Todos los campos son requeridos"))
-        return
-    }
+	// Validar que los parámetros de entrada sean válidos (aunque las fechas se manejan en el servicio)
+	if request.Location == "" || request.SessionName == "" || request.SessionType == "" || request.Year == 0 {
+		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Todos los campos son requeridos"))
+		return
+	}
 
-    // Llamar al servicio para actualizar el session_key, date_start, y date_end
-    apiErr := sc.sessionService.UpdateSessionData(c.Request.Context(), sessionID, request.Location, request.SessionName, request.SessionType, request.Year)
-    if apiErr != nil {
-        c.JSON(apiErr.Status(), apiErr)
-        return
-    }
+	// Llamar al servicio para actualizar el session_key, date_start, y date_end
+	apiErr := sc.sessionService.UpdateSessionData(c.Request.Context(), sessionID, request.Location, request.SessionName, request.SessionType, request.Year)
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
 
-    // Responder con un estado 200 (OK) si la actualización fue exitosa
-    c.Status(http.StatusOK)
+	// Responder con un estado 200 (OK) si la actualización fue exitosa
+	c.Status(http.StatusOK)
 }
 
 func (sc *SessionController) GetSessionKeyBySessionID(c *gin.Context) {
-    sessionID, err := strconv.Atoi(c.Param("id"))
-    if err != nil {
-        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de sesión inválido"))
-        return
-    }
+	sessionID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de sesión inválido"))
+		return
+	}
 
-    sessionKey, apiErr := sc.sessionService.GetSessionKeyBySessionID(c.Request.Context(), sessionID)
-    if apiErr != nil {
-        c.JSON(apiErr.Status(), apiErr)
-        return
-    }
+	sessionKey, apiErr := sc.sessionService.GetSessionKeyBySessionID(c.Request.Context(), sessionID)
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
 
-    c.JSON(http.StatusOK, gin.H{"session_key": sessionKey})
+	c.JSON(http.StatusOK, gin.H{"session_key": sessionKey})
 }
 
 func (sc *SessionController) UpdateSessionKeyAdmin(c *gin.Context) {
-    // Obtener el ID de la sesión desde los parámetros de la URL
-    sessionID, err := strconv.Atoi(c.Param("id"))
-    if err != nil {
-        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID inválido"))
-        return
-    }
+	// Obtener el ID de la sesión desde los parámetros de la URL
+	sessionID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID inválido"))
+		return
+	}
 
-    // Bindear el sessionKey del cuerpo de la solicitud
-    var request struct {
-        SessionKey int `json:"session_key"`
-    }
-    if err := c.ShouldBindJSON(&request); err != nil {
-        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Datos inválidos"))
-        return
-    }
+	// Bindear el sessionKey del cuerpo de la solicitud
+	var request struct {
+		SessionKey int `json:"session_key"`
+	}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("Datos inválidos"))
+		return
+	}
 
-    // Llamar al servicio para actualizar manualmente el session_key
-    apiErr := sc.sessionService.UpdateSessionKeyAdmin(c.Request.Context(), sessionID, request.SessionKey)
-    if apiErr != nil {
-        c.JSON(apiErr.Status(), apiErr)
-        return
-    }
+	// Llamar al servicio para actualizar manualmente el session_key
+	apiErr := sc.sessionService.UpdateSessionKeyAdmin(c.Request.Context(), sessionID, request.SessionKey)
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
 
-    // Responder con un estado 200 si la actualización fue exitosa
-    c.Status(http.StatusOK)
+	// Responder con un estado 200 si la actualización fue exitosa
+	c.Status(http.StatusOK)
 }
 
 func (sc *SessionController) UpdateDFastLap(c *gin.Context) {
-    sessionID, err := strconv.Atoi(c.Param("id"))
-    if err != nil {
-        c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de sesión inválido"))
-        return
-    }
+	sessionID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de sesión inválido"))
+		return
+	}
 
-    apiErr := sc.sessionService.UpdateDFastLap(c.Request.Context(), sessionID)
-    if apiErr != nil {
-        c.JSON(apiErr.Status(), apiErr)
-        return
-    }
+	apiErr := sc.sessionService.UpdateDFastLap(c.Request.Context(), sessionID)
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
 
-    c.JSON(http.StatusOK, gin.H{"message": "Vuelta más rápida actualizada correctamente"})
+	c.JSON(http.StatusOK, gin.H{"message": "Vuelta más rápida actualizada correctamente"})
 }

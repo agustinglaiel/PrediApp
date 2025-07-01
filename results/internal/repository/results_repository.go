@@ -3,8 +3,9 @@ package repository
 import (
 	"context"
 	"errors"
-	"results/internal/model"
-	e "results/pkg/utils"
+
+	"prediapp.local/results/internal/model"
+	e "prediapp.local/results/pkg/utils"
 
 	"gorm.io/gorm"
 )
@@ -26,15 +27,15 @@ type ResultRepository interface {
 	// GetDriverPositionInSession(ctx context.Context, driverID int, sessionID int) (int, e.ApiError)
 	GetResultsOrderedByPosition(ctx context.Context, sessionID int) ([]*model.Result, e.ApiError)
 	ExistsSessionInResults(ctx context.Context, sessionID int) (bool, e.ApiError)
-	SessionCreateResultAdmin(ctx context.Context, results []*model.Result) error 
-	SessionCreateOrUpdateResultsAdmin(ctx context.Context, resultsToCreate, resultsToUpdate []*model.Result) error 
+	SessionCreateResultAdmin(ctx context.Context, results []*model.Result) error
+	SessionCreateOrUpdateResultsAdmin(ctx context.Context, resultsToCreate, resultsToUpdate []*model.Result) error
 }
 
 func NewResultRepository(db *gorm.DB) ResultRepository {
 	return &resultRepository{db: db}
 }
 
-//ESTO SOLO SIRVE PARA CREAR UN RESULTADO A LA VEZ
+// ESTO SOLO SIRVE PARA CREAR UN RESULTADO A LA VEZ
 // CreateResult crea un nuevo resultado en la base de datos
 func (r *resultRepository) CreateResult(ctx context.Context, result *model.Result) e.ApiError {
 	if err := r.db.WithContext(ctx).Create(result).Error; err != nil {
@@ -56,16 +57,16 @@ func (r *resultRepository) GetResultByID(ctx context.Context, resultID int) (*mo
 }
 
 func (r *resultRepository) GetResultByDriverAndSession(ctx context.Context, driverID, sessionID int) (*model.Result, e.ApiError) {
-    var result model.Result
-    if err := r.db.WithContext(ctx).
-        Where("driver_id = ? AND session_id = ?", driverID, sessionID).
-        First(&result).Error; err != nil {
-        if errors.Is(err, gorm.ErrRecordNotFound) {
-            return nil, nil // no es error, simplemente no existe
-        }
-        return nil, e.NewInternalServerApiError("Error al buscar resultado por driver y session", err)
-    }
-    return &result, nil
+	var result model.Result
+	if err := r.db.WithContext(ctx).
+		Where("driver_id = ? AND session_id = ?", driverID, sessionID).
+		First(&result).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil // no es error, simplemente no existe
+		}
+		return nil, e.NewInternalServerApiError("Error al buscar resultado por driver y session", err)
+	}
+	return &result, nil
 }
 
 // UpdateResult actualiza un resultado existente en la base de datos
@@ -113,14 +114,14 @@ func (r *resultRepository) GetAllResults(ctx context.Context) ([]*model.Result, 
 
 // GetFastestLapInSession obtiene el piloto con el tiempo de vuelta más rápido en una sesión específica
 func (r *resultRepository) GetFastestLapInSession(ctx context.Context, sessionID int) (*model.Result, e.ApiError) {
-    var result model.Result
-    if err := r.db.WithContext(ctx).Preload("Driver").Preload("Session").Where("session_id = ?", sessionID).Order("fastest_lap_time ASC").First(&result).Error; err != nil {
-        if err == gorm.ErrRecordNotFound {
-            return nil, e.NewNotFoundApiError("No fastest lap found for the session")
-        }
-        return nil, e.NewInternalServerApiError("Error fetching fastest lap for session", err)
-    }
-    return &result, nil
+	var result model.Result
+	if err := r.db.WithContext(ctx).Preload("Driver").Preload("Session").Where("session_id = ?", sessionID).Order("fastest_lap_time ASC").First(&result).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, e.NewNotFoundApiError("No fastest lap found for the session")
+		}
+		return nil, e.NewInternalServerApiError("Error fetching fastest lap for session", err)
+	}
+	return &result, nil
 }
 
 // GetDriverPositionInSession obtiene la posición de un piloto en una sesión, cargando las relaciones de la sesión
@@ -142,14 +143,14 @@ obtiene todos los resultados de una sesión específica (incluyendo detalles de 
 */
 
 func (r *resultRepository) GetResultsOrderedByPosition(ctx context.Context, sessionID int) ([]*model.Result, e.ApiError) {
-    var results []*model.Result
-    if err := r.db.WithContext(ctx).
-        Preload("Driver").Preload("Session").Where("session_id = ?", sessionID).
-        Order("CASE WHEN position IS NULL THEN 1 ELSE 0 END ASC, position ASC").
-        Find(&results).Error; err != nil {
-        return nil, e.NewInternalServerApiError("Error fetching ordered results for session", err)
-    }
-    return results, nil
+	var results []*model.Result
+	if err := r.db.WithContext(ctx).
+		Preload("Driver").Preload("Session").Where("session_id = ?", sessionID).
+		Order("CASE WHEN position IS NULL THEN 1 ELSE 0 END ASC, position ASC").
+		Find(&results).Error; err != nil {
+		return nil, e.NewInternalServerApiError("Error fetching ordered results for session", err)
+	}
+	return results, nil
 }
 
 // ExistsSessionInResults verifica si existen resultados para un sessionID dado
@@ -163,29 +164,29 @@ func (r *resultRepository) ExistsSessionInResults(ctx context.Context, sessionID
 }
 
 func (r *resultRepository) SessionCreateResultAdmin(ctx context.Context, results []*model.Result) error {
-    // Ejecutamos la creación en una sola transacción
-    return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-        if err := tx.Create(&results).Error; err != nil {
-            return err
-        }
-        return nil
-    })
+	// Ejecutamos la creación en una sola transacción
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(&results).Error; err != nil {
+			return err
+		}
+		return nil
+	})
 }
 
 func (r *resultRepository) SessionCreateOrUpdateResultsAdmin(ctx context.Context, resultsToCreate, resultsToUpdate []*model.Result) error {
-    return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-        // Crear nuevos resultados
-        if len(resultsToCreate) > 0 {
-            if err := tx.Create(&resultsToCreate).Error; err != nil {
-                return err
-            }
-        }
-        // Actualizar resultados existentes
-        for _, result := range resultsToUpdate {
-            if err := tx.Save(result).Error; err != nil {
-                return err
-            }
-        }
-        return nil
-    })
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Crear nuevos resultados
+		if len(resultsToCreate) > 0 {
+			if err := tx.Create(&resultsToCreate).Error; err != nil {
+				return err
+			}
+		}
+		// Actualizar resultados existentes
+		for _, result := range resultsToUpdate {
+			if err := tx.Save(result).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }

@@ -7,9 +7,10 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	dto "sessions/internal/dto"
-	"sessions/pkg/utils"
 	"time"
+
+	dto "prediapp.local/sessions/internal/dto"
+	"prediapp.local/sessions/pkg/utils"
 )
 
 type HttpClient struct {
@@ -131,23 +132,23 @@ func (c *HttpClient) Delete(endpoint string) error {
 
 // GetRaceControlData realiza una solicitud GET para obtener los datos de control de carrera (VSC/SC) de la API externa
 func (c *HttpClient) GetRaceControlData(sessionKey *int) ([]dto.RaceControlEvent, error) {
-    // Definir el endpoint para la solicitud GET
-    endpoint := fmt.Sprintf("https://api.openf1.org/v1/race_control?session_key=%d", *sessionKey)
+	// Definir el endpoint para la solicitud GET
+	endpoint := fmt.Sprintf("https://api.openf1.org/v1/race_control?session_key=%d", *sessionKey)
 	print("Endpoint: ", endpoint)
 
-    // Hacer la solicitud GET utilizando el cliente HTTP
-    body, err := c.Get(endpoint)
-    if err != nil {
-        return nil, fmt.Errorf("error fetching race control data: %w", err)
-    }
+	// Hacer la solicitud GET utilizando el cliente HTTP
+	body, err := c.Get(endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("error fetching race control data: %w", err)
+	}
 
-    // Deserializar la respuesta JSON en una estructura Go
-    var raceControlEvents []dto.RaceControlEvent
-    if err := json.Unmarshal(body, &raceControlEvents); err != nil {
-        return nil, fmt.Errorf("error decoding race control response: %w", err)
-    }
+	// Deserializar la respuesta JSON en una estructura Go
+	var raceControlEvents []dto.RaceControlEvent
+	if err := json.Unmarshal(body, &raceControlEvents); err != nil {
+		return nil, fmt.Errorf("error decoding race control response: %w", err)
+	}
 
-    return raceControlEvents, nil
+	return raceControlEvents, nil
 }
 
 /*
@@ -172,82 +173,82 @@ func (c *HttpClient) GetLapsData(sessionKey int) ([]dto.LapData, e.ApiError) {
     return lapsData, nil
 }*/
 
-//Esta función la usamos para obtener el session_key de una session para luego poder hacer el update de sc y vsc
+// Esta función la usamos para obtener el session_key de una session para luego poder hacer el update de sc y vsc
 // GetSessionKey obtiene el session_key basado en location, session_name, session_type, y year
 func (c *HttpClient) GetSessionData(location string, sessionName string, sessionType string, year int) (*dto.SessionKeyResponseDTO, utils.ApiError) {
-    // Escapar los parámetros individuales
-    locationEscaped := url.QueryEscape(location)
-    sessionNameEscaped := url.QueryEscape(sessionName)
-    sessionTypeEscaped := url.QueryEscape(sessionType)
+	// Escapar los parámetros individuales
+	locationEscaped := url.QueryEscape(location)
+	sessionNameEscaped := url.QueryEscape(sessionName)
+	sessionTypeEscaped := url.QueryEscape(sessionType)
 
-    // Definir el endpoint con los parámetros escapados
-    endpoint := fmt.Sprintf("https://api.openf1.org/v1/sessions?location=%s&session_name=%s&session_type=%s&year=%d",
-        locationEscaped, sessionNameEscaped, sessionTypeEscaped, year)
+	// Definir el endpoint con los parámetros escapados
+	endpoint := fmt.Sprintf("https://api.openf1.org/v1/sessions?location=%s&session_name=%s&session_type=%s&year=%d",
+		locationEscaped, sessionNameEscaped, sessionTypeEscaped, year)
 
-    fmt.Printf("Consultando endpoint: %s\n", endpoint)
-    
-    // Hacer la solicitud GET
-    body, err := c.Get(endpoint)
-    if err != nil {
-        fmt.Printf("Error en la solicitud GET: %v\n", err)
-        return nil, utils.NewInternalServerApiError("Error fetching session data", err)
-    }
-    
-    // Print del body de la respuesta (para ver qué devuelve la API)
-    fmt.Printf("Respuesta del body: %s\n", string(body))
+	fmt.Printf("Consultando endpoint: %s\n", endpoint)
 
-    // Deserializar la respuesta JSON como un array de SessionKeyResponseDTO
-    var response []dto.SessionKeyResponseDTO
-    if err := json.Unmarshal(body, &response); err != nil {
-        fmt.Printf("Error deserializando la respuesta JSON: %v\n", err)
-        return nil, utils.NewInternalServerApiError("Error decoding session data response", err)
-    }
+	// Hacer la solicitud GET
+	body, err := c.Get(endpoint)
+	if err != nil {
+		fmt.Printf("Error en la solicitud GET: %v\n", err)
+		return nil, utils.NewInternalServerApiError("Error fetching session data", err)
+	}
 
-    // Print de la respuesta deserializada para ver qué contiene el objeto `response`
-    fmt.Printf("Respuesta deserializada: %+v\n", response)
+	// Print del body de la respuesta (para ver qué devuelve la API)
+	fmt.Printf("Respuesta del body: %s\n", string(body))
 
-    // Verificar si el array tiene al menos un resultado y si el session_key está presente
-    if len(response) == 0 || response[0].SessionKey == nil {
-        fmt.Println("No se encontraron datos de session_key para los parámetros proporcionados.")
-        return nil, utils.NewNotFoundApiError("Session data not found for the given parameters")
-    }
+	// Deserializar la respuesta JSON como un array de SessionKeyResponseDTO
+	var response []dto.SessionKeyResponseDTO
+	if err := json.Unmarshal(body, &response); err != nil {
+		fmt.Printf("Error deserializando la respuesta JSON: %v\n", err)
+		return nil, utils.NewInternalServerApiError("Error decoding session data response", err)
+	}
 
-    // Print de los datos que estamos retornando
-    fmt.Printf("Datos retornados: SessionKey: %d, DateStart: %v, DateEnd: %v\n", *response[0].SessionKey, response[0].DateStart, response[0].DateEnd)
+	// Print de la respuesta deserializada para ver qué contiene el objeto `response`
+	fmt.Printf("Respuesta deserializada: %+v\n", response)
 
-    // Retornar el objeto con session_key, date_start y date_end del primer resultado
-    return &response[0], nil
+	// Verificar si el array tiene al menos un resultado y si el session_key está presente
+	if len(response) == 0 || response[0].SessionKey == nil {
+		fmt.Println("No se encontraron datos de session_key para los parámetros proporcionados.")
+		return nil, utils.NewNotFoundApiError("Session data not found for the given parameters")
+	}
+
+	// Print de los datos que estamos retornando
+	fmt.Printf("Datos retornados: SessionKey: %d, DateStart: %v, DateEnd: %v\n", *response[0].SessionKey, response[0].DateStart, response[0].DateEnd)
+
+	// Retornar el objeto con session_key, date_start y date_end del primer resultado
+	return &response[0], nil
 }
 
 // GetFastestLapBySessionID obtiene el piloto con la vuelta más rápida de una sesión específica
 func (c *HttpClient) GetFastestLapBySessionID(sessionID int) (*dto.FastestLapDTO, error) {
-    endpoint := fmt.Sprintf("http://localhost:8080/results/session/%d/fastest-lap", sessionID)
-    fmt.Println("Requesting:", endpoint)  // Log de la solicitud
+	endpoint := fmt.Sprintf("http://localhost:8080/results/session/%d/fastest-lap", sessionID)
+	fmt.Println("Requesting:", endpoint) // Log de la solicitud
 
-    body, err := c.Get(endpoint)
-    if err != nil {
+	body, err := c.Get(endpoint)
+	if err != nil {
 		fmt.Printf("Error en la solicitud GET: %v\n", err)
 		return nil, fmt.Errorf("error fetching fastest lap: %w", err)
 	}
 
-    if len(body) == 0 {
-        fmt.Println("Error: Respuesta vacía de la API externa")
-        return nil, fmt.Errorf("error fetching fastest lap: empty response")
-    }
+	if len(body) == 0 {
+		fmt.Println("Error: Respuesta vacía de la API externa")
+		return nil, fmt.Errorf("error fetching fastest lap: empty response")
+	}
 
-    // Deserializar la respuesta en el DTO de FastestLap
-    var fastestLap dto.FastestLapDTO
-    err = json.Unmarshal(body, &fastestLap)
-    if err != nil {
-        fmt.Printf("Error deserializando la respuesta: %s\n", string(body))
-        return nil, fmt.Errorf("error decoding fastest lap response: %w", err)
-    }
+	// Deserializar la respuesta en el DTO de FastestLap
+	var fastestLap dto.FastestLapDTO
+	err = json.Unmarshal(body, &fastestLap)
+	if err != nil {
+		fmt.Printf("Error deserializando la respuesta: %s\n", string(body))
+		return nil, fmt.Errorf("error decoding fastest lap response: %w", err)
+	}
 
-    // Verificar si el objeto FastestLapDTO contiene datos válidos
-    if fastestLap.Driver.ID == 0 {
-        fmt.Println("Error: La respuesta no contiene un piloto válido")
-        return nil, fmt.Errorf("error: no valid driver in fastest lap response")
-    }
+	// Verificar si el objeto FastestLapDTO contiene datos válidos
+	if fastestLap.Driver.ID == 0 {
+		fmt.Println("Error: La respuesta no contiene un piloto válido")
+		return nil, fmt.Errorf("error: no valid driver in fastest lap response")
+	}
 
-    return &fastestLap, nil
+	return &fastestLap, nil
 }

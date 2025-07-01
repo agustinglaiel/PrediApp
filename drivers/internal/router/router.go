@@ -1,7 +1,7 @@
 package router
 
 import (
-	drivers "drivers/internal/api"
+	drivers "prediapp.local/drivers/internal/api"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,7 +15,7 @@ func MapUrls(engine *gin.Engine, driverController *drivers.DriverController) {
 	// 	ExposeHeaders:    []string{"Content-Length"},
 	// 	AllowCredentials: true,
 	// }))
-	
+
 	// Rutas relacionadas con drivers
 	engine.POST("/drivers", driverController.CreateDriver)
 	engine.GET("/drivers/:id", driverController.GetDriverByID)

@@ -2,8 +2,9 @@ package repository
 
 import (
 	"context"
-	"posts/internal/model"
-	e "posts/pkg/utils"
+
+	"prediapp.local/posts/internal/model"
+	e "prediapp.local/posts/pkg/utils"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"

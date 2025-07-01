@@ -8,9 +8,10 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	dto "results/internal/dto"
 	"strings"
 	"time"
+
+	dto "prediapp.local/results/internal/dto"
 
 	"github.com/golang-jwt/jwt/v4"
 )
@@ -219,12 +220,12 @@ func (c *HttpClient) GetPositions(sessionKey int) ([]dto.Position, error) {
 func (c *HttpClient) GetDriverDetails(driverNumber int, sessionKey int) (dto.ExternalDriverDetails, error) {
 	// Construir la URL completa para la solicitud de detalles del piloto
 	endpoint := fmt.Sprintf("https://api.openf1.org/v1/drivers?driver_number=%d&session_key=%d", driverNumber, sessionKey)
-    println("Endpoint: ", endpoint)
+	println("Endpoint: ", endpoint)
 
 	body, err := c.Get(endpoint)
-    if err != nil {
-        return dto.ExternalDriverDetails{}, fmt.Errorf("error fetching driver details: %w", err)
-    }
+	if err != nil {
+		return dto.ExternalDriverDetails{}, fmt.Errorf("error fetching driver details: %w", err)
+	}
 
 	var driverDetails dto.ExternalDriverDetails
 	if err := json.Unmarshal(body, &driverDetails); err != nil {
@@ -308,29 +309,29 @@ func (c *HttpClient) GetDriverByNumber(driverNumber int) (dto.ResponseDriverDTO,
 }
 
 func (c *HttpClient) GetDriverByName(firstName, lastName string) (dto.ResponseDriverDTO, error) {
-    // Definir el endpoint para obtener la información del piloto desde first_name y last_name
-    endpoint := c.buildURL(fmt.Sprintf("/drivers/name/%s/%s", url.QueryEscape(firstName), url.QueryEscape(lastName)))
+	// Definir el endpoint para obtener la información del piloto desde first_name y last_name
+	endpoint := c.buildURL(fmt.Sprintf("/drivers/name/%s/%s", url.QueryEscape(firstName), url.QueryEscape(lastName)))
 
-    // Hacer la solicitud GET utilizando el cliente HTTP con autenticación
-    body, err := c.GetWithAuth(endpoint)
-    if err != nil {
-        return dto.ResponseDriverDTO{}, fmt.Errorf("error fetching driver info by name: %w", err)
-    }
+	// Hacer la solicitud GET utilizando el cliente HTTP con autenticación
+	body, err := c.GetWithAuth(endpoint)
+	if err != nil {
+		return dto.ResponseDriverDTO{}, fmt.Errorf("error fetching driver info by name: %w", err)
+	}
 
-    // Declarar la variable para deserializar la respuesta
-    var driver dto.ResponseDriverDTO
+	// Declarar la variable para deserializar la respuesta
+	var driver dto.ResponseDriverDTO
 
-    // Deserializar la respuesta para obtener la información del piloto
-    if err := json.Unmarshal(body, &driver); err != nil {
-        return dto.ResponseDriverDTO{}, fmt.Errorf("error decoding driver response by name: %w", err)
-    }
+	// Deserializar la respuesta para obtener la información del piloto
+	if err := json.Unmarshal(body, &driver); err != nil {
+		return dto.ResponseDriverDTO{}, fmt.Errorf("error decoding driver response by name: %w", err)
+	}
 
-    // Verificar si el driver ID es válido
-    if driver.ID == 0 {
-        return dto.ResponseDriverDTO{}, fmt.Errorf("driver with name %s %s not found", firstName, lastName)
-    }
+	// Verificar si el driver ID es válido
+	if driver.ID == 0 {
+		return dto.ResponseDriverDTO{}, fmt.Errorf("driver with name %s %s not found", firstName, lastName)
+	}
 
-    return driver, nil
+	return driver, nil
 }
 
 // Función para obtener la información de una sesión completa utilizando sessionId

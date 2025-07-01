@@ -1,7 +1,7 @@
 package router
 
 import (
-	prodes "prodes/internal/api"
+	prodes "prediapp.local/prodes/internal/api"
 
 	"github.com/gin-gonic/gin"
 )
