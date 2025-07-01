@@ -57,26 +57,13 @@ func main() {
 	}
 	godotenv.Load(filepath.Join(cwd, ".env."+env))
 
-	// 2) Construir DSN
-	user := os.Getenv("DB_USER")
-	pass := os.Getenv("DB_PASS")
-	host := os.Getenv("DB_HOST")
-	port := os.Getenv("DB_PORT")
-	name := os.Getenv("DB_NAME")
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-		user, pass, host, port, name,
-	)
-
-	// 3) Conectar + migrar
-	if err := db.Init(dsn); err != nil {
+	// 2) Conectar a la base de datos
+	if err := db.Init(); err != nil {
 		log.Fatalf("DB init failed: %v", err)
 	}
-	if err := db.AutoMigrate(); err != nil {
-		log.Fatalf("DB migrate failed: %v", err)
-	}
-	log.Println("DB connected and migrated ✔")
+	log.Println("DB connected ✔")
 
-	// 4) Preparar URLs de servicios
+	// 3) Preparar URLs de servicios
 	services := []struct{ dir, url string }{
 		{"./users/cmd", os.Getenv("USERS_SERVICE_URL")},
 		{"./sessions/cmd", os.Getenv("SESSIONS_SERVICE_URL")},
@@ -87,7 +74,7 @@ func main() {
 		{"./posts/cmd", os.Getenv("POSTS_SERVICE_URL")},
 	}
 
-	// 5) Recopilar env vars base
+	// 4) Recopilar env vars base
 	baseEnv := make(map[string]string)
 	for _, e := range os.Environ() {
 		parts := strings.SplitN(e, "=", 2)
@@ -96,7 +83,7 @@ func main() {
 		}
 	}
 
-	// 6) Arrancar los microservicios
+	// 5) Arrancar los microservicios
 	for i, svc := range services {
 		parts := strings.Split(svc.url, ":")
 		if len(parts) < 3 {
@@ -117,7 +104,7 @@ func main() {
 		}
 	}
 
-	// 7) Esperar Ctrl+C y limpiar
+	// 6) Esperar Ctrl+C y limpiar
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	<-sigs

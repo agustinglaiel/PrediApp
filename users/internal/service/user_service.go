@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
+	"prediapp.local/db/model"
 	"prediapp.local/users/internal/dto"
-	"prediapp.local/users/internal/model"
 	"prediapp.local/users/internal/repository"
 	e "prediapp.local/users/pkg/utils"
 

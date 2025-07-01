@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	model "prediapp.local/sessions/internal/model"
+	model "prediapp.local/db/model"
 	e "prediapp.local/sessions/pkg/utils"
 
 	"gorm.io/gorm"

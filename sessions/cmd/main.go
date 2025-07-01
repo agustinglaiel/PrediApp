@@ -6,12 +6,12 @@ import (
 	"os"
 	"time"
 
+	"prediapp.local/db"
 	"prediapp.local/sessions/internal/api"
 	"prediapp.local/sessions/internal/client"
 	"prediapp.local/sessions/internal/repository"
 	"prediapp.local/sessions/internal/router"
 	"prediapp.local/sessions/internal/service"
-	"prediapp.local/sessions/pkg/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -25,25 +25,21 @@ func main() {
 	}
 
 	// Inicializar la base de datos
-	db, err := utils.InitDB()
+	err := db.Init()
 	if err != nil {
 		fmt.Println("Error al conectar con la Base de Datos")
 		panic(err)
 	}
-	defer utils.DisconnectDB()
-
-	// Iniciar el motor de la base de datos y migrar tablas
-	utils.StartDbEngine()
+	defer db.DisconnectDB()
 
 	// Crear el cliente HTTP para interactuar con la API externa
 	externalAPIClient := client.NewHttpClient("https://api.openf1.org/v1/")
-
 	// Crear la instancia de caché con expiración de 30 minutos y tamaño máximo de 100 entradas
-	cache := utils.NewCache(30*time.Minute, 100)
+	// cache := utils.NewCache(30*time.Minute, 100)
 
 	// Inicializar repositorio y servicio
 	sessionRepo := repository.NewSessionRepository(db)
-	sessionService := service.NewSessionService(sessionRepo, externalAPIClient, cache)
+	sessionService := service.NewSessionService(sessionRepo, externalAPIClient)
 	sessionController := api.NewSessionController(sessionService)
 
 	// Configurar router
