@@ -12,6 +12,7 @@ import (
 	"prediapp.local/sessions/internal/repository"
 	"prediapp.local/sessions/internal/router"
 	"prediapp.local/sessions/internal/service"
+	"prediapp.local/sessions/pkg/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -35,11 +36,11 @@ func main() {
 	// Crear el cliente HTTP para interactuar con la API externa
 	externalAPIClient := client.NewHttpClient("https://api.openf1.org/v1/")
 	// Crear la instancia de caché con expiración de 30 minutos y tamaño máximo de 100 entradas
-	// cache := utils.NewCache(30*time.Minute, 100)
+	cache := utils.NewCache(30*time.Minute, 100)
 
 	// Inicializar repositorio y servicio
-	sessionRepo := repository.NewSessionRepository(db)
-	sessionService := service.NewSessionService(sessionRepo, externalAPIClient)
+	sessionRepo := repository.NewSessionRepository(db.DB)
+	sessionService := service.NewSessionService(sessionRepo, externalAPIClient, cache)
 	sessionController := api.NewSessionController(sessionService)
 
 	// Configurar router
