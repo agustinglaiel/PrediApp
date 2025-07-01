@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
+	"prediapp.local/db/model"
 	"prediapp.local/groups/internal/client"
 	"prediapp.local/groups/internal/dto"
-	"prediapp.local/groups/internal/model"
 	"prediapp.local/groups/internal/repository"
 	e "prediapp.local/groups/pkg/utils"
 )

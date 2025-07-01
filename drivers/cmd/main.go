@@ -5,12 +5,12 @@ import (
 	"log"
 	"os"
 
+	"prediapp.local/db"
 	"prediapp.local/drivers/internal/api"
 	"prediapp.local/drivers/internal/client"
 	"prediapp.local/drivers/internal/repository"
 	"prediapp.local/drivers/internal/router"
 	"prediapp.local/drivers/internal/service"
-	"prediapp.local/drivers/pkg/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -23,21 +23,18 @@ func main() {
 	}
 
 	// Inicializar la base de datos
-	db, err := utils.InitDB()
+	err := db.Init()
 	if err != nil {
 		fmt.Println("Error al conectar con la Base de Datos")
 		panic(err)
 	}
-	defer utils.DisconnectDB()
-
-	// Iniciar el motor de la base de datos y migrar tablas
-	utils.StartDbEngine()
+	defer db.DisconnectDB()
 
 	// Crear el cliente HTTP para interactuar con la API externa
 	externalAPIClient := client.NewHttpClient("https://api.openf1.org/v1/")
 
 	// Inicializar repositorios y servicios
-	driverRepo := repository.NewDriverRepository(db)
+	driverRepo := repository.NewDriverRepository(db.DB)
 	driverService := service.NewDriverService(driverRepo, externalAPIClient)
 	driverController := api.NewDriverController(driverService)
 

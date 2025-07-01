@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"prediapp.local/db/model"
 	internal "prediapp.local/posts/internal/client"
 	"prediapp.local/posts/internal/dto"
-	"prediapp.local/posts/internal/model"
 	"prediapp.local/posts/internal/repository"
 	e "prediapp.local/posts/pkg/utils"
 

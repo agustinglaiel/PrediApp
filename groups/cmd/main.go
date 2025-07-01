@@ -5,11 +5,11 @@ import (
 	"log"
 	"os"
 
+	"prediapp.local/db"
 	"prediapp.local/groups/internal/api"
 	"prediapp.local/groups/internal/repository"
 	"prediapp.local/groups/internal/router"
 	"prediapp.local/groups/internal/service"
-	"prediapp.local/groups/pkg/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,16 +22,14 @@ func main() {
 	}
 
 	// Inicializar la base de datos
-	db, err := utils.InitDB()
+	err := db.Init()
 	if err != nil {
 		fmt.Println("Error al conectar con la Base de Datos")
 		panic(err)
 	}
-	defer utils.DisconnectDB()
+	defer db.DisconnectDB()
 
-	utils.StartDbEngine()
-
-	groupRepo := repository.NewGroupRepository(db)
+	groupRepo := repository.NewGroupRepository(db.DB)
 	groupService := service.NewGroupService(groupRepo)
 	groupController := api.NewGroupController(groupService)
 

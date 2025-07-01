@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	model "prediapp.local/drivers/internal/model"
+	model "prediapp.local/db/model"
+	"prediapp.local/drivers/pkg/utils"
 	e "prediapp.local/drivers/pkg/utils"
 
 	"gorm.io/gorm"
@@ -17,7 +18,7 @@ type driverRepository struct {
 
 type DriverRepository interface {
 	CreateDriver(ctx context.Context, driver *model.Driver) e.ApiError
-	CreateDriversTransaction(ctx context.Context, drivers []*model.Driver) ([]*model.Driver, e.ApiError) // Nuevo método
+	CreateDriversTransaction(ctx context.Context, drivers []*model.Driver) ([]*model.Driver, utils.ApiError)
 	GetDriverByID(ctx context.Context, driverID int) (*model.Driver, e.ApiError)
 	UpdateDriver(ctx context.Context, driver *model.Driver) e.ApiError
 	DeleteDriver(ctx context.Context, driverID int) e.ApiError
@@ -42,11 +43,11 @@ func (r *driverRepository) CreateDriver(ctx context.Context, driver *model.Drive
 	return nil
 }
 
-func (r *driverRepository) CreateDriversTransaction(ctx context.Context, drivers []*model.Driver) ([]*model.Driver, e.ApiError) {
+func (r *driverRepository) CreateDriversTransaction(ctx context.Context, drivers []*model.Driver) ([]*model.Driver, utils.ApiError) {
 	var insertedDrivers []*model.Driver
 
-	// Usar la variable global DB para iniciar una transacción
-	err := e.DB.Transaction(func(tx *gorm.DB) error {
+	// Usar r.db para iniciar una transacción
+	err := r.db.Transaction(func(tx *gorm.DB) error {
 		for _, driver := range drivers {
 			if err := tx.WithContext(ctx).Create(driver).Error; err != nil {
 				// Si hay un error de duplicado (por ejemplo, si hay una restricción única), ignorar y continuar
@@ -61,7 +62,7 @@ func (r *driverRepository) CreateDriversTransaction(ctx context.Context, drivers
 	})
 
 	if err != nil {
-		return nil, e.NewInternalServerApiError("Error during transaction", err)
+		return nil, utils.NewInternalServerApiError("Error during transaction", err)
 	}
 
 	return insertedDrivers, nil

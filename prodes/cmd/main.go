@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"prediapp.local/db"
 	"prediapp.local/prodes/internal/api"
 	client "prediapp.local/prodes/internal/client"
 	"prediapp.local/prodes/internal/repository"
@@ -23,22 +24,19 @@ func main() {
 	}
 
 	// Inicializar la base de datos
-	db, err := utils.InitDB()
+	err := db.Init()
 	if err != nil {
 		fmt.Println("Error al conectar con la Base de Datos")
 		panic(err)
 	}
-	defer utils.DisconnectDB()
-
-	// Iniciar el motor de la base de datos y migrar tablas y la caché
-	utils.StartDbEngine()
+	defer db.DisconnectDB()
 	cache := utils.NewCache()
 
 	// Inicializar el cliente HTTP para comunicarte con el microservicio de sessions
 	httpClient := client.NewHttpClient("http://localhost:")
 
 	// Inicializar repositorios, servicios y controlador
-	prodeRepo := repository.NewProdeRepository(db)
+	prodeRepo := repository.NewProdeRepository(db.DB)
 	prodeService := service.NewPrediService(prodeRepo, httpClient, cache)
 	prodeController := api.NewProdeController(prodeService)
 

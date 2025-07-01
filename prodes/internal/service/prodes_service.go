@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"time"
 
+	model "prediapp.local/db/model"
 	client "prediapp.local/prodes/internal/client"
 	prodes "prediapp.local/prodes/internal/dto"
-	model "prediapp.local/prodes/internal/model"
 	repository "prediapp.local/prodes/internal/repository"
 	e "prediapp.local/prodes/pkg/utils"
 

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log"
 
+	model "prediapp.local/db/model"
 	"prediapp.local/drivers/internal/client"
 	dto "prediapp.local/drivers/internal/dto"
-	model "prediapp.local/drivers/internal/model"
 	repository "prediapp.local/drivers/internal/repository"
 	e "prediapp.local/drivers/pkg/utils"
 )

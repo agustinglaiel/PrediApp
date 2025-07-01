@@ -5,11 +5,11 @@ import (
 	"log"
 	"os"
 
+	"prediapp.local/db"
 	"prediapp.local/posts/internal/api"
 	"prediapp.local/posts/internal/repository"
 	"prediapp.local/posts/internal/router"
 	"prediapp.local/posts/internal/service"
-	"prediapp.local/posts/pkg/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,20 +20,16 @@ func main() {
 		log.Fatal("PORT is not set in the environment")
 	}
 
-	db, err := utils.InitDB()
+	err := db.Init()
 	if err != nil {
 		fmt.Println("Error al conectar con la Base de Datos")
 		panic(err)
 	}
-	defer utils.DisconnectDB()
+	defer db.DisconnectDB()
 
-	utils.StartDbEngine()
-
-	// Inicializar repositorio y servicio
-	postRepo := repository.NewPostRepository(db)
+	// Inicializar repositorio, servicio y controlador
+	postRepo := repository.NewPostRepository(db.DB)
 	postService := service.NewPostService(postRepo)
-
-	// Inicializar controlador
 	postController := api.NewPostController(postService)
 
 	// Configurar router

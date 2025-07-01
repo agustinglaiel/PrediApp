@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"prediapp.local/prodes/internal/model"
+	"prediapp.local/db/model"
 	e "prediapp.local/prodes/pkg/utils"
 
 	"gorm.io/gorm"

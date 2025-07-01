@@ -5,7 +5,7 @@ import (
 	"math/rand"
 	"time"
 
-	"prediapp.local/groups/internal/model"
+	"prediapp.local/db/model"
 	e "prediapp.local/groups/pkg/utils"
 
 	"gorm.io/gorm"

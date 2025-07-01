@@ -3,11 +3,10 @@ module prediapp.local/posts
 go 1.23.7
 
 require (
-  prediapp.local/db v0.0.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/json-iterator/go v1.1.12
-	gorm.io/driver/mysql v1.5.7
 	gorm.io/gorm v1.26.0
+	prediapp.local/db v0.0.0
 )
 
 replace prediapp.local/db => ../db
@@ -41,4 +40,5 @@ require (
 	golang.org/x/text v0.23.0 // indirect
 	google.golang.org/protobuf v1.34.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	gorm.io/driver/mysql v1.5.7 // indirect
 )

@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	"prediapp.local/posts/internal/model"
+	"prediapp.local/db/model"
 	e "prediapp.local/posts/pkg/utils"
 
 	"gorm.io/gorm"
