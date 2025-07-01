@@ -59,7 +59,7 @@ func (r *groupRepository) GetGroupByID(ctx context.Context, id int) (*model.Grou
 		First(&group).Error; err != nil {
 
 		if err == gorm.ErrRecordNotFound {
-			return nil, e.NewNotFoundApiError("Group not found")
+			return nil, e.NewNotFoundApiError("Grupo no encontrado.")
 		}
 		return nil, e.NewInternalServerApiError("Error finding group by ID", err)
 	}
@@ -86,7 +86,7 @@ func (r *groupRepository) GetGroupByGroupName(ctx context.Context, groupName str
 	var group model.Group
 	if err := r.db.WithContext(ctx).Where("group_name = ?", groupName).First(&group).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, e.NewNotFoundApiError("group not found")
+			return nil, e.NewNotFoundApiError("Grupo no encontrado.")
 		}
 		return nil, e.NewInternalServerApiError("error finding group by group name", err)
 	}
@@ -101,7 +101,7 @@ func (r *groupRepository) GetGroupByCode(ctx context.Context, code string) (*mod
 		First(&group).Error; err != nil {
 
 		if err == gorm.ErrRecordNotFound {
-			return nil, e.NewNotFoundApiError("Group not found")
+			return nil, e.NewNotFoundApiError("Grupo no encontrado.")
 		}
 		return nil, e.NewInternalServerApiError("Error finding group by code", err)
 	}

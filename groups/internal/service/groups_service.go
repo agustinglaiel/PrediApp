@@ -32,7 +32,7 @@ func NewGroupService(groupRepo repository.GroupRepository) GroupServiceInterface
 func (s *groupService) CreateGroup(ctx context.Context, request dto.CreateGroupRequestDTO) (dto.GroupResponseDTO, e.ApiError) {
 	// Verificar si el nombre del grupo ya existe
 	if _, err := s.groupRepo.GetGroupByGroupName(ctx, request.GroupName); err == nil {
-		return dto.GroupResponseDTO{}, e.NewBadRequestApiError("Group name already exists")
+		return dto.GroupResponseDTO{}, e.NewBadRequestApiError("Ese nombre de grupo ya existe. Intente con otro nombre.")
 	}
 
 	newGroup := &model.Group{
@@ -166,7 +166,7 @@ func (s *groupService) GetGroups(ctx context.Context) ([]dto.GroupListResponseDT
 func (s *groupService) DeleteGroupByID(ctx context.Context, id int) e.ApiError {
 	_, err := s.groupRepo.GetGroupByID(ctx, id)
 	if err != nil {
-		return e.NewBadRequestApiError("Group not found")
+		return e.NewBadRequestApiError("Grupo no encontrado.")
 	}
 
 	if err := s.groupRepo.DeleteGroupByID(ctx, id); err != nil {
@@ -178,7 +178,7 @@ func (s *groupService) DeleteGroupByID(ctx context.Context, id int) e.ApiError {
 func (s *groupService) DeleteGroupByGroupName(ctx context.Context, groupName string) e.ApiError {
 	_, err := s.groupRepo.GetGroupByGroupName(ctx, groupName)
 	if err != nil {
-		return e.NewBadRequestApiError("group not found")
+		return e.NewBadRequestApiError("Grupo no encontrado.")
 	}
 
 	if err := s.groupRepo.DeleteGroupByGroupName(ctx, groupName); err != nil {
@@ -199,10 +199,10 @@ func (s *groupService) JoinGroup(ctx context.Context, request dto.RequestJoinGro
 		return err
 	}
 	if role == "member" {
-		return e.NewBadRequestApiError("User is already a member of the group")
+		return e.NewBadRequestApiError("Usted ya es miembro de este grupo.")
 	}
 	if role == "invited" {
-		return e.NewBadRequestApiError("User has already requested to join the group and is awaiting approval")
+		return e.NewBadRequestApiError("Ya ha enviado una solicitud para unirse a este grupo. Espere a que el administrador maneje su solicitud.")
 	}
 
 	// Agregar al usuario como "invited"
