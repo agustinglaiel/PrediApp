@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"prediapp.local/results/internal/model"
+	"prediapp.local/db/model"
 	e "prediapp.local/results/pkg/utils"
 
 	"gorm.io/gorm"

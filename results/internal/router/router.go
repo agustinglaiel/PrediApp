@@ -7,15 +7,6 @@ import (
 )
 
 func MapUrls(engine *gin.Engine, resultController *api.ResultController) {
-	// Use CORS middleware
-	// engine.Use(cors.New(cors.Config{
-	// 	AllowOrigins:     []string{"http://localhost:3000"},
-	// 	AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-	// 	AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
-	// 	ExposeHeaders:    []string{"Content-Length"},
-	// 	AllowCredentials: true,
-	// }))
-
 	// Rutas relacionadas con resultados
 	engine.GET("/results/api/:sessionId", resultController.FetchResultsFromExternalAPI) // Obtener resultados de la API externa para una sesión
 	engine.GET("/results/session/api/:sessionId", resultController.FetchNonRaceSessionResults)

@@ -5,12 +5,12 @@ import (
 	"log"
 	"os"
 
+	"prediapp.local/db"
 	"prediapp.local/results/internal/api"
 	"prediapp.local/results/internal/client"
 	"prediapp.local/results/internal/repository"
 	"prediapp.local/results/internal/router"
 	"prediapp.local/results/internal/service"
-	"prediapp.local/results/pkg/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -23,21 +23,18 @@ func main() {
 	}
 
 	// Inicializar la base de datos
-	db, err := utils.InitDB()
+	err := db.Init()
 	if err != nil {
 		fmt.Println("Error al conectar con la Base de Datos")
 		panic(err)
 	}
-	defer utils.DisconnectDB()
-
-	// Iniciar el motor de la base de datos y migrar tablas
-	utils.StartDbEngine()
+	defer db.DisconnectDB()
 
 	// Crear el cliente HTTP para interactuar con la API externa
 	externalAPIClient := client.NewHttpClient("http://localhost:8080")
 
 	// Inicializar repositorio y servicio
-	resultRepo := repository.NewResultRepository(db)
+	resultRepo := repository.NewResultRepository(db.DB)
 	resultService := service.NewResultService(resultRepo, externalAPIClient)
 	resultController := api.NewResultController(resultService)
 

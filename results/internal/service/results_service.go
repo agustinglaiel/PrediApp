@@ -9,9 +9,9 @@ import (
 
 	e "prediapp.local/results/pkg/utils"
 
+	"prediapp.local/db/model"
 	"prediapp.local/results/internal/client"
 	"prediapp.local/results/internal/dto"
-	"prediapp.local/results/internal/model"
 	"prediapp.local/results/internal/repository"
 
 	"gorm.io/gorm"
