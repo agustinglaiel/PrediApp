@@ -85,3 +85,8 @@ func Migrate() error {
 	log.Println("Database migrations applied successfully")
 	return nil
 }
+
+// cómo funciona?
+// lo que haces es pedirle al migrador (“golang-migrate”) que aplique todas las migraciones que
+// aún no estén registradas en la tabla schema_migrations.
+// Entonces, Para cada script cuyo número de versión sea mayor que esa última, ejecuta el SQL.
