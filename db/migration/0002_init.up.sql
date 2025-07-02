@@ -61,4 +61,25 @@ VALUES
 (24, 70, "Yas Marina Circuit", "UAE", 21, "United Arab Emirates", "Yas Island", 0, "Qualifying", "Qualifying", "2025-12-06 11:00:00", "2025-12-06 12:00:00", 2025, NULL, NULL, NULL),
 (24, 70, "Yas Marina Circuit", "UAE", 21, "United Arab Emirates", "Yas Island", 0, "Race", "Race", "2025-12-07 10:00:00", "2025-12-07 12:00:00", 2025, NULL, NULL, NULL);
 
-
+INSERT INTO drivers (broadcast_name, country_code, driver_number, first_name, last_name, full_name, name_acronym, headshot_url, team_name, activo)
+VALUES
+("M VERSTAPPEN", "NED", 1, "Max", "Verstappen", "Max VERSTAPPEN", "VER", "https://www.formula1.com/content/dam/fom-website/drivers/M/MAXVER01_Max_Verstappen/maxver01.png.transform/1col/image.png", "Red Bull Racing", TRUE),
+("L NORRIS", "GBR", 4, "Lando", "Norris", "Lando NORRIS", "NOR", "https://www.formula1.com/content/dam/fom-website/drivers/L/LANNOR01_Lando_Norris/lannor01.png.transform/1col/image.png", "Mclaren", TRUE),
+("P GASLY", "FRA", 10, "Pierre", "Gasly", "Pierre GASLY", "GAS", "https://www.formula1.com/content/dam/fom-website/drivers/P/PIEGAS01_Pierre_Gasly/piegas01.png.transform/1col/image.png", "Alpine", TRUE),
+("F ALONSO", "ESP", 14, "Fernando", "Alonso", "Fernando ALONSO", "ALO", "https://www.formula1.com/content/dam/fom-website/drivers/F/FERALO01_Fernando_Alonso/feralo01.png.transform/1col/image.png", "Aston Martin", TRUE),
+("C LECLERC", "MON", 16, "Charles", "Leclerc", "Charles LECLERC", "LEC", "https://www.formula1.com/content/dam/fom-website/drivers/C/CHALEC01_Charles_Leclerc/chalec01.png.transform/1col/image.png", "Scuderia Ferrari", TRUE),
+("Y TSUNODA", "JAP", 22, "Yuki", "Tsunoda", "Yuki TSUNODA", "TSU", "https://www.formula1.com/content/dam/fom-website/drivers/Y/YUKTSU01_Yuki_Tsunoda/yuktsu01.png.transform/1col/image.png", "Red Bull Racing", TRUE),
+("N HULKENBERG", "GER", 27, "Nico", "Hulkenberg", "Nico HULKENBERG", "HUL", "https://www.formula1.com/content/dam/fom-website/drivers/N/NICHUL01_Nico_Hulkenberg/nichul01.png.transform/1col/image.png", "Kick Sauber", TRUE),
+("E OCON", "FRA", 31, "Esteban", "Ocon", "Esteban OCON", "OCO", "https://www.formula1.com/content/dam/fom-website/drivers/E/ESTOCO01_Esteban_Ocon/estoco01.png.transform/1col/image.png", "Haas Ferrari", TRUE),
+("L HAMILTON", "GBR", 44, "Lewis", "Hamilton", "Lewis HAMILTON", "HAM", "https://www.formula1.com/content/dam/fom-website/drivers/L/LEWHAM01_Lewis_Hamilton/lewham01.png.transform/1col/image.png", "Scuderia Ferarri", TRUE),
+("C SAIN", "ESP", 55, "Carlos", "Sainz", "Carlos SAINZ", "SAI", "https://www.formula1.com/content/dam/fom-website/drivers/C/CARSAI01_Carlos_Sainz/carsai01.png.transform/1col/image.png", "Williams Raicing", TRUE),
+("G RUSSELL", "GBR", 63, "George", "Russell", "George RUSSELL", "RUS", "https://www.formula1.com/content/dam/fom-website/drivers/G/GEORUS01_George_Russell/georus01.png.transform/1col/image.png", "Mercedes", TRUE),
+("O PIASTRI", "AUS", 81, "Oscar", "Piastri", "Oscar PIASTRI", "PIA", "https://www.formula1.com/content/dam/fom-website/drivers/O/OSCPIA01_Oscar_Piastri/oscpia01.png.transform/1col/image.png", "Mclaren", TRUE),
+("A ALBON", "THA", 23, "Alex", "Albon", "Alex ALBON", "ALB", "https://www.formula1.com/content/dam/fom-website/drivers/A/ALEALB01_Alexander_Albon/alealb01.png.transform/1col/image.png", "Williams Racing", TRUE),
+("L STROLL", "CAN", 18, "Lance", "Stroll", "Lance STROLL", "STR", "https://www.formula1.com/content/dam/fom-website/drivers/L/LANSTR01_Lance_Stroll/lanstr01.png.transform/1col/image.png", "Aston Martin", TRUE),
+("L LAWSON", "NZL", 40, "Liam", "Lawson", "Liam LAWSON", "LAW", "https://www.formula1.com/content/dam/fom-website/drivers/L/LANSTR01_Lance_Stroll/lanstr01.png.transform/1col/image.png", "Racing Bulls", TRUE),
+("I HADJAR", "FRA", 41, "Isack", "Hadjar", "Isack HADJAR", "HAD", "https://www.formula1.com/content/dam/fom-website/drivers/I/ISAHAD01_Isack_Hadjar/isahad01.png.transform/1col/image.png", "Racing Bulls", TRUE),
+("O BEARMAN", "GBR", 50, "Oliver", "Bearman", "Oliver BEARMAN", "BEA", "https://www.formula1.com/content/dam/fom-website/drivers/O/OLIBEA01_Oliver_Bearman/olibea01.png.transform/1col/image.png", "Haas Ferrari", TRUE),
+("F COLAPINTO", "ARG", 43, "Franco", "Colapinto", "Franco COLAPINTO", "COL", "https://www.formula1.com/content/dam/fom-website/drivers/F/FRACOL01_Franco_Colapinto/fracol01.png.transform/1col/image.png", "Alpine", TRUE),
+("A ANTONELLI", "ITA", 12, "Andrea Kimi", "Antonelli", "Andrea Kimi ANTONELLI", "ANT", "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/A/ANDANT01_Andrea%20Kimi_Antonelli/andant01.png.transform/1col/image.png", "Mercedes", TRUE),
+("G BORTOLETO", "BRA", 5, "Gabriel", "Bortoleto", "Gabriel BORTOLETO", "BOR", "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/G/GABBOR01_Gabriel_Bortoleto/gabbor01.png.transform/1col/image.png", "kick Sauber", TRUE);

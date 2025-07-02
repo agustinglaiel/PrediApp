@@ -197,14 +197,13 @@ func (s *groupService) JoinGroup(ctx context.Context, request dto.RequestJoinGro
 	if err != nil {
 		return err
 	}
-	if role == "member" {
+	if role == "member" || role == "creator" {
 		return e.NewBadRequestApiError("Usted ya es miembro de este grupo.")
 	}
 	if role == "invited" {
 		return e.NewBadRequestApiError("Ya ha enviado una solicitud para unirse a este grupo. Espere a que el administrador maneje su solicitud.")
 	}
 
-	// Agregar al usuario como "invited"
 	if err := s.groupRepo.AddUserToGroup(ctx, group.ID, request.UserID, "invited"); err != nil {
 		return e.NewInternalServerApiError("Error adding user to group", err)
 	}

@@ -37,8 +37,7 @@ func main() {
 	}
 
 	// 3) HTTP client y caché
-	sessURL := os.Getenv("SESSIONS_SERVICE_URL")
-	httpClient := client.NewHttpClient(sessURL)
+	httpClient := client.NewHttpClient("http://localhost:")
 	cache := utils.NewCache()
 
 	// 4) Repos, servicio y controlador
