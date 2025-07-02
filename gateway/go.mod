@@ -3,7 +3,6 @@ module prediapp.local/gateway
 go 1.23.7
 
 require (
-	prediapp.local/db v0.0.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/joho/godotenv v1.5.1

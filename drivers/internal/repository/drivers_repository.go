@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	model "prediapp.local/db/model"
-	"prediapp.local/drivers/pkg/utils"
 	e "prediapp.local/drivers/pkg/utils"
 
 	"gorm.io/gorm"
@@ -18,7 +17,7 @@ type driverRepository struct {
 
 type DriverRepository interface {
 	CreateDriver(ctx context.Context, driver *model.Driver) e.ApiError
-	CreateDriversTransaction(ctx context.Context, drivers []*model.Driver) ([]*model.Driver, utils.ApiError)
+	CreateDriversTransaction(ctx context.Context, drivers []*model.Driver) ([]*model.Driver, e.ApiError)
 	GetDriverByID(ctx context.Context, driverID int) (*model.Driver, e.ApiError)
 	UpdateDriver(ctx context.Context, driver *model.Driver) e.ApiError
 	DeleteDriver(ctx context.Context, driverID int) e.ApiError
@@ -43,7 +42,7 @@ func (r *driverRepository) CreateDriver(ctx context.Context, driver *model.Drive
 	return nil
 }
 
-func (r *driverRepository) CreateDriversTransaction(ctx context.Context, drivers []*model.Driver) ([]*model.Driver, utils.ApiError) {
+func (r *driverRepository) CreateDriversTransaction(ctx context.Context, drivers []*model.Driver) ([]*model.Driver, e.ApiError) {
 	var insertedDrivers []*model.Driver
 
 	// Usar r.db para iniciar una transacción
@@ -62,7 +61,7 @@ func (r *driverRepository) CreateDriversTransaction(ctx context.Context, drivers
 	})
 
 	if err != nil {
-		return nil, utils.NewInternalServerApiError("Error during transaction", err)
+		return nil, e.NewInternalServerApiError("Error during transaction", err)
 	}
 
 	return insertedDrivers, nil

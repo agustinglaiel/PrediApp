@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"prediapp.local/db"
@@ -18,40 +20,50 @@ import (
 )
 
 func main() {
-	time.Local = time.UTC // Establecer la zona horaria a UTC
-	// Obtener el puerto de la variable de entorno PORT
-	port := os.Getenv("PORT")
-	if port == "" {
-		log.Fatal("PORT is not set in the environment")
+	// Usar UTC
+	time.Local = time.UTC
+
+	// 1) Validar variables de entorno
+	required := []string{
+		"PORT", "JWT_SECRET",
+		"DB_HOST", "DB_PORT", "DB_USER", "DB_PASS", "DB_NAME",
+	}
+	for _, v := range required {
+		if os.Getenv(v) == "" {
+			log.Fatalf("%s no está definida", v)
+		}
 	}
 
-	// Inicializar la base de datos
-	err := db.Init()
-	if err != nil {
-		fmt.Println("Error al conectar con la Base de Datos")
-		panic(err)
+	// 2) Inicializar DB
+	if err := db.Init(); err != nil {
+		log.Fatalf("db.Init failed: %v", err)
 	}
-	defer db.DisconnectDB()
 
-	// Crear el cliente HTTP para interactuar con la API externa
-	externalAPIClient := client.NewHttpClient("https://api.openf1.org/v1/")
-	// Crear la instancia de caché con expiración de 30 minutos y tamaño máximo de 100 entradas
+	// 3) Construir cliente y caché
+	externalAPI := client.NewHttpClient("https://api.openf1.org/v1/")
 	cache := utils.NewCache(30*time.Minute, 100)
 
-	// Inicializar repositorio y servicio
-	sessionRepo := repository.NewSessionRepository(db.DB)
-	sessionService := service.NewSessionService(sessionRepo, externalAPIClient, cache)
-	sessionController := api.NewSessionController(sessionService)
+	// 4) Repositorio, servicio y controlador
+	sRepo := repository.NewSessionRepository(db.DB)
+	sService := service.NewSessionService(sRepo, externalAPI, cache)
+	sController := api.NewSessionController(sService)
 
-	// Configurar router
-	ginRouter := gin.Default()
+	// 5) Router
+	r := gin.Default()
+	router.MapUrls(r, sController)
 
-	// Mapear URLs
-	router.MapUrls(ginRouter, sessionController)
+	// 6) Servir
+	port := os.Getenv("PORT")
+	go func() {
+		fmt.Printf("Sessions service en puerto %s...\n", port)
+		if err := r.Run(":" + port); err != nil {
+			log.Fatalf("Fallo al correr en %s: %v", port, err)
+		}
+	}()
 
-	// Iniciar servidor usando el puerto obtenido de la variable de entorno
-	fmt.Printf("Sessions service listening on port %s...\n", port)
-	if err := ginRouter.Run(":" + port); err != nil {
-		log.Fatalf("Failed to run server on port %s: %v", port, err)
-	}
+	// 7) Esperar señal
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	log.Println("Deteniendo sessions service...")
 }

@@ -2,47 +2,86 @@ package db
 
 import (
 	"fmt"
+	"log"
+	"time"
 
 	"prediapp.local/db/config"
-	"prediapp.local/db/model"
 
-	"gorm.io/driver/mysql"
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/mysql"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
+	gormmysql "gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
 var DB *gorm.DB
 
-// Init inicializa la conexión a la base de datos
+// Init inicializa la conexión a la base de datos y configura el pool de conexiones.
 func Init() error {
-	db, err := gorm.Open(mysql.Open(config.DBConnectionURL), &gorm.Config{})
+	// Inicializar configuración y construir URL
+	if err := config.Init(); err != nil {
+		return fmt.Errorf("failed to initialize config: %w", err)
+	}
+	// Añadimos multiStatements para que la migración SQL con varios statements funcione
+	dsn := config.DBConnectionURL + "&multiStatements=true"
+
+	// Conectar a la base de datos
+	dbConn, err := gorm.Open(gormmysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return fmt.Errorf("error connecting to DB: %w", err)
 	}
-	DB = db
+
+	// Configurar el pool de conexiones
+	sqlDB, err := dbConn.DB()
+	if err != nil {
+		return fmt.Errorf("error getting DB instance: %w", err)
+	}
+	sqlDB.SetMaxIdleConns(10)
+	sqlDB.SetMaxOpenConns(100)
+	sqlDB.SetConnMaxLifetime(30 * time.Minute)
+
+	DB = dbConn
 	return nil
 }
 
-// DisconnectDB desconecta de la base de datos
-func DisconnectDB() {
+// DisconnectDB desconecta de la base de datos.
+func DisconnectDB() error {
 	sqlDB, err := DB.DB()
 	if err != nil {
-		fmt.Printf("Error getting DB instance: %v\n", err)
-		return
+		return fmt.Errorf("error getting DB instance: %w", err)
 	}
-	sqlDB.Close()
+	if err := sqlDB.Close(); err != nil {
+		return fmt.Errorf("error closing DB connection: %w", err)
+	}
+	log.Println("Database connection closed")
+	return nil
 }
 
-// AutoMigrate aplica AutoMigrate sobre todos los modelos
-func AutoMigrate() error {
-	return DB.AutoMigrate(
-		&model.User{},
-		&model.Driver{},
-		&model.Session{},
-		&model.Result{},
-		&model.ProdeCarrera{},
-		&model.ProdeSession{},
-		&model.Group{},
-		&model.GroupXUsers{},
-		&model.Post{},
+// Migrate ejecuta las migraciones definidas en db/migration.
+func Migrate() error {
+	sqlDB, err := DB.DB()
+	if err != nil {
+		return fmt.Errorf("error getting DB instance: %w", err)
+	}
+
+	driver, err := mysql.WithInstance(sqlDB, &mysql.Config{})
+	if err != nil {
+		return fmt.Errorf("error creating migration driver: %w", err)
+	}
+
+	m, err := migrate.NewWithDatabaseInstance(
+		"file://db/migration",
+		"mysql",
+		driver,
 	)
+	if err != nil {
+		return fmt.Errorf("error creating migration instance: %w", err)
+	}
+
+	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+		return fmt.Errorf("error applying migrations: %w", err)
+	}
+
+	log.Println("Database migrations applied successfully")
+	return nil
 }

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"prediapp.local/db"
 	"prediapp.local/groups/internal/api"
@@ -15,31 +17,43 @@ import (
 )
 
 func main() {
-	// Obtener el puerto de la variable de entorno PORT
+	// 1) Validar variables de entorno
+	required := []string{
+		"PORT", "JWT_SECRET",
+		"DB_HOST", "DB_PORT", "DB_USER", "DB_PASS", "DB_NAME",
+	}
+	for _, v := range required {
+		if os.Getenv(v) == "" {
+			log.Fatalf("%s no está definida", v)
+		}
+	}
+
+	// 2) Inicializar DB
+	if err := db.Init(); err != nil {
+		log.Fatalf("db.Init failed: %v", err)
+	}
+
+	// 3) Repos, servicio y controlador
+	gRepo := repository.NewGroupRepository(db.DB)
+	gService := service.NewGroupService(gRepo)
+	gController := api.NewGroupController(gService)
+
+	// 4) Router
+	r := gin.Default()
+	router.MapUrls(r, gController)
+
+	// 5) Servir
 	port := os.Getenv("PORT")
-	if port == "" {
-		log.Fatal("PORT is not set in the environment")
-	}
+	go func() {
+		fmt.Printf("Groups service en puerto %s...\n", port)
+		if err := r.Run(":" + port); err != nil {
+			log.Fatalf("Fallo al correr en %s: %v", port, err)
+		}
+	}()
 
-	// Inicializar la base de datos
-	err := db.Init()
-	if err != nil {
-		fmt.Println("Error al conectar con la Base de Datos")
-		panic(err)
-	}
-	defer db.DisconnectDB()
-
-	groupRepo := repository.NewGroupRepository(db.DB)
-	groupService := service.NewGroupService(groupRepo)
-	groupController := api.NewGroupController(groupService)
-
-	ginRouter := gin.Default()
-
-	router.MapUrls(ginRouter, groupController)
-
-	// Iniciar servidor usando el puerto obtenido de la variable de entorno
-	fmt.Printf("Groups service listening on port %s...\n", port)
-	if err := ginRouter.Run(":" + port); err != nil {
-		log.Fatalf("Failed to run server on port %s: %v", port, err)
-	}
+	// 6) Esperar señal
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	log.Println("Deteniendo groups service...")
 }

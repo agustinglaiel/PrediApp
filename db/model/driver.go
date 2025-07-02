@@ -11,5 +11,5 @@ type Driver struct {
 	NameAcronym   string `json:"name_acronym" gorm:"type:varchar(10)"`
 	HeadshotURL   string `json:"headshot_url" gorm:"type:varchar(200)"`
 	TeamName      string `json:"team_name" gorm:"type:varchar(100)"`
-	Activo        bool   `json:"activo"`
+	Activo        bool   `json:"activo" gorm:"default:true"`
 }

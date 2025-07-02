@@ -5,22 +5,30 @@ import (
 	"os"
 )
 
-var (
-	DBUser     = getEnv("DB_USER", "root")
-	DBPassword = getEnv("DB_PASSWORD", "1A2g3u4s.")
-	DBHost     = getEnv("DB_HOST", "localhost")
-	DBPort     = getEnv("DB_PORT", "3306")
-	DBName     = getEnv("DB_NAME", "prediapp")
+// DBConnectionURL construye la URL de conexión a la base de datos usando variables de entorno.
+var DBConnectionURL string
 
-	DBConnectionURL = fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-		DBUser, DBPassword, DBHost, DBPort, DBName)
-)
-
-// getEnv obtiene el valor de una variable de entorno o devuelve un valor por defecto si no está establecida
-func getEnv(key, defaultValue string) string {
-	value := os.Getenv(key)
-	if value == "" {
-		return defaultValue
+// Init inicializa la configuración validando las variables de entorno necesarias.
+func Init() error {
+	requiredEnvVars := []string{
+		"DB_USER",
+		"DB_PASS",
+		"DB_HOST",
+		"DB_PORT",
+		"DB_NAME",
 	}
-	return value
+	for _, envVar := range requiredEnvVars {
+		if os.Getenv(envVar) == "" {
+			return fmt.Errorf("%s environment variable is not set", envVar)
+		}
+	}
+
+	DBConnectionURL = fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local&multiStatements=true",
+		os.Getenv("DB_USER"),
+		os.Getenv("DB_PASS"),
+		os.Getenv("DB_HOST"),
+		os.Getenv("DB_PORT"),
+		os.Getenv("DB_NAME"),
+	)
+	return nil
 }

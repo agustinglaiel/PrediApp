@@ -21,13 +21,16 @@ var cmds []*exec.Cmd
 func runMain(dir string, envVars map[string]string) error {
 	cmd := exec.Command("go", "run", "main.go")
 	cmd.Dir = dir
+
 	env := os.Environ()
 	for k, v := range envVars {
 		env = append(env, k+"="+v)
 	}
 	cmd.Env = env
+
 	cmd.Stdout = log.Writer()
 	cmd.Stderr = log.Writer()
+
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("starting %s: %w", dir, err)
 	}
@@ -63,7 +66,13 @@ func main() {
 	}
 	log.Println("DB connected ✔")
 
-	// 3) Preparar URLs de servicios
+	// 3) Ejecutar migraciones
+	if err := db.Migrate(); err != nil {
+		log.Fatalf("DB migration failed: %v", err)
+	}
+	log.Println("DB migrations applied ✔")
+
+	// 4) Preparar URLs de servicios
 	services := []struct{ dir, url string }{
 		{"./users/cmd", os.Getenv("USERS_SERVICE_URL")},
 		{"./sessions/cmd", os.Getenv("SESSIONS_SERVICE_URL")},
@@ -74,7 +83,7 @@ func main() {
 		{"./posts/cmd", os.Getenv("POSTS_SERVICE_URL")},
 	}
 
-	// 4) Recopilar env vars base
+	// 5) Recopilar env vars base
 	baseEnv := make(map[string]string)
 	for _, e := range os.Environ() {
 		parts := strings.SplitN(e, "=", 2)
@@ -83,7 +92,7 @@ func main() {
 		}
 	}
 
-	// 5) Arrancar los microservicios
+	// 6) Arrancar los microservicios
 	for i, svc := range services {
 		parts := strings.Split(svc.url, ":")
 		if len(parts) < 3 {
@@ -95,6 +104,7 @@ func main() {
 			svcEnv[k] = v
 		}
 		svcEnv["PORT"] = parts[2]
+
 		log.Printf("Starting %s on %s...", svc.dir, parts[2])
 		if err := runMain(svc.dir, svcEnv); err != nil {
 			log.Printf("error: %v", err)
@@ -104,10 +114,17 @@ func main() {
 		}
 	}
 
-	// 6) Esperar Ctrl+C y limpiar
+	// 7) Esperar Ctrl+C y limpiar
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	<-sigs
+
 	log.Println("Stopping services…")
 	cleanup()
+
+	// 8) Desconectar DB
+	if err := db.DisconnectDB(); err != nil {
+		log.Fatalf("DB disconnect failed: %v", err)
+	}
+	log.Println("DB disconnected ✔")
 }

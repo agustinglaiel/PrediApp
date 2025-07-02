@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"prediapp.local/db"
 	"prediapp.local/prodes/internal/api"
@@ -17,38 +19,49 @@ import (
 )
 
 func main() {
-	// Obtener el puerto de la variable de entorno PORT
-	port := os.Getenv("PORT")
-	if port == "" {
-		log.Fatal("PORT is not set in the environment")
+	// 1) Validar variables de entorno
+	required := []string{
+		"PORT", "JWT_SECRET",
+		"DB_HOST", "DB_PORT", "DB_USER", "DB_PASS", "DB_NAME",
+		"SESSIONS_SERVICE_URL",
+	}
+	for _, v := range required {
+		if os.Getenv(v) == "" {
+			log.Fatalf("%s no está definida", v)
+		}
 	}
 
-	// Inicializar la base de datos
-	err := db.Init()
-	if err != nil {
-		fmt.Println("Error al conectar con la Base de Datos")
-		panic(err)
+	// 2) Inicializar DB
+	if err := db.Init(); err != nil {
+		log.Fatalf("db.Init failed: %v", err)
 	}
-	defer db.DisconnectDB()
+
+	// 3) HTTP client y caché
+	sessURL := os.Getenv("SESSIONS_SERVICE_URL")
+	httpClient := client.NewHttpClient(sessURL)
 	cache := utils.NewCache()
 
-	// Inicializar el cliente HTTP para comunicarte con el microservicio de sessions
-	httpClient := client.NewHttpClient("http://localhost:")
+	// 4) Repos, servicio y controlador
+	pRepo := repository.NewProdeRepository(db.DB)
+	pService := service.NewPrediService(pRepo, httpClient, cache)
+	pController := api.NewProdeController(pService)
 
-	// Inicializar repositorios, servicios y controlador
-	prodeRepo := repository.NewProdeRepository(db.DB)
-	prodeService := service.NewPrediService(prodeRepo, httpClient, cache)
-	prodeController := api.NewProdeController(prodeService)
+	// 5) Router
+	r := gin.Default()
+	router.MapUrls(r, pController)
 
-	// Configurar el router
-	ginRouter := gin.Default()
+	// 6) Servir
+	port := os.Getenv("PORT")
+	go func() {
+		fmt.Printf("Prodes service en puerto %s...\n", port)
+		if err := r.Run(":" + port); err != nil {
+			log.Fatalf("Fallo al correr en %s: %v", port, err)
+		}
+	}()
 
-	// Llamar a MapUrls para configurar las rutas
-	router.MapUrls(ginRouter, prodeController)
-
-	// Iniciar servidor usando el puerto obtenido de la variable de entorno
-	fmt.Printf("Prodes service listening on port %s...\n", port)
-	if err := ginRouter.Run(":" + port); err != nil {
-		log.Fatalf("Failed to run server on port %s: %v", port, err)
-	}
+	// 7) Esperar señal
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	log.Println("Deteniendo prodes service...")
 }

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"prediapp.local/db"
 	"prediapp.local/results/internal/api"
@@ -16,37 +18,48 @@ import (
 )
 
 func main() {
-	// Obtener el puerto de la variable de entorno PORT
+	// 1) Validar variables de entorno
+	required := []string{
+		"PORT", "JWT_SECRET",
+		"DB_HOST", "DB_PORT", "DB_USER", "DB_PASS", "DB_NAME",
+		"DRIVERS_SERVICE_URL",
+	}
+	for _, v := range required {
+		if os.Getenv(v) == "" {
+			log.Fatalf("%s no está definida", v)
+		}
+	}
+
+	// 2) Inicializar DB
+	if err := db.Init(); err != nil {
+		log.Fatalf("db.Init failed: %v", err)
+	}
+
+	// 3) Cliente externo
+	drvURL := os.Getenv("DRIVERS_SERVICE_URL")
+	externalAPI := client.NewHttpClient(drvURL)
+
+	// 4) Repositorio, servicio y controlador
+	rRepo := repository.NewResultRepository(db.DB)
+	rService := service.NewResultService(rRepo, externalAPI)
+	rController := api.NewResultController(rService)
+
+	// 5) Router
+	r := gin.Default()
+	router.MapUrls(r, rController)
+
+	// 6) Servir
 	port := os.Getenv("PORT")
-	if port == "" {
-		log.Fatal("PORT is not set in the environment")
-	}
+	go func() {
+		fmt.Printf("Results service en puerto %s...\n", port)
+		if err := r.Run(":" + port); err != nil {
+			log.Fatalf("Fallo al correr en %s: %v", port, err)
+		}
+	}()
 
-	// Inicializar la base de datos
-	err := db.Init()
-	if err != nil {
-		fmt.Println("Error al conectar con la Base de Datos")
-		panic(err)
-	}
-	defer db.DisconnectDB()
-
-	// Crear el cliente HTTP para interactuar con la API externa
-	externalAPIClient := client.NewHttpClient("http://localhost:8080")
-
-	// Inicializar repositorio y servicio
-	resultRepo := repository.NewResultRepository(db.DB)
-	resultService := service.NewResultService(resultRepo, externalAPIClient)
-	resultController := api.NewResultController(resultService)
-
-	// Configurar router
-	ginRouter := gin.Default()
-
-	// Mapear URLs
-	router.MapUrls(ginRouter, resultController)
-
-	// Iniciar servidor usando el puerto obtenido de la variable de entorno
-	fmt.Printf("Results service listening on port %s...\n", port)
-	if err := ginRouter.Run(":" + port); err != nil {
-		log.Fatalf("Failed to run server on port %s: %v", port, err)
-	}
+	// 7) Esperar señal
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	log.Println("Deteniendo results service...")
 }
