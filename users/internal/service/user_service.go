@@ -27,6 +27,7 @@ type UserServiceInterface interface {
 	DeleteUserById(ctx context.Context, id int) e.ApiError
 	DeleteUserByUsername(ctx context.Context, username string) e.ApiError
 	UpdateRoleByUserId(ctx context.Context, id int, request dto.UserUpdateRoleRequestDTO) (dto.UserResponseDTO, e.ApiError)
+	GetUserScoreByUserId(ctx context.Context, id int) (dto.UserScoreDtoSimplified, e.ApiError)
 }
 
 func NewUserService(userRepo repository.UserRepository) UserServiceInterface {
@@ -338,5 +339,17 @@ func (s *userService) UpdateRoleByUserId(ctx context.Context, id int, request dt
 		IsActive:  user.IsActive,
 	}
 
+	return response, nil
+}
+
+func (s *userService) GetUserScoreByUserId(ctx context.Context, id int) (dto.UserScoreDtoSimplified, e.ApiError) {
+	user, apiErr := s.userRepo.GetUserByID(ctx, id)
+	if apiErr != nil {
+		return dto.UserScoreDtoSimplified{}, apiErr
+	}
+	response := dto.UserScoreDtoSimplified{
+		Username: user.Username,
+		Score:    user.Score,
+	}
 	return response, nil
 }

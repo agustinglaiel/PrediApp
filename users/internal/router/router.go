@@ -24,6 +24,7 @@ func MapUrls(engine *gin.Engine, userController *api.UserController) {
 		usersGroup.PUT("/role/:id", userController.UpdateRoleByUserId)
 		usersGroup.DELETE("/:id", userController.DeleteUserByID)
 		usersGroup.DELETE("/username/:username", userController.DeleteUserByUsername)
+		usersGroup.GET("/:id/score", userController.GetUserScoreByUserId)
 	}
 
 	fmt.Println("Finishing mappings configurations")

@@ -189,3 +189,21 @@ func (ctrl *UserController) UpdateRoleByUserId(c *gin.Context) {
 
 	c.JSON(http.StatusOK, user)
 }
+
+func (ctrl *UserController) GetUserScoreByUserId(c *gin.Context) {
+	id := c.Param("id")
+	intID, err := strconv.Atoi(id) // Cambiado a Atoi para int
+	if err != nil {
+		apiErr := e.NewBadRequestApiError("invalid user ID")
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	score, apiErr := ctrl.userService.GetUserScoreByUserId(c.Request.Context(), intID) // Cambiado a int
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	c.JSON(http.StatusOK, score)
+}
