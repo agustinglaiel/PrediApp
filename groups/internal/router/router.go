@@ -18,6 +18,7 @@ func MapUrls(engine *gin.Engine, groupController *api.GroupController) {
 		groupsGroup.DELETE("/:id", groupController.DeleteGroupByID)
 		groupsGroup.POST("/join", groupController.JoinGroup)
 		groupsGroup.POST("/manage-invitation", groupController.ManageGroupInvitation)
+		groupsGroup.GET("/:id/join-requests", groupController.GetJoinRequests)
 	}
 
 	fmt.Println("Finishing mappings configurations")

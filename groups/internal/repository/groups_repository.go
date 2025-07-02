@@ -31,6 +31,7 @@ type GroupRepository interface {
 	UserExistsInGroup(ctx context.Context, groupID int, userID int) (bool, e.ApiError)
 	GetUserRoleInGroup(ctx context.Context, groupID int, userID int) (string, e.ApiError)
 	UpdateUserRoleInGroup(ctx context.Context, groupID int, userID int, newRole string) e.ApiError
+	GetJoinRequests(ctx context.Context, groupID int) ([]string, e.ApiError)
 }
 
 func NewGroupRepository(db *gorm.DB) GroupRepository {
@@ -211,6 +212,22 @@ func (r *groupRepository) UpdateUserRoleInGroup(ctx context.Context, groupID int
 	}
 
 	return nil
+}
+
+func (r *groupRepository) GetJoinRequests(ctx context.Context, groupID int) ([]string, e.ApiError) {
+	var usernames []string
+	err := r.db.WithContext(ctx).
+		Table("group_x_users").
+		Joins("JOIN users ON users.id = group_x_users.user_id").
+		Select("users.username").
+		Where("group_x_users.group_id = ? AND group_x_users.group_role = ?", groupID, "invited").
+		Scan(&usernames).Error
+
+	if err != nil {
+		return nil, e.NewInternalServerApiError("Error getting join requests", err)
+	}
+
+	return usernames, nil
 }
 
 func generateGroupCode() string {
