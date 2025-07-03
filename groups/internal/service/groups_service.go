@@ -23,7 +23,7 @@ type GroupServiceInterface interface {
 	DeleteGroupByID(ctx context.Context, id int) e.ApiError
 	JoinGroup(ctx context.Context, request dto.RequestJoinGroupDTO) e.ApiError
 	ManageGroupInvitation(ctx context.Context, request dto.ManageGroupInvitationDTO) e.ApiError
-	GetJoinRequests(ctx context.Context, groupID int) ([]string, e.ApiError)
+	GetJoinRequests(ctx context.Context, groupID int) (dto.GroupJoinRequests, e.ApiError)
 }
 
 func NewGroupService(groupRepo repository.GroupRepository) GroupServiceInterface {
@@ -258,10 +258,14 @@ func (s *groupService) ManageGroupInvitation(ctx context.Context, request dto.Ma
 	return nil
 }
 
-func (s *groupService) GetJoinRequests(ctx context.Context, groupID int) ([]string, e.ApiError) {
-	usernames, err := s.groupRepo.GetJoinRequests(ctx, groupID)
+func (s *groupService) GetJoinRequests(ctx context.Context, groupID int) (dto.GroupJoinRequests, e.ApiError) {
+	users, err := s.groupRepo.GetJoinRequests(ctx, groupID)
 	if err != nil {
-		return nil, e.NewInternalServerApiError("Error fetching join requests", err)
+		return dto.GroupJoinRequests{}, e.NewInternalServerApiError("Error fetching join requests", err)
 	}
-	return usernames, nil
+
+	return dto.GroupJoinRequests{
+		GroupId: groupID,
+		Users:   users,
+	}, nil
 }

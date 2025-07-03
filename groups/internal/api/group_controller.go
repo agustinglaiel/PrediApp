@@ -137,16 +137,20 @@ func (ctrl *GroupController) ManageGroupInvitation(c *gin.Context) {
 }
 
 func (ctrl *GroupController) GetJoinRequests(c *gin.Context) {
-	groupId, err := strconv.Atoi(c.Param("id"))
+	idParam := c.Param("id")
+	groupId, err := strconv.Atoi(idParam)
 	if err != nil {
 		apiErr := e.NewBadRequestApiError("Invalid group ID")
 		c.JSON(apiErr.Status(), apiErr)
 		return
 	}
-	requests, apiErr := ctrl.groupService.GetJoinRequests(c.Request.Context(), groupId)
+
+	result, apiErr := ctrl.groupService.GetJoinRequests(c.Request.Context(), groupId)
 	if apiErr != nil {
 		c.JSON(apiErr.Status(), apiErr)
 		return
 	}
-	c.JSON(http.StatusOK, requests)
+
+	// result es dto.GroupJoinRequests
+	c.JSON(http.StatusOK, result)
 }

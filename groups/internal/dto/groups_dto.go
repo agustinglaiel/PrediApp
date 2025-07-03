@@ -7,24 +7,24 @@ type CreateGroupRequestDTO struct {
 }
 
 type GroupResponseDTO struct {
-	ID          int                     `json:"id"`
-	GroupName   string                  `json:"group_name"`
-	Description string                  `json:"description"`
-	GroupCode   string                  `json:"group_code"` // Código único del grupo
-	Users       []GroupUserResponseDTO  `json:"users"`      // Usuarios en el grupo y sus roles
-	CreatedAt   string                  `json:"created_at"` // Fecha de creación del grupo
-	UpdatedAt   string                  `json:"updated_at"` // Fecha de última actualización
+	ID          int                    `json:"id"`
+	GroupName   string                 `json:"group_name"`
+	Description string                 `json:"description"`
+	GroupCode   string                 `json:"group_code"` // Código único del grupo
+	Users       []GroupUserResponseDTO `json:"users"`      // Usuarios en el grupo y sus roles
+	CreatedAt   string                 `json:"created_at"` // Fecha de creación del grupo
+	UpdatedAt   string                 `json:"updated_at"` // Fecha de última actualización
 }
 
 type GroupUserResponseDTO struct {
-	UserID int    `json:"user_id"` // ID del usuario
-	Role   string `json:"role"`    // Rol del usuario: "creator" o "invited"
-	Score  *int	  `json:"score,omitempty"`   // Puntuación del usuario en el grupo
+	UserID int    `json:"user_id"`         // ID del usuario
+	Role   string `json:"role"`            // Rol del usuario: "creator" o "invited"
+	Score  *int   `json:"score,omitempty"` // Puntuación del usuario en el grupo
 }
 
 type GroupXUsersRequestDTO struct {
-	GroupID int `json:"group_id" binding:"required"`
-	UserID  int `json:"user_id" binding:"required"`
+	GroupID int    `json:"group_id" binding:"required"`
+	UserID  int    `json:"user_id" binding:"required"`
 	Role    string `json:"role" binding:"required"` // Rol en el grupo
 }
 
@@ -44,4 +44,14 @@ type ManageGroupInvitationDTO struct {
 	CreatorID    int    `json:"creator_id" binding:"required"`     // ID del creador (quien acepta/rechaza)
 	TargetUserID int    `json:"target_user_id" binding:"required"` // ID del usuario a aceptar/rechazar
 	Action       string `json:"action" binding:"required"`         // Acción: "accept" o "reject"
+}
+
+type UserSimplified struct {
+	UserId   int    `json:"user_id"`
+	Username string `json:"username"`
+}
+
+type GroupJoinRequests struct {
+	GroupId int              `json:"group_id"`
+	Users   []UserSimplified `json:"users"`
 }
