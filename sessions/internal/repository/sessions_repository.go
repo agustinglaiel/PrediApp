@@ -162,6 +162,7 @@ func (s *sessionRepository) GetUpcomingSessions(ctx context.Context) ([]*model.S
 	if err := s.db.WithContext(ctx).
 		Where("date_start > ?", currentTime).
 		Where("YEAR(date_start) = ?", currentYear).
+		Order("date_start ASC").
 		Find(&sessions).Error; err != nil {
 		return nil, e.NewInternalServerApiError("Error encontrando próximas sesiones", err)
 	}
