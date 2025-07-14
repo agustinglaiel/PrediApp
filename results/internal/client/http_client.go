@@ -201,7 +201,7 @@ func (c *HttpClient) Delete(endpoint string) error {
 // GetPositions obtiene las posiciones de los pilotos desde la API externa para una sesión específica
 func (c *HttpClient) GetPositions(sessionKey int) ([]dto.Position, error) {
 	// Construir la URL completa para la solicitud de posiciones
-	endpoint := fmt.Sprintf("https://api.openf1.org/v1/position?session_key=%d", sessionKey)
+	endpoint := fmt.Sprintf("/position?session_key=%d", sessionKey)
 	println("Endpoint: ", endpoint)
 
 	body, err := c.Get(endpoint)
@@ -217,28 +217,28 @@ func (c *HttpClient) GetPositions(sessionKey int) ([]dto.Position, error) {
 	return positions, nil
 }
 
-func (c *HttpClient) GetDriverDetails(driverNumber int, sessionKey int) (dto.ExternalDriverDetails, error) {
-	// Construir la URL completa para la solicitud de detalles del piloto
-	endpoint := fmt.Sprintf("https://api.openf1.org/v1/drivers?driver_number=%d&session_key=%d", driverNumber, sessionKey)
-	println("Endpoint: ", endpoint)
+// func (c *HttpClient) GetDriverDetails(driverNumber int, sessionKey int) (dto.ExternalDriverDetails, error) {
+// 	// Construir la URL completa para la solicitud de detalles del piloto
+// 	endpoint := fmt.Sprintf("https://api.openf1.org/v1/drivers?driver_number=%d&session_key=%d", driverNumber, sessionKey)
+// 	println("Endpoint: ", endpoint)
 
-	body, err := c.Get(endpoint)
-	if err != nil {
-		return dto.ExternalDriverDetails{}, fmt.Errorf("error fetching driver details: %w", err)
-	}
+// 	body, err := c.Get(endpoint)
+// 	if err != nil {
+// 		return dto.ExternalDriverDetails{}, fmt.Errorf("error fetching driver details: %w", err)
+// 	}
 
-	var driverDetails dto.ExternalDriverDetails
-	if err := json.Unmarshal(body, &driverDetails); err != nil {
-		return dto.ExternalDriverDetails{}, fmt.Errorf("error decoding driver details response: %w", err)
-	}
+// 	var driverDetails dto.ExternalDriverDetails
+// 	if err := json.Unmarshal(body, &driverDetails); err != nil {
+// 		return dto.ExternalDriverDetails{}, fmt.Errorf("error decoding driver details response: %w", err)
+// 	}
 
-	return driverDetails, nil
-}
+// 	return driverDetails, nil
+// }
 
 // GetLaps obtiene las vueltas rápidas de un piloto específico desde la API externa
 func (c *HttpClient) GetLaps(sessionKey int, driverNumber int) ([]dto.Lap, error) {
 	// Construir la URL completa para la solicitud de laps
-	endpoint := fmt.Sprintf("https://api.openf1.org/v1/laps?session_key=%d&driver_number=%d", sessionKey, driverNumber)
+	endpoint := fmt.Sprintf("/laps?session_key=%d&driver_number=%d", sessionKey, driverNumber)
 	println("Endpoint: ", endpoint)
 
 	body, err := c.Get(endpoint)
@@ -265,6 +265,7 @@ func (c *HttpClient) GetLaps(sessionKey int, driverNumber int) ([]dto.Lap, error
 // Función para obtener sessionKey utilizando sessionId
 func (c *HttpClient) GetSessionKeyBySessionID(sessionID int) (int, error) {
 	endpoint := c.buildURL(fmt.Sprintf("/sessions/%d/get-session-key", sessionID))
+	fmt.Println("Endpoint para obtener sessionKey:", endpoint)
 
 	body, err := c.GetWithAuth(endpoint)
 	if err != nil {
@@ -338,6 +339,7 @@ func (c *HttpClient) GetDriverByName(firstName, lastName string) (dto.ResponseDr
 func (c *HttpClient) GetSessionByID(sessionID int) (dto.ResponseSessionDTO, error) {
 	// Usar la URL correcta del microservicio de sessions
 	endpoint := c.buildURL(fmt.Sprintf("/sessions/%d", sessionID))
+	fmt.Println("Endpoint para obtener sesión por ID:", endpoint)
 
 	// Hacer la solicitud GET utilizando el cliente HTTP con autenticación
 	body, err := c.GetWithAuth(endpoint) // Usar la función que maneja el token JWT

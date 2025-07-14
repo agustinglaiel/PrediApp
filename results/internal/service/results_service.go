@@ -18,8 +18,11 @@ import (
 )
 
 type resultService struct {
-	resultRepo repository.ResultRepository
-	client     *client.HttpClient
+	resultRepo     repository.ResultRepository
+	driversClient  *client.HttpClient
+	sessionsClient *client.HttpClient
+	usersClient    *client.HttpClient
+	externalClient *client.HttpClient
 }
 
 type ResultService interface {
@@ -36,23 +39,33 @@ type ResultService interface {
 	CreateSessionResultsAdmin(ctx context.Context, bulkRequest dto.CreateBulkResultsDTO) ([]dto.ResponseResultDTO, e.ApiError)
 }
 
-func NewResultService(resultRepo repository.ResultRepository, client *client.HttpClient) ResultService {
+func NewResultService(
+	resultRepo repository.ResultRepository,
+	driversClient *client.HttpClient,
+	sessionsClient *client.HttpClient,
+	usersClient *client.HttpClient,
+	externalClient *client.HttpClient,
+) ResultService {
 	return &resultService{
-		resultRepo: resultRepo,
-		client:     client,
+		resultRepo:     resultRepo,
+		driversClient:  driversClient,
+		sessionsClient: sessionsClient,
+		usersClient:    usersClient,
+		externalClient: externalClient,
 	}
 }
 
 // FetchResultsFromExternalAPI obtiene los resultados de una API externa y los inserta o actualiza en la base de datos
 func (s *resultService) FetchResultsFromExternalAPI(ctx context.Context, sessionID int) ([]dto.ResponseResultDTO, e.ApiError) {
 	// 1. Obtener sessionKey llamando al otro microservicio
-	sessionKey, err := s.client.GetSessionKeyBySessionID(sessionID)
+	sessionKey, err := s.sessionsClient.GetSessionKeyBySessionID(sessionID)
 	if err != nil {
 		return nil, e.NewInternalServerApiError("Error obteniendo session key", err)
 	}
+	fmt.Println("Session Key obtenida:", sessionKey)
 
 	// 2. Obtener las "positions" desde la API externa
-	positions, err := s.client.GetPositions(sessionKey)
+	positions, err := s.externalClient.GetPositions(sessionKey)
 	if err != nil {
 		return nil, e.NewInternalServerApiError("Error fetching positions from external API", err)
 	}
@@ -91,7 +104,7 @@ func (s *resultService) FetchResultsFromExternalAPI(ctx context.Context, session
 	}
 
 	// Obtener las vueltas del piloto en posición 1
-	position1Laps, err := s.client.GetLaps(sessionKey, position1DriverNumber)
+	position1Laps, err := s.externalClient.GetLaps(sessionKey, position1DriverNumber)
 	if err != nil {
 		return nil, e.NewInternalServerApiError(fmt.Sprintf("Error obteniendo vueltas del piloto en posición 1 (driver %d): %v", position1DriverNumber, err), err)
 	}
@@ -102,7 +115,7 @@ func (s *resultService) FetchResultsFromExternalAPI(ctx context.Context, session
 
 	// 4. Para cada driverNumber, determinamos la vuelta más rápida y actualizamos/insertamos en DB
 	for driverNumber, positionPtr := range finalPositions {
-		laps, err := s.client.GetLaps(sessionKey, driverNumber)
+		laps, err := s.externalClient.GetLaps(sessionKey, driverNumber)
 		if err != nil {
 			fmt.Printf("Error obteniendo vueltas para driver %d: %v\n", driverNumber, err)
 			continue
@@ -131,7 +144,7 @@ func (s *resultService) FetchResultsFromExternalAPI(ctx context.Context, session
 		}
 
 		// 7. Obtener info completa del driver desde microservicio de drivers
-		driverInfo, err := s.client.GetDriverByNumber(driverNumber)
+		driverInfo, err := s.driversClient.GetDriverByNumber(driverNumber)
 		if err != nil {
 			fmt.Printf("Error obteniendo info del driver_number %d: %v\n", driverNumber, err)
 			continue
@@ -164,7 +177,7 @@ func (s *resultService) FetchResultsFromExternalAPI(ctx context.Context, session
 		}
 
 		// 9. Obtener la info de la sesión para armar el DTO de respuesta
-		sessionData, err := s.client.GetSessionByID(sessionID)
+		sessionData, err := s.sessionsClient.GetSessionByID(sessionID)
 		if err != nil {
 			return nil, e.NewInternalServerApiError("Error fetching session data", err)
 		}
@@ -203,7 +216,7 @@ func (s *resultService) FetchResultsFromExternalAPI(ctx context.Context, session
 
 func (s *resultService) FetchNonRaceSessionResults(ctx context.Context, sessionId int) ([]dto.ResponseResultDTO, e.ApiError) {
 	// 1. Obtener información de la sesión para verificar que no es Race
-	sessionData, err := s.client.GetSessionByID(sessionId)
+	sessionData, err := s.sessionsClient.GetSessionByID(sessionId)
 	if err != nil {
 		return nil, e.NewInternalServerApiError("Error fetching session data", err)
 	}
@@ -214,13 +227,13 @@ func (s *resultService) FetchNonRaceSessionResults(ctx context.Context, sessionI
 	}
 
 	// 2. Obtener sessionKey llamando al microservicio de sessions
-	sessionKey, err := s.client.GetSessionKeyBySessionID(sessionId)
+	sessionKey, err := s.sessionsClient.GetSessionKeyBySessionID(sessionId)
 	if err != nil {
 		return nil, e.NewInternalServerApiError("Error obteniendo session key", err)
 	}
 
 	// 3. Obtener las posiciones desde la API externa
-	positions, err := s.client.GetPositions(sessionKey)
+	positions, err := s.externalClient.GetPositions(sessionKey)
 	if err != nil {
 		return nil, e.NewInternalServerApiError("Error fetching positions from external API", err)
 	}
@@ -249,7 +262,7 @@ func (s *resultService) FetchNonRaceSessionResults(ctx context.Context, sessionI
 	// 4. Procesar cada piloto y sus posiciones
 	for driverNumber, positionPtr := range finalPositions {
 		// Obtener info completa del driver desde microservicio de drivers
-		driverInfo, err := s.client.GetDriverByNumber(driverNumber)
+		driverInfo, err := s.driversClient.GetDriverByNumber(driverNumber)
 		if err != nil {
 			fmt.Printf("Error obteniendo info del driver_number %d: %v\n", driverNumber, err)
 			continue

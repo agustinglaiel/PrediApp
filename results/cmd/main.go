@@ -35,13 +35,17 @@ func main() {
 		log.Fatalf("db.Init failed: %v", err)
 	}
 
-	// 3) Cliente externo
-	drvURL := os.Getenv("DRIVERS_SERVICE_URL")
-	externalAPI := client.NewHttpClient(drvURL)
+	// 3) Crear clientes HTTP para cada microservicio
+	usersClient := client.NewHttpClient(os.Getenv("USERS_SERVICE_URL"))
+	driversClient := client.NewHttpClient(os.Getenv("DRIVERS_SERVICE_URL"))
+	sessionsClient := client.NewHttpClient(os.Getenv("SESSIONS_SERVICE_URL"))
+	externalClient := client.NewHttpClient(os.Getenv("OPEN_F1_API_URL"))
+
+	// …otros como groupsClient, prodesClient…
 
 	// 4) Repositorio, servicio y controlador
 	rRepo := repository.NewResultRepository(db.DB)
-	rService := service.NewResultService(rRepo, externalAPI)
+	rService := service.NewResultService(rRepo, driversClient, sessionsClient, usersClient, externalClient)
 	rController := api.NewResultController(rService)
 
 	// 5) Router
