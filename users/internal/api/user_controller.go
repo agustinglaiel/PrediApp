@@ -1,6 +1,7 @@
 package api
 
 import (
+	"io"
 	"log"
 	"net/http"
 	"strconv"
@@ -119,24 +120,6 @@ func (ctrl *UserController) UpdateUserByID(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
-func (ctrl *UserController) UpdateUserByUsername(c *gin.Context) {
-	username := c.Param("username")
-	var request dto.UserUpdateRequestDTO
-	if err := c.ShouldBindJSON(&request); err != nil {
-		apiErr := e.NewBadRequestApiError("invalid request")
-		c.JSON(apiErr.Status(), apiErr)
-		return
-	}
-
-	user, apiErr := ctrl.userService.UpdateUserByUsername(c.Request.Context(), username, request)
-	if apiErr != nil {
-		c.JSON(apiErr.Status(), apiErr)
-		return
-	}
-
-	c.JSON(http.StatusOK, user)
-}
-
 func (ctrl *UserController) DeleteUserByID(c *gin.Context) {
 	id := c.Param("id")
 	intID, err := strconv.Atoi(id) // Cambiado a Atoi para int
@@ -147,17 +130,6 @@ func (ctrl *UserController) DeleteUserByID(c *gin.Context) {
 	}
 
 	apiErr := ctrl.userService.DeleteUserById(c.Request.Context(), intID) // Cambiado a int
-	if apiErr != nil {
-		c.JSON(apiErr.Status(), apiErr)
-		return
-	}
-	c.JSON(http.StatusNoContent, nil)
-}
-
-// DeleteUserByUsername handles deleting a user by their username
-func (ctrl *UserController) DeleteUserByUsername(c *gin.Context) {
-	username := c.Param("username")
-	apiErr := ctrl.userService.DeleteUserByUsername(c.Request.Context(), username)
 	if apiErr != nil {
 		c.JSON(apiErr.Status(), apiErr)
 		return
@@ -206,4 +178,75 @@ func (ctrl *UserController) GetUserScoreByUserId(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, score)
+}
+
+func (ctrl *UserController) UploadProfilePicture(c *gin.Context) {
+	// 1) Parsear y validar el ID
+	id := c.Param("id")
+	userID, err := strconv.Atoi(id)
+	if err != nil {
+		apiErr := e.NewBadRequestApiError("invalid user ID")
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	// 2) Obtener el archivo
+	file, err := c.FormFile("profile_picture")
+	if err != nil {
+		apiErr := e.NewBadRequestApiError("file upload error")
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	// 3) Validar tamaño (200 KB)
+	const maxSize = 200 * 1024
+	if file.Size > maxSize {
+		apiErr := e.NewBadRequestApiError("file size exceeds 200 KB")
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	// 4) Validar tipo MIME
+	mimeType := file.Header.Get("Content-Type")
+	if mimeType != "image/jpeg" && mimeType != "image/jpg" {
+		apiErr := e.NewBadRequestApiError("only JPG/JPEG allowed")
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	// 5) Leer datos
+	f, err := file.Open()
+	if err != nil {
+		apiErr := e.NewInternalServerApiError("unable to open file", err)
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+	defer f.Close()
+
+	data, err := io.ReadAll(f)
+	if err != nil {
+		apiErr := e.NewInternalServerApiError("error reading file", err)
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+	// doble check por seguridad
+	if len(data) > maxSize {
+		apiErr := e.NewBadRequestApiError("file exceeds 200 KB after reading")
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	// 6) Llamar al servicio con los bytes y el MIME
+	if apiErr := ctrl.userService.UploadProfilePicture(
+		c.Request.Context(),
+		userID,
+		data,
+		mimeType,
+	); apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+
+	// 7) Respuesta
+	c.JSON(http.StatusOK, gin.H{"message": "Profile picture uploaded successfully"})
 }

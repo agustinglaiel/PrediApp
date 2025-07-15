@@ -23,5 +23,6 @@ type User struct {
 	PhoneNumber     string         `gorm:"size:20" json:"phone_number,omitempty"`
 	Provider        string         `gorm:"size:255" json:"provider,omitempty"`
 	ProviderID      string         `gorm:"size:255" json:"provider_id,omitempty"`
-	AvatarURL       string         `gorm:"size:255" json:"avatar_url,omitempty"`
+	ImagenPerfil    []byte         `gorm:"type:mediumblob" json:"imagen_perfil,omitempty"`
+	ImagenMimeType  string         `gorm:"size:50" json:"imagen_mime_type,omitempty"`
 }

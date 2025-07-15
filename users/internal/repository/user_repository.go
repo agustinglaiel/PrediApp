@@ -23,9 +23,8 @@ type UserRepository interface {
 	GetUserByID(ctx context.Context, id int) (*model.User, e.ApiError)
 	GetUsers(ctx context.Context) ([]*model.User, e.ApiError)
 	UpdateUserByID(ctx context.Context, id int, user *model.User) e.ApiError
-	UpdateUserByUsername(ctx context.Context, username string, user *model.User) e.ApiError
 	DeleteUserByID(ctx context.Context, id int) e.ApiError
-	DeleteUserByUsername(ctx context.Context, username string) e.ApiError
+	UpdateProfileImage(ctx context.Context, id int, data []byte, mime string) e.ApiError
 }
 
 // NewUserRepository crea una nueva instancia de userRepository
@@ -97,14 +96,6 @@ func (r *userRepository) UpdateUserByID(ctx context.Context, id int, user *model
 	return nil
 }
 
-// UpdateUserByUsername actualiza un usuario por su nombre de usuario en la base de datos
-func (r *userRepository) UpdateUserByUsername(ctx context.Context, username string, user *model.User) e.ApiError {
-	if err := r.db.WithContext(ctx).Model(&model.User{}).Where("username = ?", username).Updates(user).Error; err != nil {
-		return e.NewInternalServerApiError("error updating user by username", err)
-	}
-	return nil
-}
-
 // DeleteUserByID elimina un usuario por su ID de la base de datos
 func (r *userRepository) DeleteUserByID(ctx context.Context, id int) e.ApiError {
 	var user model.User
@@ -120,10 +111,15 @@ func (r *userRepository) DeleteUserByID(ctx context.Context, id int) e.ApiError 
 	return nil
 }
 
-// DeleteUserByUsername elimina un usuario por su nombre de usuario de la base de datos
-func (r *userRepository) DeleteUserByUsername(ctx context.Context, username string) e.ApiError {
-	if err := r.db.WithContext(ctx).Where("username = ?", username).Delete(&model.User{}).Error; err != nil {
-		return e.NewInternalServerApiError("error deleting user by username", err)
+func (r *userRepository) UpdateProfileImage(ctx context.Context, id int, data []byte, mime string) e.ApiError {
+	if err := r.db.WithContext(ctx).
+		Model(&model.User{}).
+		Where("id = ?", id).
+		Updates(map[string]interface{}{
+			"imagen_perfil":    data,
+			"imagen_mime_type": mime,
+		}).Error; err != nil {
+		return e.NewInternalServerApiError("error updating avatar", err)
 	}
 	return nil
 }

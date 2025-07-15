@@ -23,11 +23,10 @@ type UserServiceInterface interface {
 	GetUserByUsername(ctx context.Context, username string) (dto.UserResponseDTO, e.ApiError)
 	GetUsers(ctx context.Context) ([]dto.UserResponseDTO, e.ApiError)
 	UpdateUserById(ctx context.Context, id int, request dto.UserUpdateRequestDTO) (dto.UserResponseDTO, e.ApiError)
-	UpdateUserByUsername(ctx context.Context, username string, request dto.UserUpdateRequestDTO) (dto.UserResponseDTO, e.ApiError)
 	DeleteUserById(ctx context.Context, id int) e.ApiError
-	DeleteUserByUsername(ctx context.Context, username string) e.ApiError
 	UpdateRoleByUserId(ctx context.Context, id int, request dto.UserUpdateRoleRequestDTO) (dto.UserResponseDTO, e.ApiError)
 	GetUserScoreByUserId(ctx context.Context, id int) (dto.UserScoreDtoSimplified, e.ApiError)
+	UploadProfilePicture(ctx context.Context, id int, image []byte, mimeType string) e.ApiError
 }
 
 func NewUserService(userRepo repository.UserRepository) UserServiceInterface {
@@ -235,64 +234,6 @@ func (s *userService) UpdateUserById(ctx context.Context, id int, request dto.Us
 	return response, nil
 }
 
-func (s *userService) UpdateUserByUsername(ctx context.Context, username string, request dto.UserUpdateRequestDTO) (dto.UserResponseDTO, e.ApiError) {
-	user, apiErr := s.userRepo.GetUserByUsername(ctx, username)
-	if apiErr != nil {
-		return dto.UserResponseDTO{}, apiErr
-	}
-
-	// Actualizar solo los campos enviados en el request
-	if request.FirstName != "" {
-		user.FirstName = request.FirstName
-	}
-	if request.LastName != "" {
-		user.LastName = request.LastName
-	}
-	if request.Username != "" {
-		user.Username = request.Username
-	}
-	if request.Email != "" {
-		user.Email = request.Email
-	}
-	if request.Role != "" {
-		user.Role = request.Role
-	}
-	validRoles := map[string]bool{"user": true, "admin": true}
-	if request.Role != "" && !validRoles[request.Role] {
-		return dto.UserResponseDTO{}, e.NewBadRequestApiError("invalid role")
-	}
-	if request.Password != "" {
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
-		if err != nil {
-			return dto.UserResponseDTO{}, e.NewInternalServerApiError("failed to hash password", err)
-		}
-		user.Password = string(hashedPassword)
-	}
-	if request.PhoneNumber != "" {
-		user.PhoneNumber = request.PhoneNumber
-	}
-	// Manejar booleanos como `IsActive` explícitamente
-	user.IsActive = request.IsActive
-
-	if apiErr := s.userRepo.UpdateUserByUsername(ctx, username, user); apiErr != nil {
-		return dto.UserResponseDTO{}, apiErr
-	}
-
-	response := dto.UserResponseDTO{
-		ID:        user.ID,
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
-		Username:  user.Username,
-		Email:     user.Email,
-		Role:      user.Role,
-		Score:     user.Score,
-		CreatedAt: user.CreatedAt.Format(time.RFC3339),
-		IsActive:  user.IsActive,
-	}
-
-	return response, nil
-}
-
 func (s *userService) DeleteUserById(ctx context.Context, id int) e.ApiError {
 	// Verificar si el usuario existe
 	_, err := s.userRepo.GetUserByID(ctx, id)
@@ -301,14 +242,6 @@ func (s *userService) DeleteUserById(ctx context.Context, id int) e.ApiError {
 	}
 
 	if apiErr := s.userRepo.DeleteUserByID(ctx, id); apiErr != nil {
-		return apiErr
-	}
-
-	return nil
-}
-
-func (s *userService) DeleteUserByUsername(ctx context.Context, username string) e.ApiError {
-	if apiErr := s.userRepo.DeleteUserByUsername(ctx, username); apiErr != nil {
 		return apiErr
 	}
 
@@ -352,4 +285,18 @@ func (s *userService) GetUserScoreByUserId(ctx context.Context, id int) (dto.Use
 		Score:    user.Score,
 	}
 	return response, nil
+}
+
+func (s *userService) UploadProfilePicture(ctx context.Context, userID int, data []byte, mimeType string) e.ApiError {
+	// Verificar que el usuario exista
+	if _, apiErr := s.userRepo.GetUserByID(ctx, userID); apiErr != nil {
+		return apiErr
+	}
+
+	// Actualizar únicamente la imagen de perfil mediante el repositorio especializado
+	if apiErr := s.userRepo.UpdateProfileImage(ctx, userID, data, mimeType); apiErr != nil {
+		return apiErr
+	}
+
+	return nil
 }
