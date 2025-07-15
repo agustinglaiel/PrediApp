@@ -180,25 +180,25 @@ func (s *userService) UpdateUserById(ctx context.Context, id int, request dto.Us
 		return dto.UserResponseDTO{}, apiErr
 	}
 
+	if request.Email != "" {
+		if existing, err := s.userRepo.GetUserByEmail(ctx, request.Email); err == nil && existing.ID != id {
+			return dto.UserResponseDTO{}, e.NewBadRequestApiError("email actualmente en uso")
+		}
+		user.Email = request.Email
+	}
+
+	if request.Username != "" {
+		if existing, err := s.userRepo.GetUserByUsername(ctx, request.Username); err == nil && existing.ID != id {
+			return dto.UserResponseDTO{}, e.NewBadRequestApiError("usuario actualmente en uso")
+		}
+		user.Username = request.Username
+	}
 	// Actualizar solo los campos enviados en el request
 	if request.FirstName != "" {
 		user.FirstName = request.FirstName
 	}
 	if request.LastName != "" {
 		user.LastName = request.LastName
-	}
-	if request.Username != "" {
-		user.Username = request.Username
-	}
-	if request.Email != "" {
-		user.Email = request.Email
-	}
-	if request.Role != "" {
-		user.Role = request.Role
-	}
-	validRoles := map[string]bool{"user": true, "admin": true}
-	if request.Role != "" && !validRoles[request.Role] {
-		return dto.UserResponseDTO{}, e.NewBadRequestApiError("invalid role")
 	}
 	if request.Password != "" {
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
@@ -225,7 +225,6 @@ func (s *userService) UpdateUserById(ctx context.Context, id int, request dto.Us
 		LastName:  user.LastName,
 		Username:  user.Username,
 		Email:     user.Email,
-		Role:      user.Role,
 		Score:     user.Score,
 		CreatedAt: user.CreatedAt.Format(time.RFC3339),
 		IsActive:  user.IsActive,

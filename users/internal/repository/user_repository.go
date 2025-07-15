@@ -90,8 +90,19 @@ func (r *userRepository) GetUsers(ctx context.Context) ([]*model.User, e.ApiErro
 
 // UpdateUserByID actualiza un usuario por su ID en la base de datos
 func (r *userRepository) UpdateUserByID(ctx context.Context, id int, user *model.User) e.ApiError {
-	if err := r.db.WithContext(ctx).Model(&model.User{}).Where("id = ?", id).Updates(user).Error; err != nil {
-		return e.NewInternalServerApiError("error updating user by ID", err)
+	// Ejecutamos la actualización y guardamos el resultado
+	res := r.db.
+		WithContext(ctx).
+		Model(&model.User{}).
+		Where("id = ?", id).
+		Updates(user)
+
+	if res.Error != nil {
+		return e.NewInternalServerApiError("error updating user", res.Error)
+	}
+
+	if res.RowsAffected == 0 {
+		return e.NewNotFoundApiError("user not found")
 	}
 	return nil
 }
