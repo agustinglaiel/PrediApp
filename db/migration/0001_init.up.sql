@@ -15,7 +15,8 @@ CREATE TABLE users (
     phone_number VARCHAR(20),
     provider VARCHAR(255),
     provider_id VARCHAR(255),
-    avatar_url VARCHAR(255),
+    imagen_perfil MEDIUMBLOB,
+    imagen_mime_type VARCHAR(50),
     UNIQUE INDEX idx_username (username),
     UNIQUE INDEX idx_email (email),
     INDEX idx_deleted_at (deleted_at)

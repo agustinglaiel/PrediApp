@@ -84,3 +84,4 @@ VALUES
 ("A ANTONELLI", "ITA", 12, "Andrea Kimi", "Antonelli", "Andrea Kimi ANTONELLI", "ANT", "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/A/ANDANT01_Andrea%20Kimi_Antonelli/andant01.png.transform/1col/image.png", "Mercedes", TRUE),
 ("G BORTOLETO", "BRA", 5, "Gabriel", "Bortoleto", "Gabriel BORTOLETO", "BOR", "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/G/GABBOR01_Gabriel_Bortoleto/gabbor01.png.transform/1col/image.png", "kick Sauber", TRUE),
 ("J DOOHAN", "FRA", 7, "Jack", "Doohan", "Jack DOOHAN", "DOO", "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/j/JACDOO01_Jack_Doohan/jacdoo01.png.transform/1col/image.png", "Alpine", False);
+
