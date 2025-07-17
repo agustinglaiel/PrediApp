@@ -16,12 +16,12 @@ func MapUrls(engine *gin.Engine, userController *api.UserController) {
 		usersGroup.POST("/login", userController.Login)
 
 		// Rutas para obtener, actualizar o eliminar usuarios
-		usersGroup.PUT(("/:id/profile-picture"), userController.UploadProfilePicture)
 		usersGroup.GET("/:id", userController.GetUserByID)
 		usersGroup.GET("/username/:username", userController.GetUserByUsername)
 		usersGroup.GET("", userController.GetUsers)
 		usersGroup.PUT("/:id", userController.UpdateUserByID)
 		usersGroup.PUT("/role/:id", userController.UpdateRoleByUserId)
+		usersGroup.POST(("/:id/profile-picture"), userController.UploadProfilePicture)
 		usersGroup.DELETE("/:id", userController.DeleteUserByID)
 		usersGroup.GET("/:id/score", userController.GetUserScoreByUserId)
 	}

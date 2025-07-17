@@ -44,15 +44,17 @@ type UserLoginResponseDTO struct {
 
 // UserResponseDTO representa la respuesta general de un usuario
 type UserResponseDTO struct {
-	ID        int    `json:"id"`
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
-	Username  string `json:"username"`
-	Email     string `json:"email"`
-	Role      string `json:"role"`
-	Score     int    `json:"score"`
-	CreatedAt string `json:"created_at"`
-	IsActive  bool   `json:"is_active"`
+	ID             int    `json:"id"`
+	FirstName      string `json:"first_name"`
+	LastName       string `json:"last_name"`
+	Username       string `json:"username"`
+	Email          string `json:"email"`
+	Role           string `json:"role"`
+	Score          int    `json:"score"`
+	CreatedAt      string `json:"created_at"`
+	IsActive       bool   `json:"is_active"`
+	ImagenPerfil   string `json:"imagen_perfil,omitempty"`
+	ImagenMimeType string `json:"imagen_mime_type,omitempty"`
 }
 
 // UserUpdateRequestDTO representa la solicitud de actualización de un usuario
@@ -63,7 +65,6 @@ type UserUpdateRequestDTO struct {
 	Email       string `json:"email,omitempty"`
 	Password    string `json:"password,omitempty"`
 	PhoneNumber string `json:"phone_number,omitempty"`
-	IsActive    bool   `json:"is_active,omitempty"`
 }
 
 type UserUpdateRoleRequestDTO struct {

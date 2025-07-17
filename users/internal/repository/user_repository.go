@@ -100,10 +100,6 @@ func (r *userRepository) UpdateUserByID(ctx context.Context, id int, user *model
 	if res.Error != nil {
 		return e.NewInternalServerApiError("error updating user", res.Error)
 	}
-
-	if res.RowsAffected == 0 {
-		return e.NewNotFoundApiError("user not found")
-	}
 	return nil
 }
 

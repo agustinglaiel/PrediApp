@@ -185,7 +185,7 @@ func (ctrl *UserController) UploadProfilePicture(c *gin.Context) {
 	id := c.Param("id")
 	userID, err := strconv.Atoi(id)
 	if err != nil {
-		apiErr := e.NewBadRequestApiError("invalid user ID")
+		apiErr := e.NewBadRequestApiError("ID de usuario no válido")
 		c.JSON(apiErr.Status(), apiErr)
 		return
 	}
@@ -193,7 +193,7 @@ func (ctrl *UserController) UploadProfilePicture(c *gin.Context) {
 	// 2) Obtener el archivo
 	file, err := c.FormFile("profile_picture")
 	if err != nil {
-		apiErr := e.NewBadRequestApiError("file upload error")
+		apiErr := e.NewBadRequestApiError("error al subir el archivo")
 		c.JSON(apiErr.Status(), apiErr)
 		return
 	}
@@ -201,7 +201,7 @@ func (ctrl *UserController) UploadProfilePicture(c *gin.Context) {
 	// 3) Validar tamaño (200 KB)
 	const maxSize = 200 * 1024
 	if file.Size > maxSize {
-		apiErr := e.NewBadRequestApiError("file size exceeds 200 KB")
+		apiErr := e.NewBadRequestApiError("El archivo no puede excederse de 200 KB")
 		c.JSON(apiErr.Status(), apiErr)
 		return
 	}
@@ -209,7 +209,7 @@ func (ctrl *UserController) UploadProfilePicture(c *gin.Context) {
 	// 4) Validar tipo MIME
 	mimeType := file.Header.Get("Content-Type")
 	if mimeType != "image/jpeg" && mimeType != "image/jpg" {
-		apiErr := e.NewBadRequestApiError("only JPG/JPEG allowed")
+		apiErr := e.NewBadRequestApiError("Solo se permiten JPG/JPEG")
 		c.JSON(apiErr.Status(), apiErr)
 		return
 	}
@@ -217,7 +217,7 @@ func (ctrl *UserController) UploadProfilePicture(c *gin.Context) {
 	// 5) Leer datos
 	f, err := file.Open()
 	if err != nil {
-		apiErr := e.NewInternalServerApiError("unable to open file", err)
+		apiErr := e.NewInternalServerApiError("No se pudo abrir el archivo", err)
 		c.JSON(apiErr.Status(), apiErr)
 		return
 	}
@@ -225,13 +225,13 @@ func (ctrl *UserController) UploadProfilePicture(c *gin.Context) {
 
 	data, err := io.ReadAll(f)
 	if err != nil {
-		apiErr := e.NewInternalServerApiError("error reading file", err)
+		apiErr := e.NewInternalServerApiError("Error al leer el archivo", err)
 		c.JSON(apiErr.Status(), apiErr)
 		return
 	}
 	// doble check por seguridad
 	if len(data) > maxSize {
-		apiErr := e.NewBadRequestApiError("file exceeds 200 KB after reading")
+		apiErr := e.NewBadRequestApiError("El archivo no puede excederse de 200 KB")
 		c.JSON(apiErr.Status(), apiErr)
 		return
 	}

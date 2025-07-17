@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/base64"
 	"time"
 
 	"prediapp.local/db/model"
@@ -114,16 +115,24 @@ func (s *userService) GetUserById(ctx context.Context, id int) (dto.UserResponse
 		return dto.UserResponseDTO{}, apiErr
 	}
 
+	// codificar imagen a base64 si existe
+	var imgB64 string
+	if len(user.ImagenPerfil) > 0 {
+		imgB64 = base64.StdEncoding.EncodeToString(user.ImagenPerfil)
+	}
+
 	response := dto.UserResponseDTO{
-		ID:        user.ID,
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
-		Username:  user.Username,
-		Email:     user.Email,
-		Role:      user.Role,
-		Score:     user.Score,
-		CreatedAt: user.CreatedAt.Format(time.RFC3339),
-		IsActive:  user.IsActive,
+		ID:             user.ID,
+		FirstName:      user.FirstName,
+		LastName:       user.LastName,
+		Username:       user.Username,
+		Email:          user.Email,
+		Role:           user.Role,
+		Score:          user.Score,
+		CreatedAt:      user.CreatedAt.Format(time.RFC3339),
+		IsActive:       user.IsActive,
+		ImagenPerfil:   imgB64,
+		ImagenMimeType: user.ImagenMimeType,
 	}
 
 	return response, nil
@@ -210,8 +219,6 @@ func (s *userService) UpdateUserById(ctx context.Context, id int, request dto.Us
 	if request.PhoneNumber != "" {
 		user.PhoneNumber = request.PhoneNumber
 	}
-	// Manejar booleanos como `IsActive` explícitamente
-	user.IsActive = request.IsActive
 
 	// Actualizar el usuario en la base de datos
 	if apiErr := s.userRepo.UpdateUserByID(ctx, id, user); apiErr != nil {
