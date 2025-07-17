@@ -21,7 +21,6 @@ type UserServiceInterface interface {
 	SignUp(ctx context.Context, request dto.UserSignUpRequestDTO) (dto.UserSignUpResponseDTO, e.ApiError)
 	Login(ctx context.Context, request dto.UserLoginRequestDTO) (dto.UserLoginResponseDTO, e.ApiError)
 	GetUserById(ctx context.Context, id int) (dto.UserResponseDTO, e.ApiError)
-	GetUserByUsername(ctx context.Context, username string) (dto.UserResponseDTO, e.ApiError)
 	GetUsers(ctx context.Context) ([]dto.UserResponseDTO, e.ApiError)
 	UpdateUserById(ctx context.Context, id int, request dto.UserUpdateRequestDTO) (dto.UserResponseDTO, e.ApiError)
 	DeleteUserById(ctx context.Context, id int) e.ApiError
@@ -129,31 +128,11 @@ func (s *userService) GetUserById(ctx context.Context, id int) (dto.UserResponse
 		Email:          user.Email,
 		Role:           user.Role,
 		Score:          user.Score,
+		PhoneNumber:    user.PhoneNumber,
 		CreatedAt:      user.CreatedAt.Format(time.RFC3339),
 		IsActive:       user.IsActive,
 		ImagenPerfil:   imgB64,
 		ImagenMimeType: user.ImagenMimeType,
-	}
-
-	return response, nil
-}
-
-func (s *userService) GetUserByUsername(ctx context.Context, username string) (dto.UserResponseDTO, e.ApiError) {
-	user, apiErr := s.userRepo.GetUserByUsername(ctx, username)
-	if apiErr != nil {
-		return dto.UserResponseDTO{}, apiErr
-	}
-
-	response := dto.UserResponseDTO{
-		ID:        user.ID,
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
-		Username:  user.Username,
-		Email:     user.Email,
-		Role:      user.Role,
-		Score:     user.Score,
-		CreatedAt: user.CreatedAt.Format(time.RFC3339),
-		IsActive:  user.IsActive,
 	}
 
 	return response, nil
@@ -167,16 +146,23 @@ func (s *userService) GetUsers(ctx context.Context) ([]dto.UserResponseDTO, e.Ap
 
 	var response []dto.UserResponseDTO
 	for _, user := range users {
+		var imgB64 string
+		if len(user.ImagenPerfil) > 0 {
+			imgB64 = base64.StdEncoding.EncodeToString(user.ImagenPerfil)
+		}
 		response = append(response, dto.UserResponseDTO{
-			ID:        user.ID,
-			FirstName: user.FirstName,
-			LastName:  user.LastName,
-			Username:  user.Username,
-			Email:     user.Email,
-			Role:      user.Role,
-			Score:     user.Score,
-			CreatedAt: user.CreatedAt.Format(time.RFC3339),
-			IsActive:  user.IsActive,
+			ID:             user.ID,
+			FirstName:      user.FirstName,
+			LastName:       user.LastName,
+			Username:       user.Username,
+			Email:          user.Email,
+			Role:           user.Role,
+			Score:          user.Score,
+			PhoneNumber:    user.PhoneNumber,
+			CreatedAt:      user.CreatedAt.Format(time.RFC3339),
+			IsActive:       user.IsActive,
+			ImagenPerfil:   imgB64,
+			ImagenMimeType: user.ImagenMimeType,
 		})
 	}
 
@@ -227,14 +213,15 @@ func (s *userService) UpdateUserById(ctx context.Context, id int, request dto.Us
 
 	// Crear la respuesta
 	response := dto.UserResponseDTO{
-		ID:        user.ID,
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
-		Username:  user.Username,
-		Email:     user.Email,
-		Score:     user.Score,
-		CreatedAt: user.CreatedAt.Format(time.RFC3339),
-		IsActive:  user.IsActive,
+		ID:          user.ID,
+		FirstName:   user.FirstName,
+		LastName:    user.LastName,
+		Username:    user.Username,
+		Email:       user.Email,
+		Score:       user.Score,
+		PhoneNumber: user.PhoneNumber,
+		CreatedAt:   user.CreatedAt.Format(time.RFC3339),
+		IsActive:    user.IsActive,
 	}
 
 	return response, nil
@@ -267,15 +254,16 @@ func (s *userService) UpdateRoleByUserId(ctx context.Context, id int, request dt
 	}
 
 	response := dto.UserResponseDTO{
-		ID:        user.ID,
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
-		Username:  user.Username,
-		Email:     user.Email,
-		Role:      user.Role,
-		Score:     user.Score,
-		CreatedAt: user.CreatedAt.Format(time.RFC3339),
-		IsActive:  user.IsActive,
+		ID:          user.ID,
+		FirstName:   user.FirstName,
+		LastName:    user.LastName,
+		Username:    user.Username,
+		Email:       user.Email,
+		Role:        user.Role,
+		Score:       user.Score,
+		PhoneNumber: user.PhoneNumber,
+		CreatedAt:   user.CreatedAt.Format(time.RFC3339),
+		IsActive:    user.IsActive,
 	}
 
 	return response, nil

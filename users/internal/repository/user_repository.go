@@ -90,7 +90,6 @@ func (r *userRepository) GetUsers(ctx context.Context) ([]*model.User, e.ApiErro
 
 // UpdateUserByID actualiza un usuario por su ID en la base de datos
 func (r *userRepository) UpdateUserByID(ctx context.Context, id int, user *model.User) e.ApiError {
-	// Ejecutamos la actualización y guardamos el resultado
 	res := r.db.
 		WithContext(ctx).
 		Model(&model.User{}).

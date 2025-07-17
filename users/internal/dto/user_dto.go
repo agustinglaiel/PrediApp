@@ -51,6 +51,7 @@ type UserResponseDTO struct {
 	Email          string `json:"email"`
 	Role           string `json:"role"`
 	Score          int    `json:"score"`
+	PhoneNumber    string `json:"phone_number,omitempty"`
 	CreatedAt      string `json:"created_at"`
 	IsActive       bool   `json:"is_active"`
 	ImagenPerfil   string `json:"imagen_perfil,omitempty"`

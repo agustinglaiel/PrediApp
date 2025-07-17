@@ -76,16 +76,6 @@ func (ctrl *UserController) GetUserByID(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
-func (ctrl *UserController) GetUserByUsername(c *gin.Context) {
-	username := c.Param("username")
-	user, apiErr := ctrl.userService.GetUserByUsername(c.Request.Context(), username)
-	if apiErr != nil {
-		c.JSON(apiErr.Status(), apiErr)
-		return
-	}
-	c.JSON(http.StatusOK, user)
-}
-
 func (ctrl *UserController) GetUsers(c *gin.Context) {
 	users, apiErr := ctrl.userService.GetUsers(c.Request.Context())
 	if apiErr != nil {

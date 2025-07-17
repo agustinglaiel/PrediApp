@@ -17,7 +17,6 @@ func MapUrls(engine *gin.Engine, userController *api.UserController) {
 
 		// Rutas para obtener, actualizar o eliminar usuarios
 		usersGroup.GET("/:id", userController.GetUserByID)
-		usersGroup.GET("/username/:username", userController.GetUserByUsername)
 		usersGroup.GET("", userController.GetUsers)
 		usersGroup.PUT("/:id", userController.UpdateUserByID)
 		usersGroup.PUT("/role/:id", userController.UpdateRoleByUserId)
