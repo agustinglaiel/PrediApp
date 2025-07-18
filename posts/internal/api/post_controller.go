@@ -22,7 +22,7 @@ func NewPostController(postService service.PostService) *PostController {
 func (ctrl *PostController) CreatePost(c *gin.Context) {
 	var request dto.PostCreateRequestDTO
 	if err := c.ShouldBindJSON(&request); err != nil {
-		apiErr := e.NewBadRequestApiError("invalid request: " + err.Error())
+		apiErr := e.NewBadRequestApiError("El texto no puede superar los 500 caracteres")
 		c.JSON(apiErr.Status(), apiErr)
 		return
 	}
