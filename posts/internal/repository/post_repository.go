@@ -7,7 +7,6 @@ import (
 	e "prediapp.local/posts/pkg/utils"
 
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 type PostRepository interface {
@@ -94,15 +93,11 @@ func (r *postRepository) SearchPosts(ctx context.Context, query string, offset, 
 	db := r.db.WithContext(ctx)
 
 	// WHERE fulltext
-	db = db.Where("MATCH(body) AGAINST(? IN BOOLEAN MODE)", query)
+	// USAMOS un LIKE simple:
+	pattern := "%" + query + "%"
+	db = db.Where("body LIKE ? AND parent_post_id IS NULL", pattern).
+		Order("created_at DESC")
 
-	// ORDER BY relevancia usando clause.Expr
-	db = db.Order(clause.Expr{
-		SQL:  "MATCH(body) AGAINST(? IN BOOLEAN MODE) DESC",
-		Vars: []interface{}{query},
-	})
-
-	// Paginación y ejecución
 	if err := db.
 		Offset(offset).
 		Limit(limit).
