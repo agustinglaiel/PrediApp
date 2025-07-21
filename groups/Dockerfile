@@ -7,12 +7,15 @@ WORKDIR /app
 # Instalar dependencias del sistema necesarias para compilar
 RUN apk add --no-cache git
 
+# Copiar el directorio db desde la raíz del proyecto a /db
+COPY ./db /db
+
 # Copiar los archivos de módulos y descargar dependencias
-COPY go.mod go.sum ./
+COPY groups/go.mod groups/go.sum ./
 RUN go mod download
 
 # Copiar el resto del código fuente
-COPY . .
+COPY groups ./
 
 # Compilar la aplicación
 # El binario se genera desde cmd/main.go

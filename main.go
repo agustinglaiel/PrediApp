@@ -48,6 +48,10 @@ func cleanup() {
 }
 
 func main() {
+	// Verificar si se pasó el argumento "migrate"
+	args := os.Args
+	migrateOnly := len(args) > 1 && args[1] == "migrate"
+
 	// 1) Carga de .env
 	cwd, err := os.Getwd()
 	if err != nil {
@@ -71,6 +75,15 @@ func main() {
 		log.Fatalf("DB migration failed: %v", err)
 	}
 	log.Println("DB migrations applied ✔")
+
+	// Si es solo migración, salir después de migrar
+	if migrateOnly {
+		if err := db.DisconnectDB(); err != nil {
+			log.Fatalf("DB disconnect failed: %v", err)
+		}
+		log.Println("DB disconnected ✔")
+		return
+	}
 
 	// 4) Preparar URLs de servicios
 	services := []struct{ dir, url string }{

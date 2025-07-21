@@ -7,22 +7,24 @@ WORKDIR /app
 # Instalar dependencias del sistema necesarias para compilar
 RUN apk add --no-cache git
 
+# Copiar el directorio db desde la raíz del proyecto a /db
+COPY ./db /db
+
 # Copiar los archivos de módulos y descargar dependencias
-COPY go.mod go.sum ./
+COPY users/go.mod users/go.sum ./
 RUN go mod download
 
-# Copiar el resto del código fuente
-COPY . .
+# Copiar el código fuente del microservicio users
+COPY users ./
 
 # Compilar la aplicación
-# El binario se genera desde cmd/main.go
 RUN go build -o users-service ./cmd/main.go
 
 # Etapa 2: Imagen final
 FROM alpine:latest
 
 # Instalar certificados y dependencias mínimas
-RUN apk add --no-cache ca-certificates tzdata
+RUN apk add --no-cache ca-certificates tzdata netcat-openbsd
 
 # Establecer el directorio de trabajo
 WORKDIR /app
@@ -33,10 +35,6 @@ COPY --from=builder /app/wait-for-db.sh .
 RUN chmod +x wait-for-db.sh
 
 ENTRYPOINT ["./wait-for-db.sh"]
-
-# No exponemos un puerto fijo, se define en tiempo de ejecución con PORT
-# EXPOSE es opcional y puede usarse como documentación
-# EXPOSE ${PORT}
 
 # Comando para ejecutar el microservicio
 CMD ["./users-service"]

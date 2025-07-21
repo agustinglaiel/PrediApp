@@ -49,7 +49,7 @@ func main() {
 	}
 
 	// Usar el puerto 8080 siempre para el gateway
-	port := "8080"
+	port := os.Getenv("PORT_GATEWAY")
 
 	// Obtener la Secret Key de la variable de entorno
 	secretKey := os.Getenv("JWT_SECRET")

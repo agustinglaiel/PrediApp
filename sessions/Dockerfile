@@ -7,12 +7,15 @@ WORKDIR /app
 # Instalar dependencias del sistema necesarias para compilar
 RUN apk add --no-cache git
 
+# Copiar el directorio db desde la raíz del proyecto a /db
+COPY ./db /db
+
 # Copiar los archivos de módulos y descargar dependencias
-COPY go.mod go.sum ./
+COPY sessions/go.mod sessions/go.sum ./
 RUN go mod download
 
 # Copiar el resto del código fuente
-COPY . .
+COPY sessions ./
 
 # Compilar la aplicación
 # El binario se genera desde cmd/main.go
@@ -22,7 +25,7 @@ RUN go build -o sessions-service ./cmd/main.go
 FROM alpine:latest
 
 # Instalar certificados y dependencias mínimas
-RUN apk add --no-cache ca-certificates tzdata
+RUN apk add --no-cache ca-certificates tzdata netcat-openbsd
 
 # Establecer el directorio de trabajo
 WORKDIR /app

@@ -1,141 +1,220 @@
-version: '3.8'
-
 services:
+  db:
+    image: mysql:8.0
+    env_file:
+      - ./.env.stage
+    volumes:
+      - db-data:/var/lib/mysql
+    ports:
+      - "3307:3306"     # opcional pongo 3307 para que no choque con el puerto 3306 del host
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u$${DB_USER} -p$${DB_PASS}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  migrator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: migrator:latest
+    command: ["./migrator", "migrate"]
+    env_file:
+      - ./.env.stage
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  users:
+    build:
+      context: .
+      dockerfile: users/Dockerfile
+    image: users-service:latest
+    env_file:
+      - ./.env.stage
+    environment:
+      - PORT=${PORT_USERS}
+    ports:
+      - "${PORT_USERS}:${PORT_USERS}"
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+    networks:
+      - app-network
+
+  sessions:
+    build:
+      context: .
+      dockerfile: sessions/Dockerfile
+    image: sessions-service:latest
+    env_file:
+      - ./.env.stage
+    environment:
+      - PORT=${PORT_SESSIONS}
+    ports:
+      - "${PORT_SESSIONS}:${PORT_SESSIONS}"
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+      users:
+        condition: service_started
+    networks:
+      - app-network
+
+  results:
+    build:
+      context: .
+      dockerfile: results/Dockerfile
+    image: results-service:latest
+    env_file:
+      - ./.env.stage
+    environment:
+      - PORT=${PORT_RESULTS}
+    ports:
+      - "${PORT_RESULTS}:${PORT_RESULTS}"
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+      users:
+        condition: service_started
+      sessions:
+        condition: service_started
+    networks:
+      - app-network
+
+  prodes:
+    build:
+      context: .
+      dockerfile: prodes/Dockerfile
+    image: prodes-service:latest
+    env_file:
+      - ./.env.stage
+    environment:
+      - PORT=${PORT_PRODES}
+    ports:
+      - "${PORT_PRODES}:${PORT_PRODES}"
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+      users:
+        condition: service_started
+      sessions:
+        condition: service_started
+      results:
+        condition: service_started
+    networks:
+      - app-network
+
+  posts:
+    build:
+      context: .
+      dockerfile: posts/Dockerfile
+    image: posts-service:latest
+    env_file:
+      - ./.env.stage
+    environment:
+      - PORT=${PORT_POSTS}
+    ports:
+      - "${PORT_POSTS}:${PORT_POSTS}"
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+      users:
+        condition: service_started
+      sessions:
+        condition: service_started
+      results:
+        condition: service_started
+      prodes:
+        condition: service_started
+    networks:
+      - app-network
+
+  groups:
+    build:
+      context: .
+      dockerfile: groups/Dockerfile
+    image: groups-service:latest
+    env_file:
+      - ./.env.stage
+    environment:
+      - PORT=${PORT_GROUPS}
+    ports:
+      - "${PORT_GROUPS}:${PORT_GROUPS}"
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+      users:
+        condition: service_started
+      sessions:
+        condition: service_started
+      results:
+        condition: service_started
+      prodes:
+        condition: service_started
+      posts:
+        condition: service_started
+    networks:
+      - app-network
+
+  drivers:
+    build:
+      context: .
+      dockerfile: drivers/Dockerfile
+    image: drivers-service:latest
+    env_file:
+      - ./.env.stage
+    environment:
+      - PORT=${PORT_DRIVERS}
+    ports:
+      - "${PORT_DRIVERS}:${PORT_DRIVERS}"
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+      users:
+        condition: service_started
+      sessions:
+        condition: service_started
+      results:
+        condition: service_started
+      prodes:
+        condition: service_started
+      posts:
+        condition: service_started
+      groups:
+        condition: service_started
+    networks:
+      - app-network
+
   gateway:
     build:
       context: .
       dockerfile: gateway/Dockerfile
-    ports:
-      - "8080:8080"
+    image: gateway-service:latest
+    env_file:
+      - ./.env
     environment:
-      - ENV=${ENV}
-      - JWT_SECRET=${JWT_SECRET}
-      - USERS_SERVICE_URL=http://users:${PORT_USERS}
-      - DRIVERS_SERVICE_URL=http://drivers:${PORT_DRIVERS}
-      - PRODES_SERVICE_URL=http://prodes:${PORT_PRODES}
-      - RESULTS_SERVICE_URL=http://results:${PORT_RESULTS}
-      - SESSIONS_SERVICE_URL=http://sessions:${PORT_SESSIONS}
-      - GROUPS_SERVICE_URL=http://groups:${PORT_GROUPS}
-      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
+      - PORT=${PORT_GATEWAY}
+    ports:
+      - "${PORT_GATEWAY}:${PORT_GATEWAY}"
     depends_on:
       - users
-      - drivers
+      - sessions
+      - results
       - prodes
-      - results
-      - sessions
+      - posts
       - groups
+      - drivers
+    networks:
+      - app-network
 
-  users:
-    build:
-      context: ./users
-      dockerfile: Dockerfile
-    environment:
-      - PORT=${PORT_USERS}
-      - DB_HOST=${DB_HOST}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
-      - JWT_SECRET=${JWT_SECRET}
-    ports:
-      - "${PORT_USERS}:${PORT_USERS}"
-    depends_on:
-      - db
-
-  sessions:
-    build:
-      context: ./sessions
-      dockerfile: Dockerfile
-    environment:
-      - PORT=${PORT_SESSIONS}
-      - DB_HOST=${DB_HOST}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
-      - JWT_SECRET=${JWT_SECRET}
-    ports:
-      - "${PORT_SESSIONS}:${PORT_SESSIONS}"
-    depends_on:
-      - db
-
-  results:
-    build:
-      context: ./results
-      dockerfile: Dockerfile
-    environment:
-      - PORT=${PORT_RESULTS}
-      - DB_HOST=${DB_HOST}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
-      - JWT_SECRET=${JWT_SECRET}
-    ports:
-      - "${PORT_RESULTS}:${PORT_RESULTS}"
-    depends_on:
-      - db
-      - sessions
-
-  prodes:
-    build:
-      context: ./prodes
-      dockerfile: Dockerfile
-    environment:
-      - PORT=${PORT_PRODES}
-      - DB_HOST=${DB_HOST}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
-      - SESSIONS_URL=http://sessions:${PORT_SESSIONS}
-      - USERS_URL=http://users:${PORT_USERS}
-      - RESULTS_URL=http://results:${PORT_RESULTS}
-    ports:
-      - "${PORT_PRODES}:${PORT_PRODES}"
-    depends_on:
-      - db
-      - users
-      - sessions
-      - results
-
-  groups:
-    build:
-      context: ./groups
-      dockerfile: Dockerfile
-    environment:
-      - PORT=${PORT_GROUPS}
-      - DB_HOST=${DB_HOST}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
-      - USERS_SERVICE_URL=http://users:${PORT_USERS}
-    ports:
-      - "${PORT_GROUPS}:${PORT_GROUPS}"
-    depends_on:
-      - db
-      - users
-
-  drivers:
-    build:
-      context: ./drivers
-      dockerfile: Dockerfile
-    environment:
-      - PORT=${PORT_DRIVERS}
-      - DB_HOST=${DB_HOST}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
-    ports:
-      - "${PORT_DRIVERS}:8051"
-    depends_on:
-      - db
-
-  db:
-    image: mysql:8.0
-    environment:
-      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
-      - MYSQL_DATABASE=${DB_NAME}
-    volumes:
-      - db-data:/var/lib/mysql
-    ports:
-      - "3306:3306"
+networks:
+  app-network:
+    driver: bridge
 
 volumes:
   db-data:

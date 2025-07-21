@@ -29,8 +29,9 @@ WORKDIR /app
 # Copiar el binario desde la etapa de construcción
 COPY --from=builder /app/gateway-service .
 
-# Copiar los archivos .env desde la raíz del proyecto al directorio padre (/)
-COPY .env* /
+# copia los env files al mismo path donde busca godotenv.Load
+COPY .env /.env
+COPY .env.stage /.env.stage
 
 # Exponer el puerto 8080 (fijo según el código)
 EXPOSE 8080

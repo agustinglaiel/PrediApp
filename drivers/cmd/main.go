@@ -20,7 +20,7 @@ import (
 func main() {
 	// 1) Validar variables de entorno
 	required := []string{
-		"PORT", "JWT_SECRET",
+		"JWT_SECRET",
 		"DB_HOST", "DB_PORT", "DB_USER", "DB_PASS", "DB_NAME",
 	}
 	for _, v := range required {
