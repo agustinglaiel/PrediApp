@@ -29,6 +29,19 @@ services:
     networks:
       - app-network
 
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    image: prediapp-nginx:latest
+    container_name: prediapp-nginx
+    depends_on:
+      - gateway
+    ports:
+      - "80:80"
+    networks:
+      - app-network
+
   users:
     build:
       context: .
@@ -214,7 +227,7 @@ services:
 
 networks:
   app-network:
-    driver: bridge
+    external: true
 
 volumes:
   db-data:
