@@ -214,31 +214,27 @@ func (c *HttpClient) Delete(endpoint string) error {
 }
 
 // GetSessionNameAndType realiza una solicitud GET para obtener el nombre y tipo de una sesión desde el microservicio de sessions
-func (c *HttpClient) GetSessionNameAndType(eventID int) (dto.SessionNameAndTypeDTO, utils.ApiError) {
-	// Definir el endpoint para la solicitud GET
-	endpoint := fmt.Sprintf("8080/sessions/%d/name-type", eventID)
+func (c *HttpClient) GetSessionNameAndType(sessionID int) (dto.SessionNameAndTypeDTO, utils.ApiError) {
+	endpoint := fmt.Sprintf("/sessions/%d/name-type", sessionID)
 
-	// Hacer la solicitud GET utilizando el cliente HTTP
 	body, err := c.Get(endpoint)
 	if err != nil {
-		return dto.SessionNameAndTypeDTO{}, utils.NewInternalServerApiError("Error fetching session name and type", err)
+		return dto.SessionNameAndTypeDTO{},
+			utils.NewInternalServerApiError("Error fetching session name and type", err)
 	}
 
-	// Deserializar la respuesta JSON en una estructura Go
-	var sessionNameAndType dto.SessionNameAndTypeDTO
-	if err := json.Unmarshal(body, &sessionNameAndType); err != nil {
-		return dto.SessionNameAndTypeDTO{}, utils.NewInternalServerApiError("Error decoding session name and type response", err)
+	var dtoResp dto.SessionNameAndTypeDTO
+	if err := json.Unmarshal(body, &dtoResp); err != nil {
+		return dto.SessionNameAndTypeDTO{},
+			utils.NewInternalServerApiError("Error decoding session response", err)
 	}
-
-	// fmt.Println("Session Name and Type: ", sessionNameAndType)
-
-	return sessionNameAndType, nil
+	return dtoResp, nil
 }
 
 // GetSessionByID realiza una solicitud GET para obtener los detalles completos de una sesión desde el microservicio de sessions
 func (c *HttpClient) GetSessionByID(sessionID int) (dto.SessionDetailsDTO, error) {
-	// Definir el endpoint para la solicitud GET
-	endpoint := fmt.Sprintf("8080/sessions/%d", sessionID)
+	// Montamos la URL completa: ej. "http://sessions:8055/sessions/1"
+	endpoint := fmt.Sprintf("/sessions/%d", sessionID)
 
 	// Hacer la solicitud GET utilizando el cliente HTTP
 	body, err := c.Get(endpoint)
@@ -256,7 +252,7 @@ func (c *HttpClient) GetSessionByID(sessionID int) (dto.SessionDetailsDTO, error
 }
 
 func (c *HttpClient) GetUserByID(userID int) (bool, error) {
-	endpoint := fmt.Sprintf("8080/users/%d", userID)
+	endpoint := fmt.Sprintf("/users/%d", userID)
 	fmt.Println("Realizando consulta al endpoint: ", endpoint)
 
 	body, err := c.Get(endpoint)
@@ -273,7 +269,7 @@ func (c *HttpClient) GetUserByID(userID int) (bool, error) {
 }
 
 func (c *HttpClient) GetDriverByID(driverID int) (dto.DriverDTO, error) {
-	endpoint := fmt.Sprintf("8080/drivers/%d", driverID)
+	endpoint := fmt.Sprintf("/drivers/%d", driverID)
 	body, err := c.Get(endpoint)
 	if err != nil {
 		return dto.DriverDTO{}, fmt.Errorf("error fetching driver by ID: %w", err)
@@ -288,8 +284,7 @@ func (c *HttpClient) GetDriverByID(driverID int) (dto.DriverDTO, error) {
 }
 
 func (c *HttpClient) GetAllDrivers() ([]dto.DriverDTO, error) {
-	endpoint := "8051/drivers"
-	body, err := c.Get(endpoint)
+	body, err := c.Get("/drivers")
 	if err != nil {
 		return nil, fmt.Errorf("error fetching all drivers: %w", err)
 	}
@@ -304,8 +299,8 @@ func (c *HttpClient) GetAllDrivers() ([]dto.DriverDTO, error) {
 
 // GetTopDriversBySession realiza una solicitud GET al microservicio de results para obtener los mejores N pilotos de una sesión
 func (c *HttpClient) GetTopDriversBySession(sessionID int, n int) ([]dto.TopDriverDTO, error) {
-	// Definir el endpoint correctamente
-	endpoint := fmt.Sprintf("8080/results/session/%d/top/%d", sessionID, n)
+	// Observa que el path puede variar según tu router en Results
+	endpoint := fmt.Sprintf("/results/session/%d/top/%d", sessionID, n)
 	// Hacer la solicitud GET utilizando el cliente HTTP
 	body, err := c.Get(endpoint)
 	if err != nil {

@@ -16,9 +16,12 @@ import (
 )
 
 type prodeService struct {
-	prodeRepo  repository.ProdeRepository
-	httpClient *client.HttpClient
-	cache      *e.Cache // Agregar la caché
+	prodeRepo     repository.ProdeRepository
+	sessionClient *client.HttpClient
+	userClient    *client.HttpClient
+	driverClient  *client.HttpClient
+	resultsClient *client.HttpClient
+	cache         *e.Cache // Agregar la caché
 }
 
 type ProdeServiceInterface interface {
@@ -43,11 +46,14 @@ type ProdeServiceInterface interface {
 }
 
 // NewProdeService crea una nueva instancia de ProdeService con inyección de dependencias
-func NewPrediService(prodeRepo repository.ProdeRepository, httpClient *client.HttpClient, cache *e.Cache) ProdeServiceInterface {
+func NewPrediService(prodeRepo repository.ProdeRepository, sessionClient *client.HttpClient, userClient *client.HttpClient, driverClient *client.HttpClient, resultsClient *client.HttpClient, cache *e.Cache) ProdeServiceInterface {
 	return &prodeService{
-		prodeRepo:  prodeRepo,
-		httpClient: httpClient,
-		cache:      cache,
+		prodeRepo:     prodeRepo,
+		sessionClient: sessionClient,
+		userClient:    userClient,
+		driverClient:  driverClient,
+		resultsClient: resultsClient,
+		cache:         cache,
 	}
 }
 
@@ -79,7 +85,7 @@ func (s *prodeService) CreateProdeCarrera(ctx context.Context, request prodes.Cr
 	// }
 
 	// Hacer la llamada al cliente HTTP para obtener la información de la sesión
-	sessionInfo, err := s.httpClient.GetSessionNameAndType(request.SessionID)
+	sessionInfo, err := s.sessionClient.GetSessionNameAndType(request.SessionID)
 	if err != nil {
 		return prodes.ResponseProdeCarreraDTO{}, e.NewInternalServerApiError("Error fetching session name and type from sessions service", err)
 	}
@@ -153,7 +159,7 @@ func (s *prodeService) CreateProdeSession(ctx context.Context, request prodes.Cr
 	// }
 
 	// Obtener la información de la sesión desde el microservicio de sesiones
-	sessionInfo, err := s.httpClient.GetSessionNameAndType(request.SessionID)
+	sessionInfo, err := s.sessionClient.GetSessionNameAndType(request.SessionID)
 	if err != nil {
 		return prodes.ResponseProdeSessionDTO{}, e.NewInternalServerApiError("Error fetching session name and type from sessions service", err)
 	}
@@ -201,7 +207,7 @@ func (s *prodeService) UpdateProdeCarrera(ctx context.Context, request prodes.Up
 	}
 
 	// Obtener los detalles de la sesión directamente del microservicio de sesiones
-	sessionDetails, httpErr := s.httpClient.GetSessionByID(existingProde.SessionID)
+	sessionDetails, httpErr := s.sessionClient.GetSessionByID(existingProde.SessionID)
 	if httpErr != nil {
 		return prodes.ResponseProdeCarreraDTO{}, e.NewInternalServerApiError("Error fetching session details", httpErr)
 	}
@@ -262,7 +268,7 @@ func (s *prodeService) UpdateProdeSession(ctx context.Context, request prodes.Up
 	}
 
 	// Obtener los detalles de la sesión directamente desde el microservicio de sesiones
-	sessionDetails, httpErr := s.httpClient.GetSessionByID(existingProde.SessionID)
+	sessionDetails, httpErr := s.sessionClient.GetSessionByID(existingProde.SessionID)
 	if httpErr != nil {
 		return prodes.ResponseProdeSessionDTO{}, e.NewInternalServerApiError("Error fetching session details", httpErr)
 	}
@@ -335,7 +341,7 @@ func (s *prodeService) DeleteProdeSession(ctx context.Context, prodeID int) e.Ap
 
 func (s *prodeService) DeleteProdeById(ctx context.Context, prodeID int) e.ApiError {
 	// Obtener los datos de la sesión directamente desde el microservicio de sessions
-	sessionInfo, err := s.httpClient.GetSessionNameAndType(prodeID)
+	sessionInfo, err := s.sessionClient.GetSessionNameAndType(prodeID)
 	if err != nil {
 		return e.NewInternalServerApiError("Error fetching session name and type from sessions service", err)
 	}
@@ -485,7 +491,7 @@ func (s *prodeService) GetProdeByUserAndSession(ctx context.Context, userID, ses
 	fmt.Printf("Fetching prode for userID: %d, sessionID: %d\n", userID, sessionID)
 
 	// Obtener los datos de la sesión directamente desde el microservicio de sessions
-	sessionInfo, err := s.httpClient.GetSessionNameAndType(sessionID)
+	sessionInfo, err := s.sessionClient.GetSessionNameAndType(sessionID)
 	if err != nil {
 		fmt.Printf("Error fetching session info: %v\n", err)
 		return nil, nil, e.NewInternalServerApiError("Error fetching session name and type from sessions service", err)
@@ -565,7 +571,7 @@ func (s *prodeService) GetProdeByUserAndSession(ctx context.Context, userID, ses
 
 func (s *prodeService) GetRaceProdesBySession(ctx context.Context, sessionID int) ([]prodes.ResponseProdeCarreraDTO, e.ApiError) {
 	// Obtener los datos de la sesión directamente desde el microservicio de sessions
-	sessionInfo, err := s.httpClient.GetSessionNameAndType(sessionID)
+	sessionInfo, err := s.sessionClient.GetSessionNameAndType(sessionID)
 	if err != nil {
 		return nil, e.NewInternalServerApiError("Error fetching session name and type from sessions service", err)
 	}
@@ -607,7 +613,7 @@ func (s *prodeService) GetRaceProdesBySession(ctx context.Context, sessionID int
 
 func (s *prodeService) UpdateRaceProdeForUserBySessionId(ctx context.Context, userID int, sessionID int, updatedProde prodes.UpdateProdeCarreraDTO) (prodes.ResponseProdeCarreraDTO, e.ApiError) {
 	// Obtener detalles de la sesión directamente desde el microservicio de sessions
-	sessionDetails, err := s.httpClient.GetSessionByID(sessionID)
+	sessionDetails, err := s.sessionClient.GetSessionByID(sessionID)
 	if err != nil {
 		return prodes.ResponseProdeCarreraDTO{}, e.NewInternalServerApiError("Error fetching session details", err)
 	}
@@ -665,7 +671,7 @@ func (s *prodeService) UpdateRaceProdeForUserBySessionId(ctx context.Context, us
 
 func (s *prodeService) GetSessionProdeBySession(ctx context.Context, sessionID int) ([]prodes.ResponseProdeSessionDTO, e.ApiError) {
 	// Obtener detalles de la sesión directamente desde el microservicio de sessions
-	sessionInfo, err := s.httpClient.GetSessionNameAndType(sessionID)
+	sessionInfo, err := s.sessionClient.GetSessionNameAndType(sessionID)
 	if err != nil {
 		return nil, e.NewInternalServerApiError("Error fetching session name and type from sessions service", err)
 	}
@@ -701,7 +707,7 @@ func (s *prodeService) GetSessionProdeBySession(ctx context.Context, sessionID i
 
 func (s *prodeService) GetUserProdes(ctx context.Context, userID int) ([]prodes.ResponseProdeCarreraDTO, []prodes.ResponseProdeSessionDTO, e.ApiError) {
 	// Llamar al cliente HTTP para verificar si el usuario existe en el microservicio de users
-	userExists, err := s.httpClient.GetUserByID(userID)
+	userExists, err := s.userClient.GetUserByID(userID)
 	if err != nil || !userExists {
 		return nil, nil, e.NewNotFoundApiError("User not found")
 	}
@@ -751,7 +757,7 @@ func (s *prodeService) GetUserProdes(ctx context.Context, userID int) ([]prodes.
 
 func (s *prodeService) GetDriverDetails(ctx context.Context, driverID int) (prodes.DriverDTO, e.ApiError) {
 	// Llamar al microservicio de drivers para obtener los detalles del piloto
-	driverDetails, err := s.httpClient.GetDriverByID(driverID)
+	driverDetails, err := s.driverClient.GetDriverByID(driverID)
 	if err != nil {
 		return prodes.DriverDTO{}, e.NewInternalServerApiError("Error fetching driver details from drivers service", err)
 	}
@@ -771,7 +777,7 @@ func (s *prodeService) GetDriverDetails(ctx context.Context, driverID int) (prod
 
 func (s *prodeService) GetAllDrivers(ctx context.Context) ([]prodes.DriverDTO, e.ApiError) {
 	// Llamar al microservicio de drivers para obtener todos los pilotos
-	drivers, err := s.httpClient.GetAllDrivers()
+	drivers, err := s.driverClient.GetAllDrivers()
 	if err != nil {
 		return nil, e.NewInternalServerApiError("Error fetching all drivers from drivers service", err)
 	}
@@ -793,7 +799,7 @@ func (s *prodeService) GetAllDrivers(ctx context.Context) ([]prodes.DriverDTO, e
 }
 
 func (s *prodeService) GetTopDriversBySessionId(ctx context.Context, sessionID, n int) ([]prodes.TopDriverDTO, e.ApiError) {
-	topDrivers, err := s.httpClient.GetTopDriversBySession(sessionID, n)
+	topDrivers, err := s.resultsClient.GetTopDriversBySession(sessionID, n)
 	if err != nil {
 		return nil, e.NewInternalServerApiError("Error fetching top drivers from results service", err)
 	}
@@ -804,7 +810,7 @@ func (s *prodeService) GetTopDriversBySessionId(ctx context.Context, sessionID, 
 
 func (s *prodeService) UpdateScoresForRaceProdes(ctx context.Context, sessionID int) e.ApiError {
 	// 1. Verificar si la sesión es Race
-	sessionDetails, err := s.httpClient.GetSessionByID(sessionID)
+	sessionDetails, err := s.sessionClient.GetSessionByID(sessionID)
 	if err != nil {
 		return e.NewInternalServerApiError("Error fetching session details", err)
 	}
@@ -815,7 +821,7 @@ func (s *prodeService) UpdateScoresForRaceProdes(ctx context.Context, sessionID 
 	}
 
 	// 2. Obtener top 5 real de la sesión
-	realTopDrivers, err := s.httpClient.GetTopDriversBySession(sessionID, 5)
+	realTopDrivers, err := s.resultsClient.GetTopDriversBySession(sessionID, 5)
 	if err != nil {
 		return e.NewInternalServerApiError("Error fetching top 5 drivers for race session", err)
 	}
@@ -850,7 +856,7 @@ func (s *prodeService) UpdateScoresForRaceProdes(ctx context.Context, sessionID 
 func (s *prodeService) UpdateScoresForSessionProdes(ctx context.Context, sessionID int) e.ApiError {
 	// 1. Obtener el top 3 real de la sesión
 	fmt.Println("Fetching top drivers for session:", sessionID) // Debugging
-	realTopDrivers, err := s.httpClient.GetTopDriversBySession(sessionID, 3)
+	realTopDrivers, err := s.resultsClient.GetTopDriversBySession(sessionID, 3)
 	if err != nil {
 		return e.NewInternalServerApiError("Error fetching real top drivers for session", err)
 	}

@@ -36,18 +36,25 @@ func main() {
 		log.Fatalf("db.Init failed: %v", err)
 	}
 
-	// 3) HTTP client y caché
-	httpClient := client.NewHttpClient("http://localhost:")
+	sessionsURL := os.Getenv("SESSIONS_SERVICE_URL")
+	usersURL := os.Getenv("USERS_SERVICE_URL")
+	driversURL := os.Getenv("DRIVERS_SERVICE_URL")
+	resultsURL := os.Getenv("RESULTS_SERVICE_URL")
+
+	sessionClient := client.NewHttpClient(sessionsURL)
+	userClient := client.NewHttpClient(usersURL)
+	driverClient := client.NewHttpClient(driversURL)
+	resultsClient := client.NewHttpClient(resultsURL)
 	cache := utils.NewCache()
 
 	// 4) Repos, servicio y controlador
 	pRepo := repository.NewProdeRepository(db.DB)
-	pService := service.NewPrediService(pRepo, httpClient, cache)
-	pController := api.NewProdeController(pService)
+	pService := service.NewPrediService(pRepo, sessionClient, userClient, driverClient, resultsClient, cache)
+	pCtrl := api.NewProdeController(pService)
 
 	// 5) Router
 	r := gin.Default()
-	router.MapUrls(r, pController)
+	router.MapUrls(r, pCtrl)
 
 	// 6) Servir
 	port := os.Getenv("PORT")
