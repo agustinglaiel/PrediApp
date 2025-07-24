@@ -5,6 +5,3 @@ node_modules/
 
 # Ignorar archivos de macOS
 .DS_Store
-
-docker-compose.yml
-Dockerfile
