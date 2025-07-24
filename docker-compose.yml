@@ -19,6 +19,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      network: host
     image: migrator:latest
     command: ["./migrator", "migrate"]
     env_file:
@@ -46,6 +47,7 @@ services:
     build:
       context: .
       dockerfile: users/Dockerfile
+      network: host
     image: users-service:latest
     env_file:
       - ./.env.stage
@@ -63,6 +65,7 @@ services:
     build:
       context: .
       dockerfile: sessions/Dockerfile
+      network: host
     image: sessions-service:latest
     env_file:
       - ./.env.stage
@@ -82,6 +85,7 @@ services:
     build:
       context: .
       dockerfile: results/Dockerfile
+      network: host
     image: results-service:latest
     env_file:
       - ./.env.stage
@@ -103,6 +107,7 @@ services:
     build:
       context: .
       dockerfile: prodes/Dockerfile
+      network: host
     image: prodes-service:latest
     env_file:
       - ./.env.stage
@@ -126,6 +131,7 @@ services:
     build:
       context: .
       dockerfile: posts/Dockerfile
+      network: host
     image: posts-service:latest
     env_file:
       - ./.env.stage
@@ -151,6 +157,7 @@ services:
     build:
       context: .
       dockerfile: groups/Dockerfile
+      network: host
     image: groups-service:latest
     env_file:
       - ./.env.stage
@@ -178,6 +185,7 @@ services:
     build:
       context: .
       dockerfile: drivers/Dockerfile
+      network: host
     image: drivers-service:latest
     env_file:
       - ./.env.stage
@@ -207,6 +215,7 @@ services:
     build:
       context: .
       dockerfile: gateway/Dockerfile
+      network: host
     image: gateway-service:latest
     env_file:
       - ./.env
