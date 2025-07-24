@@ -14,77 +14,73 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// El punto de entrada principal del gateway, donde se configura el enrutador, los middlewares y el proxy inverso.
 func main() {
-	// Construir la ruta al archivo .env
+	// 1) Carga de .env y .env.{stage|prod}
 	currentDir, err := os.Getwd()
 	if err != nil {
 		fmt.Println("Error al obtener el directorio actual:", err)
 		os.Exit(1)
 	}
-	envPath := filepath.Join(filepath.Dir(currentDir), ".env")
-
-	// Cargar el archivo .env para obtener el valor de ENV
-	err = godotenv.Load(envPath)
-	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
+	baseEnvPath := filepath.Join(filepath.Dir(currentDir), ".env")
+	if err := godotenv.Load(baseEnvPath); err != nil {
+		log.Fatalf("Error loading %s: %v", baseEnvPath, err)
 	}
 
-	// Obtener el valor de ENV desde el archivo .env (o desde la variable de entorno si está definida)
 	env := os.Getenv("ENV")
 	if env == "" {
-		log.Println("ENV not set in .env file, defaulting to 'stage'")
 		env = "stage"
+		log.Println("ENV not set, defaulting to 'stage'")
+	}
+	envPath := filepath.Join(filepath.Dir(currentDir), fmt.Sprintf(".env.%s", env))
+	if err := godotenv.Load(envPath); err != nil {
+		log.Printf("Warning: could not load %s: %v", envPath, err)
 	}
 
-	// Construir la ruta al archivo .env.stage o .env.prod según el valor de ENV
-	envFile := fmt.Sprintf(".env.%s", env)
-	envSpecificPath := filepath.Join(filepath.Dir(currentDir), envFile)
-
-	// Cargar las variables de entorno específicas del ambiente
-	err = godotenv.Load(envSpecificPath)
-	if err != nil {
-		log.Printf("Error loading %s file: %v", envFile, err)
-		log.Println("Continuing with variables from .env or system environment")
-	}
-
-	// Usar el puerto 8080 siempre para el gateway
+	// 2) Leer configuración esencial
 	port := os.Getenv("PORT_GATEWAY")
-
-	// Obtener la Secret Key de la variable de entorno
-	secretKey := os.Getenv("JWT_SECRET")
-	if secretKey == "" {
-		log.Fatal("JWT_SECRET is not set in the environment")
+	if port == "" {
+		log.Fatal("PORT_GATEWAY is not set")
+	}
+	if os.Getenv("JWT_SECRET") == "" {
+		log.Fatal("JWT_SECRET is not set")
 	}
 
-	// Crear instancia del router gin
+	// 3) Inicializar Gin
 	router := gin.Default()
-
-	// Configurar middlewares CORS
 	router.Use(middleware.CorsMiddleware())
 
-	// Rutas públicas
-	router.POST("/api/login", handlers.LoginHandler)
-	router.POST("/api/signup", handlers.SignupHandler)
-	router.GET("/api/auth/me", middleware.JwtAuthentication(""), handlers.MeHandler)
+	// 4) Grupo de rutas bajo /api
+	api := router.Group("/api")
+	{
+		// 4.1) Endpoints públicos de auth
+		api.POST("/login", handlers.LoginHandler)
+		api.POST("/signup", handlers.SignupHandler)
+		api.GET("/auth/me", middleware.JwtAuthentication(""), handlers.MeHandler)
 
-	// Rutas proxy
-	router.Any("/users", proxy.ReverseProxy())
-	router.Any("/users/*proxyPath", proxy.ReverseProxy())
-	router.Any("/drivers", proxy.ReverseProxy())
-	router.Any("/drivers/*proxyPath", proxy.ReverseProxy())
-	router.Any("/prodes", proxy.ReverseProxy())
-	router.Any("/prodes/*proxyPath", proxy.ReverseProxy())
-	router.Any("/results", proxy.ReverseProxy())
-	router.Any("/results/*proxyPath", proxy.ReverseProxy())
-	router.Any("/sessions", proxy.ReverseProxy())
-	router.Any("/sessions/*proxyPath", proxy.ReverseProxy())
-	router.Any("/groups", proxy.ReverseProxy())
-	router.Any("/groups/*proxyPath", proxy.ReverseProxy())
-	router.Any("/posts", proxy.ReverseProxy())
-	router.Any("/posts/*proxyPath", proxy.ReverseProxy())
+		// 4.2) Rutas proxy para microservicios
+		api.Any("/users", proxy.ReverseProxy())
+		api.Any("/users/*proxyPath", proxy.ReverseProxy())
 
-	// Iniciar el servidor HTTP
+		api.Any("/drivers", proxy.ReverseProxy())
+		api.Any("/drivers/*proxyPath", proxy.ReverseProxy())
+
+		api.Any("/prodes", proxy.ReverseProxy())
+		api.Any("/prodes/*proxyPath", proxy.ReverseProxy())
+
+		api.Any("/results", proxy.ReverseProxy())
+		api.Any("/results/*proxyPath", proxy.ReverseProxy())
+
+		api.Any("/sessions", proxy.ReverseProxy())
+		api.Any("/sessions/*proxyPath", proxy.ReverseProxy())
+
+		api.Any("/groups", proxy.ReverseProxy())
+		api.Any("/groups/*proxyPath", proxy.ReverseProxy())
+
+		api.Any("/posts", proxy.ReverseProxy())
+		api.Any("/posts/*proxyPath", proxy.ReverseProxy())
+	}
+
+	// 5) Arrancar el servidor
 	fmt.Printf("Gateway (%s) listening on port %s...\n", env, port)
 	if err := router.Run(":" + port); err != nil {
 		log.Fatalf("Failed to run server on port %s: %v", port, err)
