@@ -13,21 +13,42 @@ type CacheEntry struct {
 
 // Cache es la estructura que mantiene el mapa de la caché
 type Cache struct {
-	data map[string]CacheEntry
-	mu   sync.Mutex
+	data       map[string]CacheEntry
+	mu         sync.Mutex
+	cleanupInt time.Duration // Intervalo de limpieza automática
+	maxSize    int           // Tamaño máximo de la caché
 }
 
-// NewCache crea una nueva instancia de Cache
-func NewCache() *Cache {
-	return &Cache{
-		data: make(map[string]CacheEntry),
+// CacheEntryInfo es una estructura para devolver información sobre las entradas de la caché
+type CacheEntryInfo struct {
+	Key        string
+	Value      interface{}
+	Expiration time.Time
+}
+
+// NewCache crea una nueva instancia de Cache con intervalos de limpieza y tamaño máximo
+func NewCache(cleanupInterval time.Duration, maxSize int) *Cache {
+	cache := &Cache{
+		data:       make(map[string]CacheEntry),
+		cleanupInt: cleanupInterval,
+		maxSize:    maxSize,
 	}
+
+	// Lanzar una goroutine para limpiar las entradas expiradas periódicamente
+	go cache.cleanupExpiredEntries()
+
+	return cache
 }
 
-// Set agrega un valor a la caché con un tiempo de expiración en segundos
+// Set agrega un valor a la caché con un tiempo de expiración
 func (c *Cache) Set(key string, value interface{}, duration time.Duration) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
+	// Si la caché excede el tamaño, eliminar la entrada más antigua (o aplicar una política como LRU)
+	if len(c.data) >= c.maxSize {
+		c.evictEntry()
+	}
 
 	expiration := time.Now().Add(duration).Unix()
 	c.data[key] = CacheEntry{
@@ -42,13 +63,8 @@ func (c *Cache) Get(key string) (interface{}, bool) {
 	defer c.mu.Unlock()
 
 	entry, exists := c.data[key]
-	if !exists {
-		return nil, false
-	}
-
-	// Verificar si la entrada ha expirado
-	if time.Now().Unix() > entry.Expiration {
-		delete(c.data, key) // Limpiar la entrada caducada
+	if !exists || time.Now().Unix() > entry.Expiration {
+		delete(c.data, key)
 		return nil, false
 	}
 
@@ -67,4 +83,46 @@ func (c *Cache) Clear() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.data = make(map[string]CacheEntry)
+}
+
+// ListEntries devuelve una lista de todas las entradas no expiradas en la caché
+func (c *Cache) ListEntries() []CacheEntryInfo {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	var entries []CacheEntryInfo
+	for key, entry := range c.data {
+		if time.Now().Unix() <= entry.Expiration {
+			entries = append(entries, CacheEntryInfo{
+				Key:        key,
+				Value:      entry.Value,
+				Expiration: time.Unix(entry.Expiration, 0).UTC(),
+			})
+		}
+	}
+	return entries
+}
+
+// cleanupExpiredEntries elimina las entradas expiradas en intervalos regulares
+func (c *Cache) cleanupExpiredEntries() {
+	for {
+		time.Sleep(c.cleanupInt)
+		c.mu.Lock()
+		for key, entry := range c.data {
+			if time.Now().Unix() > entry.Expiration {
+				delete(c.data, key)
+			}
+		}
+		c.mu.Unlock()
+	}
+}
+
+// evictEntry elimina la entrada más antigua o aplica una política de reemplazo
+func (c *Cache) evictEntry() {
+	// Implementa la lógica para eliminar una entrada, por ejemplo LRU, FIFO, etc.
+	// Aquí podrías eliminar simplemente la primera entrada encontrada (FIFO)
+	for key := range c.data {
+		delete(c.data, key)
+		break
+	}
 }

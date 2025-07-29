@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"prediapp.local/db"
 	"prediapp.local/prodes/internal/api"
@@ -45,7 +46,7 @@ func main() {
 	userClient := client.NewHttpClient(usersURL)
 	driverClient := client.NewHttpClient(driversURL)
 	resultsClient := client.NewHttpClient(resultsURL)
-	cache := utils.NewCache()
+	cache := utils.NewCache(30*time.Minute, 100)
 
 	// 4) Repos, servicio y controlador
 	pRepo := repository.NewProdeRepository(db.DB)
@@ -70,4 +71,10 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 	log.Println("Deteniendo prodes service...")
+
+	entries := cache.ListEntries()
+	log.Println("Contenido de la caché al cerrar:")
+	for _, entry := range entries {
+		log.Printf("Clave: %s, Expiración: %s, Valor: %+v\n", entry.Key, entry.Expiration.Format(time.RFC3339), entry.Value)
+	}
 }

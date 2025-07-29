@@ -233,7 +233,6 @@ func (c *HttpClient) GetSessionNameAndType(sessionID int) (dto.SessionNameAndTyp
 
 // GetSessionByID realiza una solicitud GET para obtener los detalles completos de una sesión desde el microservicio de sessions
 func (c *HttpClient) GetSessionByID(sessionID int) (dto.SessionDetailsDTO, error) {
-	// Montamos la URL completa: ej. "http://sessions:8055/sessions/1"
 	endpoint := fmt.Sprintf("/sessions/%d", sessionID)
 
 	// Hacer la solicitud GET utilizando el cliente HTTP
