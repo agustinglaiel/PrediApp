@@ -19,6 +19,13 @@ type Cache struct {
 	maxSize    int           // Tamaño máximo de la caché
 }
 
+// CacheEntryInfo es una estructura para devolver información sobre las entradas de la caché
+type CacheEntryInfo struct {
+	Key        string
+	Value      interface{}
+	Expiration time.Time
+}
+
 // NewCache crea una nueva instancia de Cache con intervalos de limpieza y tamaño máximo
 func NewCache(cleanupInterval time.Duration, maxSize int) *Cache {
 	cache := &Cache{
@@ -76,6 +83,24 @@ func (c *Cache) Clear() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.data = make(map[string]CacheEntry)
+}
+
+// ListEntries devuelve una lista de todas las entradas no expiradas en la caché
+func (c *Cache) ListEntries() []CacheEntryInfo {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	var entries []CacheEntryInfo
+	for key, entry := range c.data {
+		if time.Now().Unix() <= entry.Expiration {
+			entries = append(entries, CacheEntryInfo{
+				Key:        key,
+				Value:      entry.Value,
+				Expiration: time.Unix(entry.Expiration, 0).UTC(),
+			})
+		}
+	}
+	return entries
 }
 
 // cleanupExpiredEntries elimina las entradas expiradas en intervalos regulares
