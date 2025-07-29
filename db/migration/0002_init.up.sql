@@ -77,7 +77,7 @@ VALUES
 ("O PIASTRI", "AUS", 81, "Oscar", "Piastri", "Oscar PIASTRI", "PIA", "https://www.formula1.com/content/dam/fom-website/drivers/O/OSCPIA01_Oscar_Piastri/oscpia01.png.transform/1col/image.png", "Mclaren", TRUE),
 ("A ALBON", "THA", 23, "Alex", "Albon", "Alex ALBON", "ALB", "https://www.formula1.com/content/dam/fom-website/drivers/A/ALEALB01_Alexander_Albon/alealb01.png.transform/1col/image.png", "Williams Racing", TRUE),
 ("L STROLL", "CAN", 18, "Lance", "Stroll", "Lance STROLL", "STR", "https://www.formula1.com/content/dam/fom-website/drivers/L/LANSTR01_Lance_Stroll/lanstr01.png.transform/1col/image.png", "Aston Martin", TRUE),
-("L LAWSON", "NZL", 40, "Liam", "Lawson", "Liam LAWSON", "LAW", "https://www.formula1.com/content/dam/fom-website/drivers/L/LANSTR01_Lance_Stroll/lanstr01.png.transform/1col/image.png", "Racing Bulls", TRUE),
+("L LAWSON", "NZL", 40, "Liam", "Lawson", "Liam LAWSON", "LAW", "https://www.formula1.com/content/dam/fom-website/drivers/L/LIALAW01_Liam_Lawson/lialaw01.png.transform/1col/image.png", "Racing Bulls", TRUE),
 ("I HADJAR", "FRA", 41, "Isack", "Hadjar", "Isack HADJAR", "HAD", "https://www.formula1.com/content/dam/fom-website/drivers/I/ISAHAD01_Isack_Hadjar/isahad01.png.transform/1col/image.png", "Racing Bulls", TRUE),
 ("O BEARMAN", "GBR", 50, "Oliver", "Bearman", "Oliver BEARMAN", "BEA", "https://www.formula1.com/content/dam/fom-website/drivers/O/OLIBEA01_Oliver_Bearman/olibea01.png.transform/1col/image.png", "Haas Ferrari", TRUE),
 ("F COLAPINTO", "ARG", 43, "Franco", "Colapinto", "Franco COLAPINTO", "COL", "https://www.formula1.com/content/dam/fom-website/drivers/F/FRACOL01_Franco_Colapinto/fracol01.png.transform/1col/image.png", "Alpine", TRUE),
