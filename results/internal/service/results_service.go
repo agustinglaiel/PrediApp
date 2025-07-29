@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	e "prediapp.local/results/pkg/utils"
 
@@ -23,6 +24,7 @@ type resultService struct {
 	sessionsClient *client.HttpClient
 	usersClient    *client.HttpClient
 	externalClient *client.HttpClient
+	cache          *e.Cache
 }
 
 type ResultService interface {
@@ -45,6 +47,7 @@ func NewResultService(
 	sessionsClient *client.HttpClient,
 	usersClient *client.HttpClient,
 	externalClient *client.HttpClient,
+	cache *e.Cache,
 ) ResultService {
 	return &resultService{
 		resultRepo:     resultRepo,
@@ -52,6 +55,7 @@ func NewResultService(
 		sessionsClient: sessionsClient,
 		usersClient:    usersClient,
 		externalClient: externalClient,
+		cache:          cache,
 	}
 }
 
@@ -390,17 +394,28 @@ func (s *resultService) CreateResult(ctx context.Context, request dto.CreateResu
 		return dto.ResponseResultDTO{}, e.NewInternalServerApiError("Error creando resultado", err)
 	}
 
-	// 7. Construir DTO de respuesta
+	// 7. Invalidar caché relevante
+	cacheKeys := []string{
+		fmt.Sprintf("results:session:%d", request.SessionID),
+		fmt.Sprintf("fastest_lap:session:%d", request.SessionID),
+		fmt.Sprintf("top_drivers:session:%d:n:%d", request.SessionID, 20), // Invalida hasta 20 para cubrir posibles valores de n
+		"all_results",
+	}
+	for _, key := range cacheKeys {
+		s.cache.Delete(key)
+		fmt.Printf("Invalidated cache for key=%s\n", key)
+	}
+
+	// 8. Construir DTO de respuesta
 	response := dto.ResponseResultDTO{
 		ID:             newResult.ID,
 		Position:       newResult.Position,
 		Status:         newResult.Status,
 		FastestLapTime: newResult.FastestLapTime,
-		// Driver y Session lo puedes rellenar si has hecho Preload en repo, o usando otros microservicios
-		Driver:    dto.ResponseDriverDTO{ID: newResult.DriverID},
-		Session:   dto.ResponseSessionDTO{ID: newResult.SessionID},
-		CreatedAt: newResult.CreatedAt,
-		UpdatedAt: newResult.UpdatedAt,
+		Driver:         dto.ResponseDriverDTO{ID: newResult.DriverID},
+		Session:        dto.ResponseSessionDTO{ID: newResult.SessionID},
+		CreatedAt:      newResult.CreatedAt,
+		UpdatedAt:      newResult.UpdatedAt,
 	}
 
 	return response, nil
@@ -455,7 +470,19 @@ func (s *resultService) UpdateResult(ctx context.Context, resultID int, request 
 		return dto.ResponseResultDTO{}, e.NewInternalServerApiError("Error updating result", err)
 	}
 
-	// 6. Construir respuesta
+	// 6. Invalidar caché relevante
+	cacheKeys := []string{
+		fmt.Sprintf("results:session:%d", result.SessionID),
+		fmt.Sprintf("fastest_lap:session:%d", result.SessionID),
+		fmt.Sprintf("top_drivers:session:%d:n:%d", result.SessionID, 20),
+		"all_results",
+	}
+	for _, key := range cacheKeys {
+		s.cache.Delete(key)
+		fmt.Printf("Invalidated cache for key=%s\n", key)
+	}
+
+	// 7. Construir respuesta
 	response := dto.ResponseResultDTO{
 		ID:             result.ID,
 		Position:       result.Position,
@@ -487,6 +514,15 @@ func (s *resultService) UpdateResult(ctx context.Context, resultID int, request 
 
 // GetResultsOrderedByPosition obtiene los resultados de una sesión específica ordenados por posición
 func (s *resultService) GetResultsOrderedByPosition(ctx context.Context, sessionID int) ([]dto.ResponseResultDTO, e.ApiError) {
+	// Verificar caché
+	cacheKey := fmt.Sprintf("results:session:%d", sessionID)
+	if cached, exists := s.cache.Get(cacheKey); exists {
+		if results, ok := cached.([]dto.ResponseResultDTO); ok {
+			fmt.Printf("Cache hit for results:session:%d\n", sessionID)
+			return results, nil
+		}
+	}
+
 	// Verificar si existe el sessionID en la tabla de resultados
 	exists, err := s.resultRepo.ExistsSessionInResults(ctx, sessionID)
 	if err != nil {
@@ -538,11 +574,28 @@ func (s *resultService) GetResultsOrderedByPosition(ctx context.Context, session
 		responseResults = append(responseResults, response)
 	}
 
+	// Cachear el resultado
+	ttl := 5 * time.Minute
+	if len(results) > 0 && results[0].Session.DateEnd.Before(time.Now()) {
+		ttl = 24 * time.Hour // Sesiones finalizadas son inmutables
+	}
+	s.cache.Set(cacheKey, responseResults, ttl)
+	fmt.Printf("Cached results for session:%d\n", sessionID)
+
 	return responseResults, nil
 }
 
 // GetFastestLapInSession obtiene el piloto con la vuelta más rápida en una sesión específica
 func (s *resultService) GetFastestLapInSession(ctx context.Context, sessionID int) (dto.ResponseResultDTO, e.ApiError) {
+	// Verificar caché
+	cacheKey := fmt.Sprintf("fastest_lap:session:%d", sessionID)
+	if cached, exists := s.cache.Get(cacheKey); exists {
+		if result, ok := cached.(dto.ResponseResultDTO); ok {
+			fmt.Printf("Cache hit for fastest_lap:session:%d\n", sessionID)
+			return result, nil
+		}
+	}
+
 	// Verificar si existe el sessionID en la tabla de resultados
 	exists, err := s.resultRepo.ExistsSessionInResults(ctx, sessionID)
 	if err != nil {
@@ -553,14 +606,13 @@ func (s *resultService) GetFastestLapInSession(ctx context.Context, sessionID in
 	}
 
 	// Obtener la vuelta más rápida de la sesión
-	results, err := s.resultRepo.GetResultsBySessionID(ctx, sessionID) // Obtenemos todos los resultados
+	results, err := s.resultRepo.GetResultsBySessionID(ctx, sessionID)
 	if err != nil {
 		return dto.ResponseResultDTO{}, e.NewInternalServerApiError("Error fetching session results", err)
 	}
 
 	var fastestResult *model.Result
 	for _, result := range results {
-		// Ignorar tiempos nulos o 0
 		if result.FastestLapTime > 0 {
 			if fastestResult == nil || result.FastestLapTime < fastestResult.FastestLapTime {
 				fastestResult = result
@@ -598,17 +650,23 @@ func (s *resultService) GetFastestLapInSession(ctx context.Context, sessionID in
 		UpdatedAt: fastestResult.UpdatedAt,
 	}
 
+	// Cachear el resultado
+	ttl := 5 * time.Minute
+	if fastestResult.Session.DateEnd.Before(time.Now()) {
+		ttl = 24 * time.Hour
+	}
+	s.cache.Set(cacheKey, response, ttl)
+	fmt.Printf("Cached fastest_lap for session:%d\n", sessionID)
+
 	return response, nil
 }
 
 // DeleteResult elimina un resultado específico
 func (s *resultService) DeleteResult(ctx context.Context, resultID int) e.ApiError {
-	// Validar que el resultID no sea 0
 	if resultID == 0 {
 		return e.NewBadRequestApiError("El ID del resultado no puede ser 0")
 	}
 
-	// Verificar si el resultado existe antes de intentar eliminarlo
 	result, err := s.resultRepo.GetResultByID(ctx, resultID)
 	if err != nil {
 		if err == e.NewNotFoundApiError("Result not found") {
@@ -617,12 +675,22 @@ func (s *resultService) DeleteResult(ctx context.Context, resultID int) e.ApiErr
 		return e.NewInternalServerApiError("Error al verificar la existencia del resultado", err)
 	}
 
-	// Imprimir información sobre el resultado que será eliminado (opcional)
 	fmt.Printf("Eliminando resultado: ID=%d, DriverID=%d, SessionID=%d\n", result.ID, result.DriverID, result.SessionID)
 
-	// Eliminar el resultado de la base de datos
 	if err := s.resultRepo.DeleteResult(ctx, resultID); err != nil {
 		return e.NewInternalServerApiError("Error al eliminar el resultado", err)
+	}
+
+	// Invalidar caché relevante
+	cacheKeys := []string{
+		fmt.Sprintf("results:session:%d", result.SessionID),
+		fmt.Sprintf("fastest_lap:session:%d", result.SessionID),
+		fmt.Sprintf("top_drivers:session:%d:n:%d", result.SessionID, 20),
+		"all_results",
+	}
+	for _, key := range cacheKeys {
+		s.cache.Delete(key)
+		fmt.Printf("Invalidated cache for key=%s\n", key)
 	}
 
 	return nil
@@ -630,50 +698,61 @@ func (s *resultService) DeleteResult(ctx context.Context, resultID int) e.ApiErr
 
 // DeleteAllResultsForSession elimina todos los resultados asociados a una sesión específica
 func (s *resultService) DeleteAllResultsForSession(ctx context.Context, sessionID int) e.ApiError {
-	// Validar que el sessionID no sea 0
 	if sessionID == 0 {
 		return e.NewBadRequestApiError("El ID de la sesión no puede ser 0")
 	}
 
-	// Obtener todos los resultados de la sesión
 	results, err := s.resultRepo.GetResultsBySessionID(ctx, sessionID)
 	if err != nil {
 		return e.NewInternalServerApiError("Error al obtener los resultados de la sesión", err)
 	}
 
-	// Verificar si existen resultados para esa sesión
 	if len(results) == 0 {
 		return e.NewNotFoundApiError("No se encontraron resultados para la sesión especificada")
 	}
 
-	// Eliminar cada resultado de la sesión
 	for _, result := range results {
 		if err := s.resultRepo.DeleteResult(ctx, result.ID); err != nil {
 			return e.NewInternalServerApiError(fmt.Sprintf("Error al eliminar el resultado con ID %d", result.ID), err)
 		}
 	}
 
-	// Retornar éxito si todos los resultados fueron eliminados
+	// Invalidar caché relevante
+	cacheKeys := []string{
+		fmt.Sprintf("results:session:%d", sessionID),
+		fmt.Sprintf("fastest_lap:session:%d", sessionID),
+		fmt.Sprintf("top_drivers:session:%d:n:%d", sessionID, 20),
+		"all_results",
+	}
+	for _, key := range cacheKeys {
+		s.cache.Delete(key)
+		fmt.Printf("Invalidated cache for key=%s\n", key)
+	}
+
 	return nil
 }
 
 // GetAllResults obtiene todos los resultados de la base de datos
 func (s *resultService) GetAllResults(ctx context.Context) ([]dto.ResponseResultDTO, e.ApiError) {
-	// Obtener todos los resultados del repositorio
+	// Verificar caché
+	cacheKey := "all_results"
+	if cached, exists := s.cache.Get(cacheKey); exists {
+		if results, ok := cached.([]dto.ResponseResultDTO); ok {
+			fmt.Printf("Cache hit for all_results\n")
+			return results, nil
+		}
+	}
+
 	results, err := s.resultRepo.GetAllResults(ctx)
 	if err != nil {
 		return nil, e.NewInternalServerApiError("Error al obtener todos los resultados", err)
 	}
 
-	// Verificar si no se encontraron resultados
 	if len(results) == 0 {
 		return nil, e.NewNotFoundApiError("No se encontraron resultados en la base de datos")
 	}
 
-	// Crear un slice para almacenar los DTOs de respuesta
 	var responseResults []dto.ResponseResultDTO
-
-	// Iterar sobre los resultados obtenidos y convertirlos a DTOs
 	for _, result := range results {
 		response := dto.ResponseResultDTO{
 			ID:             result.ID,
@@ -699,11 +778,13 @@ func (s *resultService) GetAllResults(ctx context.Context) ([]dto.ResponseResult
 			CreatedAt: result.CreatedAt,
 			UpdatedAt: result.UpdatedAt,
 		}
-		// Agregar el DTO al slice de respuestas
 		responseResults = append(responseResults, response)
 	}
 
-	// Retornar los resultados procesados
+	// Cachear el resultado
+	s.cache.Set(cacheKey, responseResults, 5*time.Minute)
+	fmt.Printf("Cached all_results\n")
+
 	return responseResults, nil
 }
 
@@ -716,18 +797,24 @@ func (s *resultService) GetTopNDriversInSession(ctx context.Context, sessionID i
 		return nil, e.NewBadRequestApiError("El número de pilotos a obtener debe ser mayor que 0")
 	}
 
-	// Obtener los resultados de la sesión ordenados por posición
+	// Verificar caché
+	cacheKey := fmt.Sprintf("top_drivers:session:%d:n:%d", sessionID, n)
+	if cached, exists := s.cache.Get(cacheKey); exists {
+		if topDrivers, ok := cached.([]dto.TopDriverDTO); ok {
+			fmt.Printf("Cache hit for top_drivers:session:%d:n:%d\n", sessionID, n)
+			return topDrivers, nil
+		}
+	}
+
 	results, err := s.resultRepo.GetResultsOrderedByPosition(ctx, sessionID)
 	if err != nil {
 		return nil, e.NewInternalServerApiError("Error obteniendo resultados de la sesión", err)
 	}
 
-	// Verificar si no se encontraron resultados
 	if len(results) == 0 {
 		return nil, e.NewNotFoundApiError("No se encontraron resultados para la sesión")
 	}
 
-	// Filtrar sólo los que tengan Position != nil (o Status == FINISHED)
 	var finishedResults []*model.Result
 	for _, r := range results {
 		if r.Position != nil {
@@ -738,7 +825,6 @@ func (s *resultService) GetTopNDriversInSession(ctx context.Context, sessionID i
 		return nil, e.NewNotFoundApiError("Ningún piloto terminó la sesión")
 	}
 
-	// Ajustar n si excede
 	if n > len(finishedResults) {
 		n = len(finishedResults)
 	}
@@ -746,20 +832,26 @@ func (s *resultService) GetTopNDriversInSession(ctx context.Context, sessionID i
 		n = 20
 	}
 
-	// Construir el slice final
 	var topDrivers []dto.TopDriverDTO
 	for i := 0; i < n; i++ {
-		// Aquí *finishedResults[i].Position es seguro: no es nil
 		topDrivers = append(topDrivers, dto.TopDriverDTO{
 			Position: *finishedResults[i].Position,
 			DriverID: finishedResults[i].DriverID,
 		})
 	}
+
+	// Cachear el resultado
+	ttl := 5 * time.Minute
+	if len(results) > 0 && results[0].Session.DateEnd.Before(time.Now()) {
+		ttl = 24 * time.Hour
+	}
+	s.cache.Set(cacheKey, topDrivers, ttl)
+	fmt.Printf("Cached top_drivers for session:%d:n:%d\n", sessionID, n)
+
 	return topDrivers, nil
 }
 
 func (s *resultService) CreateSessionResultsAdmin(ctx context.Context, bulkRequest dto.CreateBulkResultsDTO) ([]dto.ResponseResultDTO, e.ApiError) {
-	// 1. Validar session_id
 	if bulkRequest.SessionID == 0 {
 		return nil, e.NewBadRequestApiError("El session_id no puede ser 0")
 	}
@@ -767,10 +859,8 @@ func (s *resultService) CreateSessionResultsAdmin(ctx context.Context, bulkReque
 	var resultsToCreate []*model.Result
 	var resultsToUpdate []*model.Result
 
-	// 2. Definir un set de status válidos
 	validStatuses := map[string]bool{"FINISHED": true, "DNF": true, "DNS": true, "DSQ": true}
 
-	// 3. Obtener resultados existentes para la sesión
 	existingResults, err := s.resultRepo.GetResultsBySessionID(ctx, bulkRequest.SessionID)
 	if err != nil {
 		return nil, e.NewInternalServerApiError("Error obteniendo resultados existentes", err)
@@ -781,9 +871,7 @@ func (s *resultService) CreateSessionResultsAdmin(ctx context.Context, bulkReque
 		existingResultsMap[r.DriverID] = r
 	}
 
-	// 4. Recorrer cada ítem
 	for _, item := range bulkRequest.Results {
-		// Validar si el status no viene, asumimos algo en base a la position
 		if item.Status == "" {
 			if item.Position != nil {
 				item.Status = "FINISHED"
@@ -796,7 +884,6 @@ func (s *resultService) CreateSessionResultsAdmin(ctx context.Context, bulkReque
 			}
 		}
 
-		// Validación de la combinación status/position
 		if item.Status == "FINISHED" {
 			if item.Position == nil {
 				return nil, e.NewBadRequestApiError("Debe proporcionar una posición si el status es FINISHED")
@@ -807,7 +894,6 @@ func (s *resultService) CreateSessionResultsAdmin(ctx context.Context, bulkReque
 				)
 			}
 		} else {
-			// "DNF", "DNS", "DSQ" => position debe ser nil
 			if item.Position != nil {
 				return nil, e.NewBadRequestApiError(
 					fmt.Sprintf("No puede dar Position si el status es %s (driver_id %d)", item.Status, item.DriverID),
@@ -815,22 +901,18 @@ func (s *resultService) CreateSessionResultsAdmin(ctx context.Context, bulkReque
 			}
 		}
 
-		// Validar fastestLapTime
 		if item.FastestLapTime != 0 && item.FastestLapTime < 30 {
 			return nil, e.NewBadRequestApiError(
 				fmt.Sprintf("FastestLapTime inválido para driver_id %d. Debe ser >30 o 0", item.DriverID),
 			)
 		}
 
-		// Verificar si ya existe un resultado para (driver, session)
 		if existingResult, exists := existingResultsMap[item.DriverID]; exists {
-			// Actualizar resultado existente
 			existingResult.Position = item.Position
 			existingResult.Status = item.Status
 			existingResult.FastestLapTime = item.FastestLapTime
 			resultsToUpdate = append(resultsToUpdate, existingResult)
 		} else {
-			// Crear nuevo resultado
 			newResult := &model.Result{
 				SessionID:      bulkRequest.SessionID,
 				DriverID:       item.DriverID,
@@ -842,19 +924,28 @@ func (s *resultService) CreateSessionResultsAdmin(ctx context.Context, bulkReque
 		}
 	}
 
-	// 5. Ejecutar creación y actualización en una transacción
 	txErr := s.resultRepo.SessionCreateOrUpdateResultsAdmin(ctx, resultsToCreate, resultsToUpdate)
 	if txErr != nil {
 		return nil, e.NewInternalServerApiError("Error creando o actualizando resultados masivamente", txErr)
 	}
 
-	// 6. Obtener todos los resultados actualizados para la sesión
 	updatedResults, err := s.resultRepo.GetResultsBySessionID(ctx, bulkRequest.SessionID)
 	if err != nil {
 		return nil, e.NewInternalServerApiError("Error obteniendo resultados actualizados", err)
 	}
 
-	// 7. Convertir a DTO
+	// Invalidar caché relevante
+	cacheKeys := []string{
+		fmt.Sprintf("results:session:%d", bulkRequest.SessionID),
+		fmt.Sprintf("fastest_lap:session:%d", bulkRequest.SessionID),
+		fmt.Sprintf("top_drivers:session:%d:n:%d", bulkRequest.SessionID, 20),
+		"all_results",
+	}
+	for _, key := range cacheKeys {
+		s.cache.Delete(key)
+		fmt.Printf("Invalidated cache for key=%s\n", key)
+	}
+
 	var responseResults []dto.ResponseResultDTO
 	for _, r := range updatedResults {
 		responseResults = append(responseResults, dto.ResponseResultDTO{
