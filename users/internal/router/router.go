@@ -23,6 +23,7 @@ func MapUrls(engine *gin.Engine, userController *api.UserController) {
 		usersGroup.POST(("/:id/profile-picture"), userController.UploadProfilePicture)
 		usersGroup.DELETE("/:id", userController.DeleteUserByID)
 		usersGroup.GET("/:id/score", userController.GetUserScoreByUserId)
+		usersGroup.GET("/scoreboard", userController.GetScoreboard)
 	}
 
 	fmt.Println("Finishing mappings configurations")

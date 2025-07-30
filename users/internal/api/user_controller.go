@@ -170,6 +170,16 @@ func (ctrl *UserController) GetUserScoreByUserId(c *gin.Context) {
 	c.JSON(http.StatusOK, score)
 }
 
+func (ctrl *UserController) GetScoreboard(c *gin.Context) {
+	// Implementación de la función para obtener el tablero de puntuaciones
+	scoreboard, apiErr := ctrl.userService.GetScoreboard(c.Request.Context())
+	if apiErr != nil {
+		c.JSON(apiErr.Status(), apiErr)
+		return
+	}
+	c.JSON(http.StatusOK, scoreboard)
+}
+
 func (ctrl *UserController) UploadProfilePicture(c *gin.Context) {
 	// 1) Parsear y validar el ID
 	id := c.Param("id")

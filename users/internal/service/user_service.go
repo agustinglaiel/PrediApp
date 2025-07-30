@@ -27,6 +27,7 @@ type UserServiceInterface interface {
 	UpdateRoleByUserId(ctx context.Context, id int, request dto.UserUpdateRoleRequestDTO) (dto.UserResponseDTO, e.ApiError)
 	GetUserScoreByUserId(ctx context.Context, id int) (dto.UserScoreDtoSimplified, e.ApiError)
 	UploadProfilePicture(ctx context.Context, id int, image []byte, mimeType string) e.ApiError
+	GetScoreboard(ctx context.Context) ([]dto.UserScoreDtoSimplified, e.ApiError)
 }
 
 func NewUserService(userRepo repository.UserRepository) UserServiceInterface {
@@ -293,4 +294,21 @@ func (s *userService) UploadProfilePicture(ctx context.Context, userID int, data
 	}
 
 	return nil
+}
+
+func (s *userService) GetScoreboard(ctx context.Context) ([]dto.UserScoreDtoSimplified, e.ApiError) {
+	users, apiErr := s.userRepo.GetUsers(ctx)
+	if apiErr != nil {
+		return nil, apiErr
+	}
+
+	var scoreboard []dto.UserScoreDtoSimplified
+	for _, user := range users {
+		scoreboard = append(scoreboard, dto.UserScoreDtoSimplified{
+			Username: user.Username,
+			Score:    user.Score,
+		})
+	}
+
+	return scoreboard, nil
 }
