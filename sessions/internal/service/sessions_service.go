@@ -290,6 +290,9 @@ func (s *sessionService) UpdateSessionById(ctx context.Context, sessionID int, r
 	if request.CountryKey != nil {
 		session.CountryKey = *request.CountryKey
 	}
+	if request.SessionKey != nil {
+		session.SessionKey = request.SessionKey
+	}
 	if request.CountryName != nil {
 		session.CountryName = *request.CountryName
 	}
@@ -316,7 +319,7 @@ func (s *sessionService) UpdateSessionById(ctx context.Context, sessionID int, r
 	}
 
 	// Si la sesión es de tipo "Race", actualizamos los campos relacionados con resultados de la carrera
-	if session.SessionType == "Race" && session.SessionName == "Race" {
+	if session.SessionType == "Race" && (session.SessionName == "Race" || session.SessionName == "Sprint") {
 		if request.DNF != nil {
 			session.DNF = request.DNF
 		}
@@ -786,8 +789,6 @@ func (s *sessionService) ListPastSessions(ctx context.Context, year int) ([]dto.
 			DNF:              session.DNF,
 		})
 	}
-
-	fmt.Println("Response for past sessions:", response)
 
 	// Almacenar en caché con fechas en UTC
 	cachedResponse := make([]dto.ResponseSessionDTO, len(response))

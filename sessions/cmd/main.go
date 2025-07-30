@@ -66,4 +66,11 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 	log.Println("Deteniendo sessions service...")
+
+	// Print cache
+	entries := cache.ListEntries()
+	log.Println("Contenido de la caché de Sessions al cerrar:")
+	for _, entry := range entries {
+		log.Printf("Clave: %s, Expiración: %s, Valor: %+v\n", entry.Key, entry.Expiration.Format(time.RFC3339), entry.Value)
+	}
 }

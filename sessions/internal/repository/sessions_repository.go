@@ -88,7 +88,6 @@ func (s *sessionRepository) UpdateSessionById(ctx context.Context, session *mode
 		"dnf":                session.DNF, // Incluir siempre DNF, incluso si es nil
 		"vsc":                session.VSC, // Incluir siempre VSC, incluso si es nil
 		"sf":                 session.SF,  // Incluir siempre SF, incluso si es nil
-		// "d_fast_lap":        session.DFastLap, // Incluir si lo usas
 	}
 
 	// Ejecutar la actualización

@@ -69,7 +69,7 @@ func main() {
 	log.Println("Deteniendo results service...")
 
 	entries := cache.ListEntries()
-	log.Println("Contenido de la caché al cerrar:")
+	log.Println("Contenido de la caché de results al cerrar:")
 	for _, entry := range entries {
 		log.Printf("Clave: %s, Expiración: %s, Valor: %+v\n", entry.Key, entry.Expiration.Format(time.RFC3339), entry.Value)
 	}

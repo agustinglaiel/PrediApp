@@ -73,7 +73,7 @@ func main() {
 	log.Println("Deteniendo prodes service...")
 
 	entries := cache.ListEntries()
-	log.Println("Contenido de la caché al cerrar:")
+	log.Println("Contenido de la caché de prodes al cerrar:")
 	for _, entry := range entries {
 		log.Printf("Clave: %s, Expiración: %s, Valor: %+v\n", entry.Key, entry.Expiration.Format(time.RFC3339), entry.Value)
 	}
