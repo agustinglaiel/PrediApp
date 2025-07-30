@@ -46,22 +46,22 @@ type UpdateSessionDTO struct {
 }
 
 type ResponseSessionDTO struct {
-	ID               int    `json:"id"`
-	WeekendID        int    `json:"weekend_id"`
-	CircuitKey       int    `json:"circuit_key"`
-	CircuitShortName string `json:"circuit_short_name"`
-	CountryCode      string `json:"country_code"`
-	CountryName      string `json:"country_name"`
-	DateStart        string `json:"date_start"`
-	DateEnd          string `json:"date_end"`
-	Location         string `json:"location"`
-	SessionKey       *int   `json:"session_key"`
-	SessionName      string `json:"session_name"`
-	SessionType      string `json:"session_type"`
-	Year             int    `json:"year"`
-	VSC              *bool  `json:"vsc"`
-	SF               *bool  `json:"sf"`
-	DNF              *int   `json:"dnf"`
+	ID               int       `json:"id"`
+	WeekendID        int       `json:"weekend_id"`
+	CircuitKey       int       `json:"circuit_key"`
+	CircuitShortName string    `json:"circuit_short_name"`
+	CountryCode      string    `json:"country_code"`
+	CountryName      string    `json:"country_name"`
+	DateStart        time.Time `json:"date_start"`
+	DateEnd          time.Time `json:"date_end"`
+	Location         string    `json:"location"`
+	SessionKey       *int      `json:"session_key"`
+	SessionName      string    `json:"session_name"`
+	SessionType      string    `json:"session_type"`
+	Year             int       `json:"year"`
+	VSC              *bool     `json:"vsc"`
+	SF               *bool     `json:"sf"`
+	DNF              *int      `json:"dnf"`
 }
 
 type DeleteSessionDTO struct {
