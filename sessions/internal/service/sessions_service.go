@@ -49,6 +49,12 @@ func NewSessionService(sessionsRepo repository.SessionRepository, client *client
 	}
 }
 
+// Definir la ubicación para Argentina (UTC-3)
+var argentinaLocation = time.FixedZone("ART", -3*60*60) // -3 horas en segundos
+
+// Formato RFC 3339 con offset
+const rfc3339WithOffset = "2006-01-02T15:04:05-07:00"
+
 func (s *sessionService) CreateSession(ctx context.Context, request dto.CreateSessionDTO) (dto.ResponseSessionDTO, e.ApiError) {
 	// Validar que la combinación de session_name y session_type sea válida
 	validCombinations := map[string]string{
@@ -141,8 +147,8 @@ func (s *sessionService) CreateSession(ctx context.Context, request dto.CreateSe
 		CircuitShortName: newSession.CircuitShortName,
 		CountryCode:      newSession.CountryCode,
 		CountryName:      newSession.CountryName,
-		DateStart:        newSession.DateStart.UTC(),
-		DateEnd:          newSession.DateEnd.UTC(),
+		DateStart:        newSession.DateStart.In(argentinaLocation).Format(rfc3339WithOffset),
+		DateEnd:          newSession.DateEnd.In(argentinaLocation).Format(rfc3339WithOffset),
 		Location:         newSession.Location,
 		SessionKey:       newSession.SessionKey,
 		SessionName:      newSession.SessionName,
@@ -163,6 +169,17 @@ func (s *sessionService) GetSessionById(ctx context.Context, sessionID int) (dto
 	if cached, exists := s.cache.Get(cacheKey); exists {
 		if sessionDTO, ok := cached.(dto.ResponseSessionDTO); ok {
 			fmt.Printf("Cache hit for session_id=%d\n", sessionID)
+			// Convertir fechas de UTC a UTC-3
+			dateStart, err := time.Parse(time.RFC3339, sessionDTO.DateStart)
+			if err != nil {
+				return dto.ResponseSessionDTO{}, e.NewInternalServerApiError("Error parsing cached date_start", err)
+			}
+			dateEnd, err := time.Parse(time.RFC3339, sessionDTO.DateEnd)
+			if err != nil {
+				return dto.ResponseSessionDTO{}, e.NewInternalServerApiError("Error parsing cached date_end", err)
+			}
+			sessionDTO.DateStart = dateStart.In(argentinaLocation).Format(rfc3339WithOffset)
+			sessionDTO.DateEnd = dateEnd.In(argentinaLocation).Format(rfc3339WithOffset)
 			return sessionDTO, nil
 		}
 	}
@@ -181,8 +198,8 @@ func (s *sessionService) GetSessionById(ctx context.Context, sessionID int) (dto
 		CircuitShortName: session.CircuitShortName,
 		CountryCode:      session.CountryCode,
 		CountryName:      session.CountryName,
-		DateStart:        session.DateStart.UTC(),
-		DateEnd:          session.DateEnd.UTC(),
+		DateStart:        session.DateStart.In(argentinaLocation).Format(rfc3339WithOffset),
+		DateEnd:          session.DateEnd.In(argentinaLocation).Format(rfc3339WithOffset),
 		Location:         session.Location,
 		SessionKey:       session.SessionKey,
 		SessionName:      session.SessionName,
@@ -193,8 +210,11 @@ func (s *sessionService) GetSessionById(ctx context.Context, sessionID int) (dto
 		DNF:              session.DNF,
 	}
 
-	// Almacenar en caché con un TTL de 1 hora
-	s.cache.Set(cacheKey, response, 1*time.Hour)
+	// Almacenar en caché con fechas en UTC
+	cachedResponse := response
+	cachedResponse.DateStart = session.DateStart.UTC().Format(time.RFC3339)
+	cachedResponse.DateEnd = session.DateEnd.UTC().Format(time.RFC3339)
+	s.cache.Set(cacheKey, cachedResponse, 1*time.Hour)
 	fmt.Printf("Cache miss for session_id=%d, storing response\n", sessionID)
 
 	return response, nil
@@ -336,8 +356,8 @@ func (s *sessionService) UpdateSessionById(ctx context.Context, sessionID int, r
 		CircuitShortName: session.CircuitShortName,
 		CountryCode:      session.CountryCode,
 		CountryName:      session.CountryName,
-		DateStart:        session.DateStart.UTC(),
-		DateEnd:          session.DateEnd.UTC(),
+		DateStart:        session.DateStart.In(argentinaLocation).Format(rfc3339WithOffset),
+		DateEnd:          session.DateEnd.In(argentinaLocation).Format(rfc3339WithOffset),
 		Location:         session.Location,
 		SessionKey:       session.SessionKey,
 		SessionName:      session.SessionName,
@@ -347,6 +367,12 @@ func (s *sessionService) UpdateSessionById(ctx context.Context, sessionID int, r
 		VSC:              session.VSC,
 		SF:               session.SF,
 	}
+
+	// Almacenar en caché con fechas en UTC
+	cachedResponse := response
+	cachedResponse.DateStart = session.DateStart.UTC().Format(time.RFC3339)
+	cachedResponse.DateEnd = session.DateEnd.UTC().Format(time.RFC3339)
+	s.cache.Set(fmt.Sprintf("session:%d", sessionID), cachedResponse, 1*time.Hour)
 
 	return response, nil
 }
@@ -388,6 +414,19 @@ func (s *sessionService) ListSessionsByYear(ctx context.Context, year int) ([]dt
 	if cached, exists := s.cache.Get(cacheKey); exists {
 		if sessions, ok := cached.([]dto.ResponseSessionDTO); ok {
 			fmt.Printf("Cache hit for sessions_year=%d\n", year)
+			// Convertir fechas de UTC a UTC-3
+			for i := range sessions {
+				dateStart, err := time.Parse(time.RFC3339, sessions[i].DateStart)
+				if err != nil {
+					return nil, e.NewInternalServerApiError("Error parsing cached date_start", err)
+				}
+				dateEnd, err := time.Parse(time.RFC3339, sessions[i].DateEnd)
+				if err != nil {
+					return nil, e.NewInternalServerApiError("Error parsing cached date_end", err)
+				}
+				sessions[i].DateStart = dateStart.In(argentinaLocation).Format(rfc3339WithOffset)
+				sessions[i].DateEnd = dateEnd.In(argentinaLocation).Format(rfc3339WithOffset)
+			}
 			return sessions, nil
 		}
 	}
@@ -408,8 +447,8 @@ func (s *sessionService) ListSessionsByYear(ctx context.Context, year int) ([]dt
 			CircuitShortName: session.CircuitShortName,
 			CountryCode:      session.CountryCode,
 			CountryName:      session.CountryName,
-			DateStart:        session.DateStart.UTC(),
-			DateEnd:          session.DateEnd.UTC(),
+			DateStart:        session.DateStart.In(argentinaLocation).Format(rfc3339WithOffset),
+			DateEnd:          session.DateEnd.In(argentinaLocation).Format(rfc3339WithOffset),
 			Location:         session.Location,
 			SessionKey:       session.SessionKey,
 			SessionName:      session.SessionName,
@@ -421,8 +460,22 @@ func (s *sessionService) ListSessionsByYear(ctx context.Context, year int) ([]dt
 		})
 	}
 
-	// Almacenar en caché con un TTL de 1 hora
-	s.cache.Set(cacheKey, response, 1*time.Hour)
+	// Almacenar en caché con fechas en UTC
+	cachedResponse := make([]dto.ResponseSessionDTO, len(response))
+	copy(cachedResponse, response)
+	for i := range cachedResponse {
+		dateStart, err := time.Parse(rfc3339WithOffset, cachedResponse[i].DateStart)
+		if err != nil {
+			return nil, e.NewInternalServerApiError("Error parsing date_start for cache", err)
+		}
+		dateEnd, err := time.Parse(rfc3339WithOffset, cachedResponse[i].DateEnd)
+		if err != nil {
+			return nil, e.NewInternalServerApiError("Error parsing date_end for cache", err)
+		}
+		cachedResponse[i].DateStart = dateStart.UTC().Format(time.RFC3339)
+		cachedResponse[i].DateEnd = dateEnd.UTC().Format(time.RFC3339)
+	}
+	s.cache.Set(cacheKey, cachedResponse, 1*time.Hour)
 	fmt.Printf("Cache miss for sessions_year=%d, storing response\n", year)
 
 	return response, nil
@@ -465,6 +518,19 @@ func (s *sessionService) ListSessionsByCircuitKey(ctx context.Context, circuitKe
 	if cached, exists := s.cache.Get(cacheKey); exists {
 		if sessions, ok := cached.([]dto.ResponseSessionDTO); ok {
 			fmt.Printf("Cache hit for sessions_circuit=%d\n", circuitKey)
+			// Convertir fechas de UTC a UTC-3
+			for i := range sessions {
+				dateStart, err := time.Parse(time.RFC3339, sessions[i].DateStart)
+				if err != nil {
+					return nil, e.NewInternalServerApiError("Error parsing cached date_start", err)
+				}
+				dateEnd, err := time.Parse(time.RFC3339, sessions[i].DateEnd)
+				if err != nil {
+					return nil, e.NewInternalServerApiError("Error parsing cached date_end", err)
+				}
+				sessions[i].DateStart = dateStart.In(argentinaLocation).Format(rfc3339WithOffset)
+				sessions[i].DateEnd = dateEnd.In(argentinaLocation).Format(rfc3339WithOffset)
+			}
 			return sessions, nil
 		}
 	}
@@ -485,18 +551,35 @@ func (s *sessionService) ListSessionsByCircuitKey(ctx context.Context, circuitKe
 			CircuitShortName: session.CircuitShortName,
 			CountryCode:      session.CountryCode,
 			CountryName:      session.CountryName,
-			DateStart:        session.DateStart.UTC(),
-			DateEnd:          session.DateEnd.UTC(),
+			DateStart:        session.DateStart.In(argentinaLocation).Format(rfc3339WithOffset),
+			DateEnd:          session.DateEnd.In(argentinaLocation).Format(rfc3339WithOffset),
 			Location:         session.Location,
 			SessionKey:       session.SessionKey,
 			SessionName:      session.SessionName,
 			SessionType:      session.SessionType,
 			Year:             session.Year,
+			VSC:              session.VSC,
+			SF:               session.SF,
+			DNF:              session.DNF,
 		})
 	}
 
-	// Almacenar en caché con un TTL de 1 hora
-	s.cache.Set(cacheKey, response, 1*time.Hour)
+	// Almacenar en caché con fechas en UTC
+	cachedResponse := make([]dto.ResponseSessionDTO, len(response))
+	copy(cachedResponse, response)
+	for i := range cachedResponse {
+		dateStart, err := time.Parse(rfc3339WithOffset, cachedResponse[i].DateStart)
+		if err != nil {
+			return nil, e.NewInternalServerApiError("Error parsing date_start for cache", err)
+		}
+		dateEnd, err := time.Parse(rfc3339WithOffset, cachedResponse[i].DateEnd)
+		if err != nil {
+			return nil, e.NewInternalServerApiError("Error parsing date_end for cache", err)
+		}
+		cachedResponse[i].DateStart = dateStart.UTC().Format(time.RFC3339)
+		cachedResponse[i].DateEnd = dateEnd.UTC().Format(time.RFC3339)
+	}
+	s.cache.Set(cacheKey, cachedResponse, 1*time.Hour)
 	fmt.Printf("Cache miss for sessions_circuit=%d, storing response\n", circuitKey)
 
 	return response, nil
@@ -509,6 +592,19 @@ func (s *sessionService) ListSessionsByCountryCode(ctx context.Context, countryC
 	if cached, exists := s.cache.Get(cacheKey); exists {
 		if sessions, ok := cached.([]dto.ResponseSessionDTO); ok {
 			fmt.Printf("Cache hit for sessions_country=%s\n", countryCode)
+			// Convertir fechas de UTC a UTC-3
+			for i := range sessions {
+				dateStart, err := time.Parse(time.RFC3339, sessions[i].DateStart)
+				if err != nil {
+					return nil, e.NewInternalServerApiError("Error parsing cached date_start", err)
+				}
+				dateEnd, err := time.Parse(time.RFC3339, sessions[i].DateEnd)
+				if err != nil {
+					return nil, e.NewInternalServerApiError("Error parsing cached date_end", err)
+				}
+				sessions[i].DateStart = dateStart.In(argentinaLocation).Format(rfc3339WithOffset)
+				sessions[i].DateEnd = dateEnd.In(argentinaLocation).Format(rfc3339WithOffset)
+			}
 			return sessions, nil
 		}
 	}
@@ -529,18 +625,35 @@ func (s *sessionService) ListSessionsByCountryCode(ctx context.Context, countryC
 			CircuitShortName: session.CircuitShortName,
 			CountryCode:      session.CountryCode,
 			CountryName:      session.CountryName,
-			DateStart:        session.DateStart.UTC(),
-			DateEnd:          session.DateEnd.UTC(),
+			DateStart:        session.DateStart.In(argentinaLocation).Format(rfc3339WithOffset),
+			DateEnd:          session.DateEnd.In(argentinaLocation).Format(rfc3339WithOffset),
 			Location:         session.Location,
 			SessionKey:       session.SessionKey,
 			SessionName:      session.SessionName,
 			SessionType:      session.SessionType,
 			Year:             session.Year,
+			VSC:              session.VSC,
+			SF:               session.SF,
+			DNF:              session.DNF,
 		})
 	}
 
-	// Almacenar en caché con un TTL de 1 hora
-	s.cache.Set(cacheKey, response, 1*time.Hour)
+	// Almacenar en caché con fechas en UTC
+	cachedResponse := make([]dto.ResponseSessionDTO, len(response))
+	copy(cachedResponse, response)
+	for i := range cachedResponse {
+		dateStart, err := time.Parse(rfc3339WithOffset, cachedResponse[i].DateStart)
+		if err != nil {
+			return nil, e.NewInternalServerApiError("Error parsing date_start for cache", err)
+		}
+		dateEnd, err := time.Parse(rfc3339WithOffset, cachedResponse[i].DateEnd)
+		if err != nil {
+			return nil, e.NewInternalServerApiError("Error parsing date_end for cache", err)
+		}
+		cachedResponse[i].DateStart = dateStart.UTC().Format(time.RFC3339)
+		cachedResponse[i].DateEnd = dateEnd.UTC().Format(time.RFC3339)
+	}
+	s.cache.Set(cacheKey, cachedResponse, 1*time.Hour)
 	fmt.Printf("Cache miss for sessions_country=%s, storing response\n", countryCode)
 
 	return response, nil
@@ -553,6 +666,19 @@ func (s *sessionService) ListUpcomingSessions(ctx context.Context) ([]dto.Respon
 	if cached, exists := s.cache.Get(cacheKey); exists {
 		if sessions, ok := cached.([]dto.ResponseSessionDTO); ok {
 			fmt.Printf("Cache hit for upcoming_sessions\n")
+			// Convertir fechas de UTC a UTC-3
+			for i := range sessions {
+				dateStart, err := time.Parse(time.RFC3339, sessions[i].DateStart)
+				if err != nil {
+					return nil, e.NewInternalServerApiError("Error parsing cached date_start", err)
+				}
+				dateEnd, err := time.Parse(time.RFC3339, sessions[i].DateEnd)
+				if err != nil {
+					return nil, e.NewInternalServerApiError("Error parsing cached date_end", err)
+				}
+				sessions[i].DateStart = dateStart.In(argentinaLocation).Format(rfc3339WithOffset)
+				sessions[i].DateEnd = dateEnd.In(argentinaLocation).Format(rfc3339WithOffset)
+			}
 			return sessions, nil
 		}
 	}
@@ -573,8 +699,8 @@ func (s *sessionService) ListUpcomingSessions(ctx context.Context) ([]dto.Respon
 			CircuitShortName: session.CircuitShortName,
 			CountryCode:      session.CountryCode,
 			CountryName:      session.CountryName,
-			DateStart:        session.DateStart.UTC(),
-			DateEnd:          session.DateEnd.UTC(),
+			DateStart:        session.DateStart.In(argentinaLocation).Format(rfc3339WithOffset),
+			DateEnd:          session.DateEnd.In(argentinaLocation).Format(rfc3339WithOffset),
 			Location:         session.Location,
 			SessionKey:       session.SessionKey,
 			SessionName:      session.SessionName,
@@ -583,8 +709,22 @@ func (s *sessionService) ListUpcomingSessions(ctx context.Context) ([]dto.Respon
 		})
 	}
 
-	// Almacenar en caché con un TTL de 5 minutos
-	s.cache.Set(cacheKey, response, 5*time.Minute)
+	// Almacenar en caché con fechas en UTC
+	cachedResponse := make([]dto.ResponseSessionDTO, len(response))
+	copy(cachedResponse, response)
+	for i := range cachedResponse {
+		dateStart, err := time.Parse(rfc3339WithOffset, cachedResponse[i].DateStart)
+		if err != nil {
+			return nil, e.NewInternalServerApiError("Error parsing date_start for cache", err)
+		}
+		dateEnd, err := time.Parse(rfc3339WithOffset, cachedResponse[i].DateEnd)
+		if err != nil {
+			return nil, e.NewInternalServerApiError("Error parsing date_end for cache", err)
+		}
+		cachedResponse[i].DateStart = dateStart.UTC().Format(time.RFC3339)
+		cachedResponse[i].DateEnd = dateEnd.UTC().Format(time.RFC3339)
+	}
+	s.cache.Set(cacheKey, cachedResponse, 5*time.Minute)
 	fmt.Printf("Cache miss for upcoming_sessions, storing response\n")
 
 	if len(response) == 0 {
@@ -601,6 +741,19 @@ func (s *sessionService) ListPastSessions(ctx context.Context, year int) ([]dto.
 	if cached, exists := s.cache.Get(cacheKey); exists {
 		if sessions, ok := cached.([]dto.ResponseSessionDTO); ok {
 			fmt.Printf("Cache hit for past_sessions_year=%d\n", year)
+			// Convertir fechas de UTC a UTC-3
+			for i := range sessions {
+				dateStart, err := time.Parse(time.RFC3339, sessions[i].DateStart)
+				if err != nil {
+					return nil, e.NewInternalServerApiError("Error parsing cached date_start", err)
+				}
+				dateEnd, err := time.Parse(time.RFC3339, sessions[i].DateEnd)
+				if err != nil {
+					return nil, e.NewInternalServerApiError("Error parsing cached date_end", err)
+				}
+				sessions[i].DateStart = dateStart.In(argentinaLocation).Format(rfc3339WithOffset)
+				sessions[i].DateEnd = dateEnd.In(argentinaLocation).Format(rfc3339WithOffset)
+			}
 			return sessions, nil
 		}
 	}
@@ -621,18 +774,37 @@ func (s *sessionService) ListPastSessions(ctx context.Context, year int) ([]dto.
 			CircuitShortName: session.CircuitShortName,
 			CountryCode:      session.CountryCode,
 			CountryName:      session.CountryName,
-			DateStart:        session.DateStart.UTC(),
-			DateEnd:          session.DateEnd.UTC(),
+			DateStart:        session.DateStart.In(argentinaLocation).Format(rfc3339WithOffset),
+			DateEnd:          session.DateEnd.In(argentinaLocation).Format(rfc3339WithOffset),
 			Location:         session.Location,
 			SessionKey:       session.SessionKey,
 			SessionName:      session.SessionName,
 			SessionType:      session.SessionType,
 			Year:             session.Year,
+			VSC:              session.VSC,
+			SF:               session.SF,
+			DNF:              session.DNF,
 		})
 	}
 
-	// Almacenar en caché con un TTL de 24 horas (datos inmutables)
-	s.cache.Set(cacheKey, response, 24*time.Hour)
+	fmt.Println("Response for past sessions:", response)
+
+	// Almacenar en caché con fechas en UTC
+	cachedResponse := make([]dto.ResponseSessionDTO, len(response))
+	copy(cachedResponse, response)
+	for i := range cachedResponse {
+		dateStart, err := time.Parse(rfc3339WithOffset, cachedResponse[i].DateStart)
+		if err != nil {
+			return nil, e.NewInternalServerApiError("Error parsing date_start for cache", err)
+		}
+		dateEnd, err := time.Parse(rfc3339WithOffset, cachedResponse[i].DateEnd)
+		if err != nil {
+			return nil, e.NewInternalServerApiError("Error parsing date_end for cache", err)
+		}
+		cachedResponse[i].DateStart = dateStart.UTC().Format(time.RFC3339)
+		cachedResponse[i].DateEnd = dateEnd.UTC().Format(time.RFC3339)
+	}
+	s.cache.Set(cacheKey, cachedResponse, 24*time.Hour)
 	fmt.Printf("Cache miss for past_sessions_year=%d, storing response\n", year)
 
 	if len(response) == 0 {
@@ -658,6 +830,19 @@ func (s *sessionService) ListSessionsBetweenDates(ctx context.Context, startDate
 	if cached, exists := s.cache.Get(cacheKey); exists {
 		if sessions, ok := cached.([]dto.ResponseSessionDTO); ok {
 			fmt.Printf("Cache hit for sessions_date_range=%s_%s\n", startDate.Format(time.RFC3339), endDate.Format(time.RFC3339))
+			// Convertir fechas de UTC a UTC-3
+			for i := range sessions {
+				dateStart, err := time.Parse(time.RFC3339, sessions[i].DateStart)
+				if err != nil {
+					return nil, e.NewInternalServerApiError("Error parsing cached date_start", err)
+				}
+				dateEnd, err := time.Parse(time.RFC3339, sessions[i].DateEnd)
+				if err != nil {
+					return nil, e.NewInternalServerApiError("Error parsing cached date_end", err)
+				}
+				sessions[i].DateStart = dateStart.In(argentinaLocation).Format(rfc3339WithOffset)
+				sessions[i].DateEnd = dateEnd.In(argentinaLocation).Format(rfc3339WithOffset)
+			}
 			return sessions, nil
 		}
 	}
@@ -678,18 +863,35 @@ func (s *sessionService) ListSessionsBetweenDates(ctx context.Context, startDate
 			CircuitShortName: session.CircuitShortName,
 			CountryCode:      session.CountryCode,
 			CountryName:      session.CountryName,
-			DateStart:        session.DateStart.UTC(),
-			DateEnd:          session.DateEnd.UTC(),
+			DateStart:        session.DateStart.In(argentinaLocation).Format(rfc3339WithOffset),
+			DateEnd:          session.DateEnd.In(argentinaLocation).Format(rfc3339WithOffset),
 			Location:         session.Location,
 			SessionKey:       session.SessionKey,
 			SessionName:      session.SessionName,
 			SessionType:      session.SessionType,
 			Year:             session.Year,
+			VSC:              session.VSC,
+			SF:               session.SF,
+			DNF:              session.DNF,
 		})
 	}
 
-	// Almacenar en caché con un TTL de 5 minutos
-	s.cache.Set(cacheKey, response, 5*time.Minute)
+	// Almacenar en caché con fechas en UTC
+	cachedResponse := make([]dto.ResponseSessionDTO, len(response))
+	copy(cachedResponse, response)
+	for i := range cachedResponse {
+		dateStart, err := time.Parse(rfc3339WithOffset, cachedResponse[i].DateStart)
+		if err != nil {
+			return nil, e.NewInternalServerApiError("Error parsing date_start for cache", err)
+		}
+		dateEnd, err := time.Parse(rfc3339WithOffset, cachedResponse[i].DateEnd)
+		if err != nil {
+			return nil, e.NewInternalServerApiError("Error parsing date_end for cache", err)
+		}
+		cachedResponse[i].DateStart = dateStart.UTC().Format(time.RFC3339)
+		cachedResponse[i].DateEnd = dateEnd.UTC().Format(time.RFC3339)
+	}
+	s.cache.Set(cacheKey, cachedResponse, 5*time.Minute)
 	fmt.Printf("Cache miss for sessions_date_range=%s_%s, storing response\n", startDate.Format(time.RFC3339), endDate.Format(time.RFC3339))
 
 	if len(response) == 0 {
@@ -711,6 +913,19 @@ func (s *sessionService) FindSessionsByNameAndType(ctx context.Context, sessionN
 	if cached, exists := s.cache.Get(cacheKey); exists {
 		if sessions, ok := cached.([]dto.ResponseSessionDTO); ok {
 			fmt.Printf("Cache hit for sessions_name_type=%s_%s\n", sessionName, sessionType)
+			// Convertir fechas de UTC a UTC-3
+			for i := range sessions {
+				dateStart, err := time.Parse(time.RFC3339, sessions[i].DateStart)
+				if err != nil {
+					return nil, e.NewInternalServerApiError("Error parsing cached date_start", err)
+				}
+				dateEnd, err := time.Parse(time.RFC3339, sessions[i].DateEnd)
+				if err != nil {
+					return nil, e.NewInternalServerApiError("Error parsing cached date_end", err)
+				}
+				sessions[i].DateStart = dateStart.In(argentinaLocation).Format(rfc3339WithOffset)
+				sessions[i].DateEnd = dateEnd.In(argentinaLocation).Format(rfc3339WithOffset)
+			}
 			return sessions, nil
 		}
 	}
@@ -731,21 +946,37 @@ func (s *sessionService) FindSessionsByNameAndType(ctx context.Context, sessionN
 			CircuitShortName: session.CircuitShortName,
 			CountryCode:      session.CountryCode,
 			CountryName:      session.CountryName,
-			DateStart:        session.DateStart.UTC(),
-			DateEnd:          session.DateEnd.UTC(),
+			DateStart:        session.DateStart.In(argentinaLocation).Format(rfc3339WithOffset),
+			DateEnd:          session.DateEnd.In(argentinaLocation).Format(rfc3339WithOffset),
 			Location:         session.Location,
 			SessionKey:       session.SessionKey,
 			SessionName:      session.SessionName,
 			SessionType:      session.SessionType,
 			Year:             session.Year,
+			VSC:              session.VSC,
+			SF:               session.SF,
+			DNF:              session.DNF,
 		})
 	}
 
-	// Almacenar en caché con un TTL de 1 hora
-	s.cache.Set(cacheKey, response, 1*time.Hour)
+	// Almacenar en caché con fechas en UTC
+	cachedResponse := make([]dto.ResponseSessionDTO, len(response))
+	copy(cachedResponse, response)
+	for i := range cachedResponse {
+		dateStart, err := time.Parse(rfc3339WithOffset, cachedResponse[i].DateStart)
+		if err != nil {
+			return nil, e.NewInternalServerApiError("Error parsing date_start for cache", err)
+		}
+		dateEnd, err := time.Parse(rfc3339WithOffset, cachedResponse[i].DateEnd)
+		if err != nil {
+			return nil, e.NewInternalServerApiError("Error parsing date_end for cache", err)
+		}
+		cachedResponse[i].DateStart = dateStart.UTC().Format(time.RFC3339)
+		cachedResponse[i].DateEnd = dateEnd.UTC().Format(time.RFC3339)
+	}
+	s.cache.Set(cacheKey, cachedResponse, 1*time.Hour)
 	fmt.Printf("Cache miss for sessions_name_type=%s_%s, storing response\n", sessionName, sessionType)
 
-	// Si no se encuentran sesiones con el nombre y tipo especificado, devolver lista vacía
 	if len(response) == 0 {
 		return []dto.ResponseSessionDTO{}, nil
 	}
@@ -760,6 +991,19 @@ func (s *sessionService) GetAllSessions(ctx context.Context) ([]dto.ResponseSess
 	if cached, exists := s.cache.Get(cacheKey); exists {
 		if sessions, ok := cached.([]dto.ResponseSessionDTO); ok {
 			fmt.Printf("Cache hit for all_sessions\n")
+			// Convertir fechas de UTC a UTC-3
+			for i := range sessions {
+				dateStart, err := time.Parse(time.RFC3339, sessions[i].DateStart)
+				if err != nil {
+					return nil, e.NewInternalServerApiError("Error parsing cached date_start", err)
+				}
+				dateEnd, err := time.Parse(time.RFC3339, sessions[i].DateEnd)
+				if err != nil {
+					return nil, e.NewInternalServerApiError("Error parsing cached date_end", err)
+				}
+				sessions[i].DateStart = dateStart.In(argentinaLocation).Format(rfc3339WithOffset)
+				sessions[i].DateEnd = dateEnd.In(argentinaLocation).Format(rfc3339WithOffset)
+			}
 			return sessions, nil
 		}
 	}
@@ -780,21 +1024,37 @@ func (s *sessionService) GetAllSessions(ctx context.Context) ([]dto.ResponseSess
 			CircuitShortName: session.CircuitShortName,
 			CountryCode:      session.CountryCode,
 			CountryName:      session.CountryName,
-			DateStart:        session.DateStart.UTC(),
-			DateEnd:          session.DateEnd.UTC(),
+			DateStart:        session.DateStart.In(argentinaLocation).Format(rfc3339WithOffset),
+			DateEnd:          session.DateEnd.In(argentinaLocation).Format(rfc3339WithOffset),
 			Location:         session.Location,
 			SessionKey:       session.SessionKey,
 			SessionName:      session.SessionName,
 			SessionType:      session.SessionType,
 			Year:             session.Year,
+			VSC:              session.VSC,
+			SF:               session.SF,
+			DNF:              session.DNF,
 		})
 	}
 
-	// Almacenar en caché con un TTL de 5 minutos
-	s.cache.Set(cacheKey, response, 5*time.Minute)
+	// Almacenar en caché con fechas en UTC
+	cachedResponse := make([]dto.ResponseSessionDTO, len(response))
+	copy(cachedResponse, response)
+	for i := range cachedResponse {
+		dateStart, err := time.Parse(rfc3339WithOffset, cachedResponse[i].DateStart)
+		if err != nil {
+			return nil, e.NewInternalServerApiError("Error parsing date_start for cache", err)
+		}
+		dateEnd, err := time.Parse(rfc3339WithOffset, cachedResponse[i].DateEnd)
+		if err != nil {
+			return nil, e.NewInternalServerApiError("Error parsing date_end for cache", err)
+		}
+		cachedResponse[i].DateStart = dateStart.UTC().Format(time.RFC3339)
+		cachedResponse[i].DateEnd = dateEnd.UTC().Format(time.RFC3339)
+	}
+	s.cache.Set(cacheKey, cachedResponse, 5*time.Minute)
 	fmt.Printf("Cache miss for all_sessions, storing response\n")
 
-	// Si no se encuentran sesiones, devolver lista vacía
 	if len(response) == 0 {
 		return []dto.ResponseSessionDTO{}, nil
 	}
