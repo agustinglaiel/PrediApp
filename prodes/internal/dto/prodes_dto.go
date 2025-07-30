@@ -118,9 +118,9 @@ type SessionDetailsDTO struct {
 	Location         string    `json:"location"`
 	SessionName      string    `json:"session_name"`
 	SessionType      string    `json:"session_type"`
-	VSC              bool      `json:"vsc"`
-	SC               bool      `json:"sc"`
-	DNF              int       `json:"dnf"`
+	VSC              *bool     `json:"vsc"`
+	SC               *bool     `json:"sc"`
+	DNF              *int      `json:"dnf"`
 }
 
 type DriverDTO struct {

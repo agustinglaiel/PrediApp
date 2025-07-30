@@ -856,6 +856,10 @@ func (s *prodeService) UpdateScoresForRaceProdes(ctx context.Context, sessionID 
 		return e.NewInternalServerApiError("Error fetching session details", err)
 	}
 
+	if sessionDetails.SC == nil || sessionDetails.VSC == nil || sessionDetails.DNF == nil {
+		return e.NewBadRequestApiError("Debe completar datos de la sesión para recalcular prodes carrera")
+	}
+
 	if !isRaceSession(sessionDetails.SessionName, sessionDetails.SessionType) {
 		return e.NewBadRequestApiError("La sesión no es de tipo 'Race'; no se pueden recalcular prodes carrera")
 	}
@@ -865,9 +869,9 @@ func (s *prodeService) UpdateScoresForRaceProdes(ctx context.Context, sessionID 
 		return e.NewInternalServerApiError("Error fetching top 5 drivers for race session", err)
 	}
 
-	realVSC := sessionDetails.VSC
-	realSC := sessionDetails.SC
-	realDNF := sessionDetails.DNF
+	realVSC := *sessionDetails.VSC
+	realSC := *sessionDetails.SC
+	realDNF := *sessionDetails.DNF
 
 	raceProdes, err := s.prodeRepo.GetRaceProdesBySession(ctx, sessionID)
 	if err != nil {
@@ -900,7 +904,6 @@ func (s *prodeService) UpdateScoresForRaceProdes(ctx context.Context, sessionID 
 }
 
 func (s *prodeService) UpdateScoresForSessionProdes(ctx context.Context, sessionID int) e.ApiError {
-	fmt.Println("Fetching top drivers for session:", sessionID)
 	realTopDrivers, err := s.resultsClient.GetTopDriversBySession(sessionID, 3)
 	if err != nil {
 		return e.NewInternalServerApiError("Error fetching real top drivers for session", err)
