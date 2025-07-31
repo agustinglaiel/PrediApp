@@ -21,7 +21,7 @@ type prodeService struct {
 	userClient    *client.HttpClient
 	driverClient  *client.HttpClient
 	resultsClient *client.HttpClient
-	cache         *e.Cache // Agregar la caché
+	// cache         *e.Cache
 }
 
 type ProdeServiceInterface interface {
@@ -44,14 +44,14 @@ type ProdeServiceInterface interface {
 }
 
 // NewProdeService crea una nueva instancia de ProdeService con inyección de dependencias
-func NewPrediService(prodeRepo repository.ProdeRepository, sessionClient *client.HttpClient, userClient *client.HttpClient, driverClient *client.HttpClient, resultsClient *client.HttpClient, cache *e.Cache) ProdeServiceInterface {
+func NewPrediService(prodeRepo repository.ProdeRepository, sessionClient *client.HttpClient, userClient *client.HttpClient, driverClient *client.HttpClient, resultsClient *client.HttpClient) ProdeServiceInterface {
 	return &prodeService{
 		prodeRepo:     prodeRepo,
 		sessionClient: sessionClient,
 		userClient:    userClient,
 		driverClient:  driverClient,
 		resultsClient: resultsClient,
-		cache:         cache,
+		// cache:         cache,
 	}
 }
 
@@ -110,16 +110,16 @@ func (s *prodeService) CreateProdeCarrera(ctx context.Context, request prodes.Cr
 		return prodes.ResponseProdeCarreraDTO{}, e.NewInternalServerApiError("Error creando el pronóstico de carrera", err)
 	}
 
-	// Invalidar caché relevante
-	cacheKeys := []string{
-		fmt.Sprintf("prode:user:%d", request.UserID),
-		fmt.Sprintf("race_prodes:session:%d", request.SessionID),
-		fmt.Sprintf("prode:user:%d:session:%d", request.UserID, request.SessionID),
-	}
-	for _, key := range cacheKeys {
-		s.cache.Delete(key)
-		fmt.Printf("Invalidated cache for key=%s\n", key)
-	}
+	// // Invalidar caché relevante
+	// cacheKeys := []string{
+	// 	fmt.Sprintf("prode:user:%d", request.UserID),
+	// 	fmt.Sprintf("race_prodes:session:%d", request.SessionID),
+	// 	fmt.Sprintf("prode:user:%d:session:%d", request.UserID, request.SessionID),
+	// }
+	// for _, key := range cacheKeys {
+	// 	s.cache.Delete(key)
+	// 	fmt.Printf("Invalidated cache for key=%s\n", key)
+	// }
 
 	// Convertir el modelo a DTO de respuesta
 	response := prodes.ResponseProdeCarreraDTO{
@@ -184,16 +184,16 @@ func (s *prodeService) CreateProdeSession(ctx context.Context, request prodes.Cr
 		return prodes.ResponseProdeSessionDTO{}, e.NewInternalServerApiError("Error creando el pronóstico de sesión", err)
 	}
 
-	// Invalidar caché relevante
-	cacheKeys := []string{
-		fmt.Sprintf("prode:user:%d", request.UserID),
-		fmt.Sprintf("session_prodes:session:%d", request.SessionID),
-		fmt.Sprintf("prode:user:%d:session:%d", request.UserID, request.SessionID),
-	}
-	for _, key := range cacheKeys {
-		s.cache.Delete(key)
-		fmt.Printf("Invalidated cache for key=%s\n", key)
-	}
+	// // Invalidar caché relevante
+	// cacheKeys := []string{
+	// 	fmt.Sprintf("prode:user:%d", request.UserID),
+	// 	fmt.Sprintf("session_prodes:session:%d", request.SessionID),
+	// 	fmt.Sprintf("prode:user:%d:session:%d", request.UserID, request.SessionID),
+	// }
+	// for _, key := range cacheKeys {
+	// 	s.cache.Delete(key)
+	// 	fmt.Printf("Invalidated cache for key=%s\n", key)
+	// }
 
 	// Convertir el modelo a DTO de respuesta
 	response := prodes.ResponseProdeSessionDTO{
@@ -251,16 +251,16 @@ func (s *prodeService) UpdateProdeCarrera(ctx context.Context, request prodes.Up
 		return prodes.ResponseProdeCarreraDTO{}, e.NewInternalServerApiError("Error actualizando el pronóstico de carrera", err)
 	}
 
-	// Invalidar caché relevante
-	cacheKeys := []string{
-		fmt.Sprintf("prode:user:%d", prode.UserID),
-		fmt.Sprintf("race_prodes:session:%d", prode.SessionID),
-		fmt.Sprintf("prode:user:%d:session:%d", prode.UserID, prode.SessionID),
-	}
-	for _, key := range cacheKeys {
-		s.cache.Delete(key)
-		fmt.Printf("Invalidated cache for key=%s\n", key)
-	}
+	// // Invalidar caché relevante
+	// cacheKeys := []string{
+	// 	fmt.Sprintf("prode:user:%d", prode.UserID),
+	// 	fmt.Sprintf("race_prodes:session:%d", prode.SessionID),
+	// 	fmt.Sprintf("prode:user:%d:session:%d", prode.UserID, prode.SessionID),
+	// }
+	// for _, key := range cacheKeys {
+	// 	s.cache.Delete(key)
+	// 	fmt.Printf("Invalidated cache for key=%s\n", key)
+	// }
 
 	response := prodes.ResponseProdeCarreraDTO{
 		ID:        prode.ID,
@@ -317,16 +317,16 @@ func (s *prodeService) UpdateProdeSession(ctx context.Context, request prodes.Up
 		return prodes.ResponseProdeSessionDTO{}, e.NewInternalServerApiError("Error actualizando el pronóstico de sesión", err)
 	}
 
-	// Invalidar caché relevante
-	cacheKeys := []string{
-		fmt.Sprintf("prode:user:%d", prode.UserID),
-		fmt.Sprintf("session_prodes:session:%d", prode.SessionID),
-		fmt.Sprintf("prode:user:%d:session:%d", prode.UserID, prode.SessionID),
-	}
-	for _, key := range cacheKeys {
-		s.cache.Delete(key)
-		fmt.Printf("Invalidated cache for key=%s\n", key)
-	}
+	// // Invalidar caché relevante
+	// cacheKeys := []string{
+	// 	fmt.Sprintf("prode:user:%d", prode.UserID),
+	// 	fmt.Sprintf("session_prodes:session:%d", prode.SessionID),
+	// 	fmt.Sprintf("prode:user:%d:session:%d", prode.UserID, prode.SessionID),
+	// }
+	// for _, key := range cacheKeys {
+	// 	s.cache.Delete(key)
+	// 	fmt.Printf("Invalidated cache for key=%s\n", key)
+	// }
 
 	response := prodes.ResponseProdeSessionDTO{
 		ID:        prode.ID,
@@ -353,15 +353,15 @@ func (s *prodeService) DeleteProdeCarrera(ctx context.Context, prodeID int) e.Ap
 	}
 
 	// Invalidar caché relevante
-	cacheKeys := []string{
-		fmt.Sprintf("prode:user:%d", prode.UserID),
-		fmt.Sprintf("race_prodes:session:%d", prode.SessionID),
-		fmt.Sprintf("prode:user:%d:session:%d", prode.UserID, prode.SessionID),
-	}
-	for _, key := range cacheKeys {
-		s.cache.Delete(key)
-		fmt.Printf("Invalidated cache for key=%s\n", key)
-	}
+	// cacheKeys := []string{
+	// 	fmt.Sprintf("prode:user:%d", prode.UserID),
+	// 	fmt.Sprintf("race_prodes:session:%d", prode.SessionID),
+	// 	fmt.Sprintf("prode:user:%d:session:%d", prode.UserID, prode.SessionID),
+	// }
+	// for _, key := range cacheKeys {
+	// 	s.cache.Delete(key)
+	// 	fmt.Printf("Invalidated cache for key=%s\n", key)
+	// }
 
 	return nil
 }
@@ -378,15 +378,15 @@ func (s *prodeService) DeleteProdeSession(ctx context.Context, prodeID int) e.Ap
 	}
 
 	// Invalidar caché relevante
-	cacheKeys := []string{
-		fmt.Sprintf("prode:user:%d", prode.UserID),
-		fmt.Sprintf("session_prodes:session:%d", prode.SessionID),
-		fmt.Sprintf("prode:user:%d:session:%d", prode.UserID, prode.SessionID),
-	}
-	for _, key := range cacheKeys {
-		s.cache.Delete(key)
-		fmt.Printf("Invalidated cache for key=%s\n", key)
-	}
+	// cacheKeys := []string{
+	// 	fmt.Sprintf("prode:user:%d", prode.UserID),
+	// 	fmt.Sprintf("session_prodes:session:%d", prode.SessionID),
+	// 	fmt.Sprintf("prode:user:%d:session:%d", prode.UserID, prode.SessionID),
+	// }
+	// for _, key := range cacheKeys {
+	// 	s.cache.Delete(key)
+	// 	fmt.Printf("Invalidated cache for key=%s\n", key)
+	// }
 
 	return nil
 }
@@ -411,16 +411,16 @@ func (s *prodeService) DeleteProdeById(ctx context.Context, prodeID int) e.ApiEr
 }
 
 func (s *prodeService) GetProdesByUserId(ctx context.Context, userID int) ([]prodes.ResponseProdeCarreraDTO, []prodes.ResponseProdeSessionDTO, e.ApiError) {
-	cacheKey := fmt.Sprintf("prode:user:%d", userID)
-	if cached, exists := s.cache.Get(cacheKey); exists {
-		if result, ok := cached.(struct {
-			Carrera []prodes.ResponseProdeCarreraDTO
-			Session []prodes.ResponseProdeSessionDTO
-		}); ok {
-			fmt.Printf("Cache hit for prodes:user:%d\n", userID)
-			return result.Carrera, result.Session, nil
-		}
-	}
+	// cacheKey := fmt.Sprintf("prode:user:%d", userID)
+	// if cached, exists := s.cache.Get(cacheKey); exists {
+	// 	if result, ok := cached.(struct {
+	// 		Carrera []prodes.ResponseProdeCarreraDTO
+	// 		Session []prodes.ResponseProdeSessionDTO
+	// 	}); ok {
+	// 		fmt.Printf("Cache hit for prodes:user:%d\n", userID)
+	// 		return result.Carrera, result.Session, nil
+	// 	}
+	// }
 
 	carreraProdes, sessionProdes, err := s.prodeRepo.GetProdesByUserID(ctx, userID)
 	if err != nil {
@@ -459,35 +459,32 @@ func (s *prodeService) GetProdesByUserId(ctx context.Context, userID int) ([]pro
 	}
 
 	// Cachear el resultado
-	s.cache.Set(cacheKey, struct {
-		Carrera []prodes.ResponseProdeCarreraDTO
-		Session []prodes.ResponseProdeSessionDTO
-	}{Carrera: carreraResponses, Session: sessionResponses}, 5*time.Minute)
-	fmt.Printf("Cached prodes for user:%d\n", userID)
+	// s.cache.Set(cacheKey, struct {
+	// 	Carrera []prodes.ResponseProdeCarreraDTO
+	// 	Session []prodes.ResponseProdeSessionDTO
+	// }{Carrera: carreraResponses, Session: sessionResponses}, 5*time.Minute)
+	// fmt.Printf("Cached prodes for user:%d\n", userID)
 
 	return carreraResponses, sessionResponses, nil
 }
 
 func (s *prodeService) GetProdeByUserAndSession(ctx context.Context, userID, sessionID int) (*prodes.ResponseProdeCarreraDTO, *prodes.ResponseProdeSessionDTO, e.ApiError) {
-	cacheKey := fmt.Sprintf("prode:user:%d:session:%d", userID, sessionID)
-	if cached, exists := s.cache.Get(cacheKey); exists {
-		if result, ok := cached.(struct {
-			Carrera *prodes.ResponseProdeCarreraDTO
-			Session *prodes.ResponseProdeSessionDTO
-		}); ok {
-			fmt.Printf("Cache hit for prode:user:%d:session:%d\n", userID, sessionID)
-			return result.Carrera, result.Session, nil
-		}
-	}
+	// cacheKey := fmt.Sprintf("prode:user:%d:session:%d", userID, sessionID)
+	// if cached, exists := s.cache.Get(cacheKey); exists {
+	// 	if result, ok := cached.(struct {
+	// 		Carrera *prodes.ResponseProdeCarreraDTO
+	// 		Session *prodes.ResponseProdeSessionDTO
+	// 	}); ok {
+	// 		fmt.Printf("Cache hit for prode:user:%d:session:%d\n", userID, sessionID)
+	// 		return result.Carrera, result.Session, nil
+	// 	}
+	// }
 
-	fmt.Printf("Fetching prode for userID: %d, sessionID: %d\n", userID, sessionID)
 	sessionInfo, err := s.sessionClient.GetSessionNameAndType(sessionID)
 	if err != nil {
 		fmt.Printf("Error fetching session info: %v\n", err)
 		return nil, nil, e.NewInternalServerApiError("Error fetching session name and type from sessions service", err)
 	}
-
-	fmt.Printf("Session info for sessionID %d: %+v\n", sessionID, sessionInfo)
 
 	var carreraResponse *prodes.ResponseProdeCarreraDTO
 	var sessionResponse *prodes.ResponseProdeSessionDTO
@@ -544,23 +541,23 @@ func (s *prodeService) GetProdeByUserAndSession(ctx context.Context, userID, ses
 	}
 
 	// Cachear el resultado
-	s.cache.Set(cacheKey, struct {
-		Carrera *prodes.ResponseProdeCarreraDTO
-		Session *prodes.ResponseProdeSessionDTO
-	}{Carrera: carreraResponse, Session: sessionResponse}, 5*time.Minute)
-	fmt.Printf("Cached prode for user:%d:session:%d\n", userID, sessionID)
+	// s.cache.Set(cacheKey, struct {
+	// 	Carrera *prodes.ResponseProdeCarreraDTO
+	// 	Session *prodes.ResponseProdeSessionDTO
+	// }{Carrera: carreraResponse, Session: sessionResponse}, 5*time.Minute)
+	// fmt.Printf("Cached prode for user:%d:session:%d\n", userID, sessionID)
 
 	return carreraResponse, sessionResponse, nil
 }
 
 func (s *prodeService) GetRaceProdesBySession(ctx context.Context, sessionID int) ([]prodes.ResponseProdeCarreraDTO, e.ApiError) {
-	cacheKey := fmt.Sprintf("race_prodes:session:%d", sessionID)
-	if cached, exists := s.cache.Get(cacheKey); exists {
-		if raceProdes, ok := cached.([]prodes.ResponseProdeCarreraDTO); ok {
-			fmt.Printf("Cache hit for race_prodes:session:%d\n", sessionID)
-			return raceProdes, nil
-		}
-	}
+	// cacheKey := fmt.Sprintf("race_prodes:session:%d", sessionID)
+	// if cached, exists := s.cache.Get(cacheKey); exists {
+	// 	if raceProdes, ok := cached.([]prodes.ResponseProdeCarreraDTO); ok {
+	// 		fmt.Printf("Cache hit for race_prodes:session:%d\n", sessionID)
+	// 		return raceProdes, nil
+	// 	}
+	// }
 
 	sessionInfo, err := s.sessionClient.GetSessionNameAndType(sessionID)
 	if err != nil {
@@ -594,13 +591,13 @@ func (s *prodeService) GetRaceProdesBySession(ctx context.Context, sessionID int
 		})
 	}
 
-	// Cachear el resultado
-	ttl := 5 * time.Minute
-	if sessionInfo.DateEnd.Before(time.Now()) {
-		ttl = 24 * time.Hour // Sesiones finalizadas son inmutables
-	}
-	s.cache.Set(cacheKey, raceProdeResponses, ttl)
-	fmt.Printf("Cached race_prodes for session:%d\n", sessionID)
+	// // Cachear el resultado
+	// ttl := 5 * time.Minute
+	// if sessionInfo.DateEnd.Before(time.Now()) {
+	// 	ttl = 24 * time.Hour // Sesiones finalizadas son inmutables
+	// }
+	// s.cache.Set(cacheKey, raceProdeResponses, ttl)
+	// fmt.Printf("Cached race_prodes for session:%d\n", sessionID)
 
 	return raceProdeResponses, nil
 }
@@ -639,15 +636,15 @@ func (s *prodeService) UpdateRaceProdeForUserBySessionId(ctx context.Context, us
 	}
 
 	// Invalidar caché relevante
-	cacheKeys := []string{
-		fmt.Sprintf("prode:user:%d", userID),
-		fmt.Sprintf("race_prodes:session:%d", sessionID),
-		fmt.Sprintf("prode:user:%d:session:%d", userID, sessionID),
-	}
-	for _, key := range cacheKeys {
-		s.cache.Delete(key)
-		fmt.Printf("Invalidated cache for key=%s\n", key)
-	}
+	// cacheKeys := []string{
+	// 	fmt.Sprintf("prode:user:%d", userID),
+	// 	fmt.Sprintf("race_prodes:session:%d", sessionID),
+	// 	fmt.Sprintf("prode:user:%d:session:%d", userID, sessionID),
+	// }
+	// for _, key := range cacheKeys {
+	// 	s.cache.Delete(key)
+	// 	fmt.Printf("Invalidated cache for key=%s\n", key)
+	// }
 
 	response := prodes.ResponseProdeCarreraDTO{
 		ID:        prode.ID,
@@ -668,13 +665,13 @@ func (s *prodeService) UpdateRaceProdeForUserBySessionId(ctx context.Context, us
 }
 
 func (s *prodeService) GetSessionProdeBySession(ctx context.Context, sessionID int) ([]prodes.ResponseProdeSessionDTO, e.ApiError) {
-	cacheKey := fmt.Sprintf("session_prodes:session:%d", sessionID)
-	if cached, exists := s.cache.Get(cacheKey); exists {
-		if sessionProdes, ok := cached.([]prodes.ResponseProdeSessionDTO); ok {
-			fmt.Printf("Cache hit for session_prodes:session:%d\n", sessionID)
-			return sessionProdes, nil
-		}
-	}
+	// cacheKey := fmt.Sprintf("session_prodes:session:%d", sessionID)
+	// if cached, exists := s.cache.Get(cacheKey); exists {
+	// 	if sessionProdes, ok := cached.([]prodes.ResponseProdeSessionDTO); ok {
+	// 		fmt.Printf("Cache hit for session_prodes:session:%d\n", sessionID)
+	// 		return sessionProdes, nil
+	// 	}
+	// }
 
 	sessionInfo, err := s.sessionClient.GetSessionNameAndType(sessionID)
 	if err != nil {
@@ -704,27 +701,27 @@ func (s *prodeService) GetSessionProdeBySession(ctx context.Context, sessionID i
 	}
 
 	// Cachear el resultado
-	ttl := 5 * time.Minute
-	if sessionInfo.DateEnd.Before(time.Now()) {
-		ttl = 24 * time.Hour // Sesiones finalizadas son inmutables
-	}
-	s.cache.Set(cacheKey, sessionProdeResponses, ttl)
-	fmt.Printf("Cached session_prodes for session:%d\n", sessionID)
+	// ttl := 5 * time.Minute
+	// if sessionInfo.DateEnd.Before(time.Now()) {
+	// 	ttl = 24 * time.Hour // Sesiones finalizadas son inmutables
+	// }
+	// s.cache.Set(cacheKey, sessionProdeResponses, ttl)
+	// fmt.Printf("Cached session_prodes for session:%d\n", sessionID)
 
 	return sessionProdeResponses, nil
 }
 
 func (s *prodeService) GetUserProdes(ctx context.Context, userID int) ([]prodes.ResponseProdeCarreraDTO, []prodes.ResponseProdeSessionDTO, e.ApiError) {
-	cacheKey := fmt.Sprintf("prode:user:%d", userID)
-	if cached, exists := s.cache.Get(cacheKey); exists {
-		if result, ok := cached.(struct {
-			Carrera []prodes.ResponseProdeCarreraDTO
-			Session []prodes.ResponseProdeSessionDTO
-		}); ok {
-			fmt.Printf("Cache hit for prodes:user:%d\n", userID)
-			return result.Carrera, result.Session, nil
-		}
-	}
+	// cacheKey := fmt.Sprintf("prode:user:%d", userID)
+	// if cached, exists := s.cache.Get(cacheKey); exists {
+	// 	if result, ok := cached.(struct {
+	// 		Carrera []prodes.ResponseProdeCarreraDTO
+	// 		Session []prodes.ResponseProdeSessionDTO
+	// 	}); ok {
+	// 		fmt.Printf("Cache hit for prodes:user:%d\n", userID)
+	// 		return result.Carrera, result.Session, nil
+	// 	}
+	// }
 
 	userExists, err := s.userClient.GetUserByID(userID)
 	if err != nil || !userExists {
@@ -768,23 +765,23 @@ func (s *prodeService) GetUserProdes(ctx context.Context, userID int) ([]prodes.
 	}
 
 	// Cachear el resultado
-	s.cache.Set(cacheKey, struct {
-		Carrera []prodes.ResponseProdeCarreraDTO
-		Session []prodes.ResponseProdeSessionDTO
-	}{Carrera: carreraResponses, Session: sessionResponses}, 5*time.Minute)
-	fmt.Printf("Cached prodes for user:%d\n", userID)
+	// s.cache.Set(cacheKey, struct {
+	// 	Carrera []prodes.ResponseProdeCarreraDTO
+	// 	Session []prodes.ResponseProdeSessionDTO
+	// }{Carrera: carreraResponses, Session: sessionResponses}, 5*time.Minute)
+	// fmt.Printf("Cached prodes for user:%d\n", userID)
 
 	return carreraResponses, sessionResponses, nil
 }
 
 func (s *prodeService) GetDriverDetails(ctx context.Context, driverID int) (prodes.DriverDTO, e.ApiError) {
-	cacheKey := fmt.Sprintf("driver:%d", driverID)
-	if cached, exists := s.cache.Get(cacheKey); exists {
-		if driver, ok := cached.(prodes.DriverDTO); ok {
-			fmt.Printf("Cache hit for driver:%d\n", driverID)
-			return driver, nil
-		}
-	}
+	// cacheKey := fmt.Sprintf("driver:%d", driverID)
+	// if cached, exists := s.cache.Get(cacheKey); exists {
+	// 	if driver, ok := cached.(prodes.DriverDTO); ok {
+	// 		fmt.Printf("Cache hit for driver:%d\n", driverID)
+	// 		return driver, nil
+	// 	}
+	// }
 
 	driverDetails, err := s.driverClient.GetDriverByID(driverID)
 	if err != nil {
@@ -801,20 +798,20 @@ func (s *prodeService) GetDriverDetails(ctx context.Context, driverID int) (prod
 	}
 
 	// Cachear el resultado
-	s.cache.Set(cacheKey, response, 24*time.Hour)
-	fmt.Printf("Cached driver:%d\n", driverID)
+	// s.cache.Set(cacheKey, response, 24*time.Hour)
+	// fmt.Printf("Cached driver:%d\n", driverID)
 
 	return response, nil
 }
 
 func (s *prodeService) GetAllDrivers(ctx context.Context) ([]prodes.DriverDTO, e.ApiError) {
-	cacheKey := "all_drivers"
-	if cached, exists := s.cache.Get(cacheKey); exists {
-		if drivers, ok := cached.([]prodes.DriverDTO); ok {
-			fmt.Printf("Cache hit for all_drivers\n")
-			return drivers, nil
-		}
-	}
+	// cacheKey := "all_drivers"
+	// if cached, exists := s.cache.Get(cacheKey); exists {
+	// 	if drivers, ok := cached.([]prodes.DriverDTO); ok {
+	// 		fmt.Printf("Cache hit for all_drivers\n")
+	// 		return drivers, nil
+	// 	}
+	// }
 
 	drivers, err := s.driverClient.GetAllDrivers()
 	if err != nil {
@@ -834,8 +831,8 @@ func (s *prodeService) GetAllDrivers(ctx context.Context) ([]prodes.DriverDTO, e
 	}
 
 	// Cachear el resultado
-	s.cache.Set(cacheKey, driverResponses, 24*time.Hour)
-	fmt.Printf("Cached all_drivers\n")
+	// s.cache.Set(cacheKey, driverResponses, 24*time.Hour)
+	// fmt.Printf("Cached all_drivers\n")
 
 	return driverResponses, nil
 }
@@ -894,17 +891,17 @@ func (s *prodeService) UpdateScoresForRaceProdes(ctx context.Context, sessionID 
 	}
 
 	// Invalidar caché relevante
-	cacheKeys := []string{
-		fmt.Sprintf("race_prodes:session:%d", sessionID),
-	}
-	for _, prode := range raceProdes {
-		cacheKeys = append(cacheKeys, fmt.Sprintf("prode:user:%d", prode.UserID))
-		cacheKeys = append(cacheKeys, fmt.Sprintf("prode:user:%d:session:%d", prode.UserID, sessionID))
-	}
-	for _, key := range cacheKeys {
-		s.cache.Delete(key)
-		fmt.Printf("Invalidated cache for key=%s\n", key)
-	}
+	// cacheKeys := []string{
+	// 	fmt.Sprintf("race_prodes:session:%d", sessionID),
+	// }
+	// for _, prode := range raceProdes {
+	// 	cacheKeys = append(cacheKeys, fmt.Sprintf("prode:user:%d", prode.UserID))
+	// 	cacheKeys = append(cacheKeys, fmt.Sprintf("prode:user:%d:session:%d", prode.UserID, sessionID))
+	// }
+	// for _, key := range cacheKeys {
+	// 	s.cache.Delete(key)
+	// 	fmt.Printf("Invalidated cache for key=%s\n", key)
+	// }
 
 	return nil
 }
@@ -932,17 +929,17 @@ func (s *prodeService) UpdateScoresForSessionProdes(ctx context.Context, session
 	}
 
 	// Invalidar caché relevante
-	cacheKeys := []string{
-		fmt.Sprintf("session_prodes:session:%d", sessionID),
-	}
-	for _, prode := range prodesSession {
-		cacheKeys = append(cacheKeys, fmt.Sprintf("prode:user:%d", prode.UserID))
-		cacheKeys = append(cacheKeys, fmt.Sprintf("prode:user:%d:session:%d", prode.UserID, sessionID))
-	}
-	for _, key := range cacheKeys {
-		s.cache.Delete(key)
-		fmt.Printf("Invalidated cache for key=%s\n", key)
-	}
+	// cacheKeys := []string{
+	// 	fmt.Sprintf("session_prodes:session:%d", sessionID),
+	// }
+	// for _, prode := range prodesSession {
+	// 	cacheKeys = append(cacheKeys, fmt.Sprintf("prode:user:%d", prode.UserID))
+	// 	cacheKeys = append(cacheKeys, fmt.Sprintf("prode:user:%d:session:%d", prode.UserID, sessionID))
+	// }
+	// for _, key := range cacheKeys {
+	// 	s.cache.Delete(key)
+	// 	fmt.Printf("Invalidated cache for key=%s\n", key)
+	// }
 
 	return nil
 }

@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"prediapp.local/db"
 	"prediapp.local/prodes/internal/api"
@@ -14,7 +13,6 @@ import (
 	"prediapp.local/prodes/internal/repository"
 	"prediapp.local/prodes/internal/router"
 	"prediapp.local/prodes/internal/service"
-	"prediapp.local/prodes/pkg/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -46,11 +44,11 @@ func main() {
 	userClient := client.NewHttpClient(usersURL)
 	driverClient := client.NewHttpClient(driversURL)
 	resultsClient := client.NewHttpClient(resultsURL)
-	cache := utils.NewCache(30*time.Minute, 100)
+	// cache := utils.NewCache(30*time.Minute, 100)
 
 	// 4) Repos, servicio y controlador
 	pRepo := repository.NewProdeRepository(db.DB)
-	pService := service.NewPrediService(pRepo, sessionClient, userClient, driverClient, resultsClient, cache)
+	pService := service.NewPrediService(pRepo, sessionClient, userClient, driverClient, resultsClient)
 	pCtrl := api.NewProdeController(pService)
 
 	// 5) Router
@@ -72,9 +70,9 @@ func main() {
 	<-quit
 	log.Println("Deteniendo prodes service...")
 
-	entries := cache.ListEntries()
-	log.Println("Contenido de la caché de prodes al cerrar:")
-	for _, entry := range entries {
-		log.Printf("Clave: %s, Expiración: %s, Valor: %+v\n", entry.Key, entry.Expiration.Format(time.RFC3339), entry.Value)
-	}
+	// entries := cache.ListEntries()
+	// log.Println("Contenido de la caché de prodes al cerrar:")
+	// for _, entry := range entries {
+	// 	log.Printf("Clave: %s, Expiración: %s, Valor: %+v\n", entry.Key, entry.Expiration.Format(time.RFC3339), entry.Value)
+	// }
 }
