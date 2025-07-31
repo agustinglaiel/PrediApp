@@ -912,8 +912,6 @@ func (s *prodeService) UpdateScoresForSessionProdes(ctx context.Context, session
 		return e.NewInternalServerApiError("Error fetching real top drivers for session", err)
 	}
 
-	fmt.Println("Real top drivers:", realTopDrivers)
-
 	prodesSession, err := s.prodeRepo.GetSessionProdesBySession(ctx, sessionID)
 	if err != nil {
 		return e.NewInternalServerApiError("Error fetching prodes session for scoring", err)
