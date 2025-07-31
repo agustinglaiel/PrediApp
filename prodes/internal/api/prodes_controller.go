@@ -397,3 +397,11 @@ func (c *ProdeController) UpdateScoresForSession(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{"message": "Scores updated successfully"})
 }
+
+// func (c *ProdeController) UpdateUserScores(ctx *gin.Context) {
+// 	if apiErr := c.prodeService.UpdateUserScores(ctx.Request.Context()); apiErr != nil {
+// 		ctx.JSON(apiErr.Status(), apiErr)
+// 		return
+// 	}
+// 	ctx.JSON(http.StatusOK, gin.H{"message": "Puntajes de los usuarios actualizados correctamente"})
+// }

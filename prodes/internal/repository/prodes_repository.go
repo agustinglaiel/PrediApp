@@ -33,6 +33,7 @@ type ProdeRepository interface {
 	GetProdeSessionByUserAndSession(ctx context.Context, userID, sessionID int) (*model.ProdeSession, e.ApiError)
 	GetRaceProdesBySession(ctx context.Context, sessionID int) ([]*model.ProdeCarrera, e.ApiError)
 	GetSessionProdesBySession(ctx context.Context, sessionID int) ([]*model.ProdeSession, e.ApiError)
+	IncrementUserScore(ctx context.Context, userID int, delta int) e.ApiError
 }
 
 func NewProdeRepository(db *gorm.DB) ProdeRepository {
@@ -293,4 +294,18 @@ func (r *prodeRepository) GetSessionProdesBySession(ctx context.Context, session
 	}
 
 	return prodesSession, nil
+}
+
+func (r *prodeRepository) IncrementUserScore(ctx context.Context, userID int, delta int) e.ApiError {
+	if delta == 0 {
+		return nil
+	}
+	if err := r.db.WithContext(ctx).
+		Model(&model.User{}).
+		Where("id = ?", userID).
+		UpdateColumn("score", gorm.Expr("score + ?", delta)).
+		Error; err != nil {
+		return e.NewInternalServerApiError("Error incrementing user score", err)
+	}
+	return nil
 }

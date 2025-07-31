@@ -41,6 +41,7 @@ type ProdeServiceInterface interface {
 	GetProdeByUserAndSession(ctx context.Context, userID int, sessionID int) (*prodes.ResponseProdeCarreraDTO, *prodes.ResponseProdeSessionDTO, e.ApiError)
 	UpdateScoresForRaceProdes(ctx context.Context, sessionID int) e.ApiError
 	UpdateScoresForSessionProdes(ctx context.Context, sessionID int) e.ApiError
+	// UpdateUserScores(ctx context.Context) e.ApiError
 }
 
 // NewProdeService crea una nueva instancia de ProdeService con inyección de dependencias
@@ -857,7 +858,7 @@ func (s *prodeService) UpdateScoresForRaceProdes(ctx context.Context, sessionID 
 		return e.NewBadRequestApiError("La sesión no es de tipo 'Race'; no se pueden recalcular prodes carrera")
 	}
 
-	// Usar valores por defecto si vienen nil
+	// Valores reales con defaults
 	realVSC := false
 	if sessionDetails.VSC != nil {
 		realVSC = *sessionDetails.VSC
@@ -881,27 +882,33 @@ func (s *prodeService) UpdateScoresForRaceProdes(ctx context.Context, sessionID 
 		return e.NewInternalServerApiError("Error fetching race prodes for session", err)
 	}
 
+	// Acumular deltas por usuario
+	deltaPorUsuario := make(map[int]int)
+
+	// Calcular nuevos scores y acumular deltas
 	for _, prode := range raceProdes {
 		newScore := calculateRaceScore(prode, realTopDrivers, realVSC, realSC, realDNF)
+		delta := newScore - prode.Score
+		if delta == 0 {
+			continue
+		}
 		prode.Score = newScore
+		deltaPorUsuario[prode.UserID] += delta
+	}
 
+	// Persistir prodes actualizados
+	for _, prode := range raceProdes {
 		if err := s.prodeRepo.UpdateProdeCarrera(ctx, prode); err != nil {
 			return e.NewInternalServerApiError("Error updating race prode score", err)
 		}
 	}
 
-	// Invalidar caché relevante
-	// cacheKeys := []string{
-	// 	fmt.Sprintf("race_prodes:session:%d", sessionID),
-	// }
-	// for _, prode := range raceProdes {
-	// 	cacheKeys = append(cacheKeys, fmt.Sprintf("prode:user:%d", prode.UserID))
-	// 	cacheKeys = append(cacheKeys, fmt.Sprintf("prode:user:%d:session:%d", prode.UserID, sessionID))
-	// }
-	// for _, key := range cacheKeys {
-	// 	s.cache.Delete(key)
-	// 	fmt.Printf("Invalidated cache for key=%s\n", key)
-	// }
+	// Aplicar deltas acumulados a cada user
+	for userID, delta := range deltaPorUsuario {
+		if apiErr := s.prodeRepo.IncrementUserScore(ctx, userID, delta); apiErr != nil {
+			return e.NewInternalServerApiError("Error updating user total score", apiErr)
+		}
+	}
 
 	return nil
 }
@@ -917,27 +924,29 @@ func (s *prodeService) UpdateScoresForSessionProdes(ctx context.Context, session
 		return e.NewInternalServerApiError("Error fetching prodes session for scoring", err)
 	}
 
-	for _, prode := range prodesSession {
-		score := calculateSessionScore(prode, realTopDrivers)
-		prode.Score = score
+	deltaPorUsuario := make(map[int]int)
 
+	for _, prode := range prodesSession {
+		newScore := calculateSessionScore(prode, realTopDrivers)
+		delta := newScore - prode.Score
+		if delta == 0 {
+			continue
+		}
+		prode.Score = newScore
+		deltaPorUsuario[prode.UserID] += delta
+	}
+
+	for _, prode := range prodesSession {
 		if err := s.prodeRepo.UpdateProdeSession(ctx, prode); err != nil {
 			return e.NewInternalServerApiError("Error updating prode session score", err)
 		}
 	}
 
-	// Invalidar caché relevante
-	// cacheKeys := []string{
-	// 	fmt.Sprintf("session_prodes:session:%d", sessionID),
-	// }
-	// for _, prode := range prodesSession {
-	// 	cacheKeys = append(cacheKeys, fmt.Sprintf("prode:user:%d", prode.UserID))
-	// 	cacheKeys = append(cacheKeys, fmt.Sprintf("prode:user:%d:session:%d", prode.UserID, sessionID))
-	// }
-	// for _, key := range cacheKeys {
-	// 	s.cache.Delete(key)
-	// 	fmt.Printf("Invalidated cache for key=%s\n", key)
-	// }
+	for userID, delta := range deltaPorUsuario {
+		if apiErr := s.prodeRepo.IncrementUserScore(ctx, userID, delta); apiErr != nil {
+			return e.NewInternalServerApiError("Error updating user total score", apiErr)
+		}
+	}
 
 	return nil
 }
