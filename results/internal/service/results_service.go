@@ -23,7 +23,7 @@ type resultService struct {
 	sessionsClient *client.HttpClient
 	usersClient    *client.HttpClient
 	externalClient *client.HttpClient
-	cache          *e.Cache
+	// cache          *e.Cache
 }
 
 type ResultService interface {
@@ -46,7 +46,7 @@ func NewResultService(
 	sessionsClient *client.HttpClient,
 	usersClient *client.HttpClient,
 	externalClient *client.HttpClient,
-	cache *e.Cache,
+	// cache *e.Cache,
 ) ResultService {
 	return &resultService{
 		resultRepo:     resultRepo,
@@ -54,7 +54,7 @@ func NewResultService(
 		sessionsClient: sessionsClient,
 		usersClient:    usersClient,
 		externalClient: externalClient,
-		cache:          cache,
+		// cache:          cache,
 	}
 }
 
