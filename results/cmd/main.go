@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"prediapp.local/db"
 	"prediapp.local/results/internal/api"
@@ -14,7 +13,6 @@ import (
 	"prediapp.local/results/internal/repository"
 	"prediapp.local/results/internal/router"
 	"prediapp.local/results/internal/service"
-	"prediapp.local/results/pkg/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -42,11 +40,11 @@ func main() {
 	driversClient := client.NewHttpClient(os.Getenv("DRIVERS_SERVICE_URL"))
 	sessionsClient := client.NewHttpClient(os.Getenv("SESSIONS_SERVICE_URL"))
 	externalClient := client.NewHttpClient(os.Getenv("OPEN_F1_API_URL"))
-	cache := utils.NewCache(30*time.Minute, 100)
+	// cache := utils.NewCache(30*time.Minute, 100)
 
 	// 4) Repositorio, servicio y controlador
 	rRepo := repository.NewResultRepository(db.DB)
-	rService := service.NewResultService(rRepo, driversClient, sessionsClient, usersClient, externalClient, cache)
+	rService := service.NewResultService(rRepo, driversClient, sessionsClient, usersClient, externalClient)
 	rController := api.NewResultController(rService)
 
 	// 5) Router
@@ -68,9 +66,9 @@ func main() {
 	<-quit
 	log.Println("Deteniendo results service...")
 
-	entries := cache.ListEntries()
-	log.Println("Contenido de la caché de results al cerrar:")
-	for _, entry := range entries {
-		log.Printf("Clave: %s, Expiración: %s, Valor: %+v\n", entry.Key, entry.Expiration.Format(time.RFC3339), entry.Value)
-	}
+	// entries := cache.ListEntries()
+	// log.Println("Contenido de la caché de results al cerrar:")
+	// for _, entry := range entries {
+	// 	log.Printf("Clave: %s, Expiración: %s, Valor: %+v\n", entry.Key, entry.Expiration.Format(time.RFC3339), entry.Value)
+	// }
 }

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"time"
 
 	e "prediapp.local/results/pkg/utils"
 
@@ -394,18 +393,6 @@ func (s *resultService) CreateResult(ctx context.Context, request dto.CreateResu
 		return dto.ResponseResultDTO{}, e.NewInternalServerApiError("Error creando resultado", err)
 	}
 
-	// 7. Invalidar caché relevante
-	cacheKeys := []string{
-		fmt.Sprintf("results:session:%d", request.SessionID),
-		fmt.Sprintf("fastest_lap:session:%d", request.SessionID),
-		fmt.Sprintf("top_drivers:session:%d:n:%d", request.SessionID, 20), // Invalida hasta 20 para cubrir posibles valores de n
-		"all_results",
-	}
-	for _, key := range cacheKeys {
-		s.cache.Delete(key)
-		fmt.Printf("Invalidated cache for key=%s\n", key)
-	}
-
 	// 8. Construir DTO de respuesta
 	response := dto.ResponseResultDTO{
 		ID:             newResult.ID,
@@ -470,18 +457,6 @@ func (s *resultService) UpdateResult(ctx context.Context, resultID int, request 
 		return dto.ResponseResultDTO{}, e.NewInternalServerApiError("Error updating result", err)
 	}
 
-	// 6. Invalidar caché relevante
-	cacheKeys := []string{
-		fmt.Sprintf("results:session:%d", result.SessionID),
-		fmt.Sprintf("fastest_lap:session:%d", result.SessionID),
-		fmt.Sprintf("top_drivers:session:%d:n:%d", result.SessionID, 20),
-		"all_results",
-	}
-	for _, key := range cacheKeys {
-		s.cache.Delete(key)
-		fmt.Printf("Invalidated cache for key=%s\n", key)
-	}
-
 	// 7. Construir respuesta
 	response := dto.ResponseResultDTO{
 		ID:             result.ID,
@@ -515,13 +490,13 @@ func (s *resultService) UpdateResult(ctx context.Context, resultID int, request 
 // GetResultsOrderedByPosition obtiene los resultados de una sesión específica ordenados por posición
 func (s *resultService) GetResultsOrderedByPosition(ctx context.Context, sessionID int) ([]dto.ResponseResultDTO, e.ApiError) {
 	// Verificar caché
-	cacheKey := fmt.Sprintf("results:session:%d", sessionID)
-	if cached, exists := s.cache.Get(cacheKey); exists {
-		if results, ok := cached.([]dto.ResponseResultDTO); ok {
-			fmt.Printf("Cache hit for results:session:%d\n", sessionID)
-			return results, nil
-		}
-	}
+	// cacheKey := fmt.Sprintf("results:session:%d", sessionID)
+	// if cached, exists := s.cache.Get(cacheKey); exists {
+	// 	if results, ok := cached.([]dto.ResponseResultDTO); ok {
+	// 		fmt.Printf("Cache hit for results:session:%d\n", sessionID)
+	// 		return results, nil
+	// 	}
+	// }
 
 	// Verificar si existe el sessionID en la tabla de resultados
 	exists, err := s.resultRepo.ExistsSessionInResults(ctx, sessionID)
@@ -574,13 +549,13 @@ func (s *resultService) GetResultsOrderedByPosition(ctx context.Context, session
 		responseResults = append(responseResults, response)
 	}
 
-	// Cachear el resultado
-	ttl := 5 * time.Minute
-	if len(results) > 0 && results[0].Session.DateEnd.Before(time.Now()) {
-		ttl = 24 * time.Hour // Sesiones finalizadas son inmutables
-	}
-	s.cache.Set(cacheKey, responseResults, ttl)
-	fmt.Printf("Cached results for session:%d\n", sessionID)
+	// // Cachear el resultado
+	// ttl := 5 * time.Minute
+	// if len(results) > 0 && results[0].Session.DateEnd.Before(time.Now()) {
+	// 	ttl = 24 * time.Hour // Sesiones finalizadas son inmutables
+	// }
+	// s.cache.Set(cacheKey, responseResults, ttl)
+	// fmt.Printf("Cached results for session:%d\n", sessionID)
 
 	return responseResults, nil
 }
@@ -588,13 +563,13 @@ func (s *resultService) GetResultsOrderedByPosition(ctx context.Context, session
 // GetFastestLapInSession obtiene el piloto con la vuelta más rápida en una sesión específica
 func (s *resultService) GetFastestLapInSession(ctx context.Context, sessionID int) (dto.ResponseResultDTO, e.ApiError) {
 	// Verificar caché
-	cacheKey := fmt.Sprintf("fastest_lap:session:%d", sessionID)
-	if cached, exists := s.cache.Get(cacheKey); exists {
-		if result, ok := cached.(dto.ResponseResultDTO); ok {
-			fmt.Printf("Cache hit for fastest_lap:session:%d\n", sessionID)
-			return result, nil
-		}
-	}
+	// cacheKey := fmt.Sprintf("fastest_lap:session:%d", sessionID)
+	// if cached, exists := s.cache.Get(cacheKey); exists {
+	// 	if result, ok := cached.(dto.ResponseResultDTO); ok {
+	// 		fmt.Printf("Cache hit for fastest_lap:session:%d\n", sessionID)
+	// 		return result, nil
+	// 	}
+	// }
 
 	// Verificar si existe el sessionID en la tabla de resultados
 	exists, err := s.resultRepo.ExistsSessionInResults(ctx, sessionID)
@@ -651,12 +626,12 @@ func (s *resultService) GetFastestLapInSession(ctx context.Context, sessionID in
 	}
 
 	// Cachear el resultado
-	ttl := 5 * time.Minute
-	if fastestResult.Session.DateEnd.Before(time.Now()) {
-		ttl = 24 * time.Hour
-	}
-	s.cache.Set(cacheKey, response, ttl)
-	fmt.Printf("Cached fastest_lap for session:%d\n", sessionID)
+	// ttl := 5 * time.Minute
+	// if fastestResult.Session.DateEnd.Before(time.Now()) {
+	// 	ttl = 24 * time.Hour
+	// }
+	// s.cache.Set(cacheKey, response, ttl)
+	// fmt.Printf("Cached fastest_lap for session:%d\n", sessionID)
 
 	return response, nil
 }
@@ -681,17 +656,17 @@ func (s *resultService) DeleteResult(ctx context.Context, resultID int) e.ApiErr
 		return e.NewInternalServerApiError("Error al eliminar el resultado", err)
 	}
 
-	// Invalidar caché relevante
-	cacheKeys := []string{
-		fmt.Sprintf("results:session:%d", result.SessionID),
-		fmt.Sprintf("fastest_lap:session:%d", result.SessionID),
-		fmt.Sprintf("top_drivers:session:%d:n:%d", result.SessionID, 20),
-		"all_results",
-	}
-	for _, key := range cacheKeys {
-		s.cache.Delete(key)
-		fmt.Printf("Invalidated cache for key=%s\n", key)
-	}
+	// // Invalidar caché relevante
+	// cacheKeys := []string{
+	// 	fmt.Sprintf("results:session:%d", result.SessionID),
+	// 	fmt.Sprintf("fastest_lap:session:%d", result.SessionID),
+	// 	fmt.Sprintf("top_drivers:session:%d:n:%d", result.SessionID, 20),
+	// 	"all_results",
+	// }
+	// for _, key := range cacheKeys {
+	// 	s.cache.Delete(key)
+	// 	fmt.Printf("Invalidated cache for key=%s\n", key)
+	// }
 
 	return nil
 }
@@ -717,31 +692,31 @@ func (s *resultService) DeleteAllResultsForSession(ctx context.Context, sessionI
 		}
 	}
 
-	// Invalidar caché relevante
-	cacheKeys := []string{
-		fmt.Sprintf("results:session:%d", sessionID),
-		fmt.Sprintf("fastest_lap:session:%d", sessionID),
-		fmt.Sprintf("top_drivers:session:%d:n:%d", sessionID, 20),
-		"all_results",
-	}
-	for _, key := range cacheKeys {
-		s.cache.Delete(key)
-		fmt.Printf("Invalidated cache for key=%s\n", key)
-	}
+	// // Invalidar caché relevante
+	// cacheKeys := []string{
+	// 	fmt.Sprintf("results:session:%d", sessionID),
+	// 	fmt.Sprintf("fastest_lap:session:%d", sessionID),
+	// 	fmt.Sprintf("top_drivers:session:%d:n:%d", sessionID, 20),
+	// 	"all_results",
+	// }
+	// for _, key := range cacheKeys {
+	// 	s.cache.Delete(key)
+	// 	fmt.Printf("Invalidated cache for key=%s\n", key)
+	// }
 
 	return nil
 }
 
 // GetAllResults obtiene todos los resultados de la base de datos
 func (s *resultService) GetAllResults(ctx context.Context) ([]dto.ResponseResultDTO, e.ApiError) {
-	// Verificar caché
-	cacheKey := "all_results"
-	if cached, exists := s.cache.Get(cacheKey); exists {
-		if results, ok := cached.([]dto.ResponseResultDTO); ok {
-			fmt.Printf("Cache hit for all_results\n")
-			return results, nil
-		}
-	}
+	// // Verificar caché
+	// cacheKey := "all_results"
+	// if cached, exists := s.cache.Get(cacheKey); exists {
+	// 	if results, ok := cached.([]dto.ResponseResultDTO); ok {
+	// 		fmt.Printf("Cache hit for all_results\n")
+	// 		return results, nil
+	// 	}
+	// }
 
 	results, err := s.resultRepo.GetAllResults(ctx)
 	if err != nil {
@@ -781,9 +756,9 @@ func (s *resultService) GetAllResults(ctx context.Context) ([]dto.ResponseResult
 		responseResults = append(responseResults, response)
 	}
 
-	// Cachear el resultado
-	s.cache.Set(cacheKey, responseResults, 5*time.Minute)
-	fmt.Printf("Cached all_results\n")
+	// // Cachear el resultado
+	// s.cache.Set(cacheKey, responseResults, 5*time.Minute)
+	// fmt.Printf("Cached all_results\n")
 
 	return responseResults, nil
 }
@@ -797,14 +772,14 @@ func (s *resultService) GetTopNDriversInSession(ctx context.Context, sessionID i
 		return nil, e.NewBadRequestApiError("El número de pilotos a obtener debe ser mayor que 0")
 	}
 
-	// Verificar caché
-	cacheKey := fmt.Sprintf("top_drivers:session:%d:n:%d", sessionID, n)
-	if cached, exists := s.cache.Get(cacheKey); exists {
-		if topDrivers, ok := cached.([]dto.TopDriverDTO); ok {
-			fmt.Printf("Cache hit for top_drivers:session:%d:n:%d\n", sessionID, n)
-			return topDrivers, nil
-		}
-	}
+	// // Verificar caché
+	// cacheKey := fmt.Sprintf("top_drivers:session:%d:n:%d", sessionID, n)
+	// if cached, exists := s.cache.Get(cacheKey); exists {
+	// 	if topDrivers, ok := cached.([]dto.TopDriverDTO); ok {
+	// 		fmt.Printf("Cache hit for top_drivers:session:%d:n:%d\n", sessionID, n)
+	// 		return topDrivers, nil
+	// 	}
+	// }
 
 	results, err := s.resultRepo.GetResultsOrderedByPosition(ctx, sessionID)
 	if err != nil {
@@ -841,12 +816,12 @@ func (s *resultService) GetTopNDriversInSession(ctx context.Context, sessionID i
 	}
 
 	// Cachear el resultado
-	ttl := 5 * time.Minute
-	if len(results) > 0 && results[0].Session.DateEnd.Before(time.Now()) {
-		ttl = 24 * time.Hour
-	}
-	s.cache.Set(cacheKey, topDrivers, ttl)
-	fmt.Printf("Cached top_drivers for session:%d:n:%d\n", sessionID, n)
+	// ttl := 5 * time.Minute
+	// if len(results) > 0 && results[0].Session.DateEnd.Before(time.Now()) {
+	// 	ttl = 24 * time.Hour
+	// }
+	// s.cache.Set(cacheKey, topDrivers, ttl)
+	// fmt.Printf("Cached top_drivers for session:%d:n:%d\n", sessionID, n)
 
 	return topDrivers, nil
 }
@@ -935,16 +910,16 @@ func (s *resultService) CreateSessionResultsAdmin(ctx context.Context, bulkReque
 	}
 
 	// Invalidar caché relevante
-	cacheKeys := []string{
-		fmt.Sprintf("results:session:%d", bulkRequest.SessionID),
-		fmt.Sprintf("fastest_lap:session:%d", bulkRequest.SessionID),
-		fmt.Sprintf("top_drivers:session:%d:n:%d", bulkRequest.SessionID, 20),
-		"all_results",
-	}
-	for _, key := range cacheKeys {
-		s.cache.Delete(key)
-		fmt.Printf("Invalidated cache for key=%s\n", key)
-	}
+	// cacheKeys := []string{
+	// 	fmt.Sprintf("results:session:%d", bulkRequest.SessionID),
+	// 	fmt.Sprintf("fastest_lap:session:%d", bulkRequest.SessionID),
+	// 	fmt.Sprintf("top_drivers:session:%d:n:%d", bulkRequest.SessionID, 20),
+	// 	"all_results",
+	// }
+	// for _, key := range cacheKeys {
+	// 	s.cache.Delete(key)
+	// 	fmt.Printf("Invalidated cache for key=%s\n", key)
+	// }
 
 	var responseResults []dto.ResponseResultDTO
 	for _, r := range updatedResults {
