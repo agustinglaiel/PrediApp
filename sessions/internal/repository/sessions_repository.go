@@ -33,7 +33,6 @@ type SessionRepository interface {
 	GetSessionsByCircuitKeyAndYear(ctx context.Context, circuitKey, year int) ([]*model.Session, e.ApiError)
 	UpdateSCAndVSC(ctx context.Context, sessionID int, sc bool, vsc bool) e.ApiError
 	UpdateSessionKey(ctx context.Context, session *model.Session) e.ApiError
-	UpdateDFastLap(ctx context.Context, sessionID int, driverID int) e.ApiError
 	GetSessionsByLocationAndYear(ctx context.Context, location string, year int) ([]*model.Session, e.ApiError)
 }
 
@@ -267,15 +266,6 @@ func (s *sessionRepository) UpdateSessionKey(ctx context.Context, session *model
 	// Actualizar el campo session_key de la sesión
 	if err := s.db.WithContext(ctx).Model(&model.Session{}).Where("id = ?", session.ID).Update("session_key", session.SessionKey).Error; err != nil {
 		return e.NewInternalServerApiError("Error actualizando el session_key en la base de datos", err)
-	}
-	return nil
-}
-
-// UpdateDFastLap actualiza el valor del campo DFastLap en una sesión específica
-func (s *sessionRepository) UpdateDFastLap(ctx context.Context, sessionID int, driverID int) e.ApiError {
-	// Actualizar el campo DFastLap de la sesión
-	if err := s.db.WithContext(ctx).Model(&model.Session{}).Where("id = ?", sessionID).Update("d_fast_lap", driverID).Error; err != nil {
-		return e.NewInternalServerApiError("Error actualizando el DFastLap en la sesión", err)
 	}
 	return nil
 }

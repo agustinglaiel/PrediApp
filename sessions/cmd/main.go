@@ -14,7 +14,6 @@ import (
 	"prediapp.local/sessions/internal/repository"
 	"prediapp.local/sessions/internal/router"
 	"prediapp.local/sessions/internal/service"
-	"prediapp.local/sessions/pkg/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -41,11 +40,11 @@ func main() {
 
 	// 3) Construir cliente y caché
 	externalAPI := client.NewHttpClient("https://api.openf1.org/v1/")
-	cache := utils.NewCache(30*time.Minute, 100)
+	// cache := utils.NewCache(30*time.Minute, 100)
 
 	// 4) Repositorio, servicio y controlador
 	sRepo := repository.NewSessionRepository(db.DB)
-	sService := service.NewSessionService(sRepo, externalAPI, cache)
+	sService := service.NewSessionService(sRepo, externalAPI)
 	sController := api.NewSessionController(sService)
 
 	// 5) Router
@@ -67,10 +66,10 @@ func main() {
 	<-quit
 	log.Println("Deteniendo sessions service...")
 
-	// Print cache
-	entries := cache.ListEntries()
-	log.Println("Contenido de la caché de Sessions al cerrar:")
-	for _, entry := range entries {
-		log.Printf("Clave: %s, Expiración: %s, Valor: %+v\n", entry.Key, entry.Expiration.Format(time.RFC3339), entry.Value)
-	}
+	// // Print cache
+	// entries := cache.ListEntries()
+	// log.Println("Contenido de la caché de Sessions al cerrar:")
+	// for _, entry := range entries {
+	// 	log.Printf("Clave: %s, Expiración: %s, Valor: %+v\n", entry.Key, entry.Expiration.Format(time.RFC3339), entry.Value)
+	// }
 }

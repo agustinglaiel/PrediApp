@@ -15,7 +15,7 @@ import (
 type sessionService struct {
 	sessionsRepo repository.SessionRepository
 	client       *client.HttpClient // Agregar el cliente HTTP
-	cache        *e.Cache
+	// cache        *e.Cache
 }
 
 type SessionServiceInterface interface {
@@ -38,14 +38,13 @@ type SessionServiceInterface interface {
 	UpdateSessionData(ctx context.Context, sessionID int, location string, sessionName string, sessionType string, year int) e.ApiError
 	GetSessionKeyBySessionID(ctx context.Context, sessionID int) (int, e.ApiError)
 	UpdateSessionKeyAdmin(ctx context.Context, sessionID int, sessionKey int) e.ApiError
-	UpdateDFastLap(ctx context.Context, sessionID int) e.ApiError
 }
 
-func NewSessionService(sessionsRepo repository.SessionRepository, client *client.HttpClient, cache *e.Cache) SessionServiceInterface {
+func NewSessionService(sessionsRepo repository.SessionRepository, client *client.HttpClient) SessionServiceInterface {
 	return &sessionService{
 		sessionsRepo: sessionsRepo,
 		client:       client, // Pasar el cliente HTTP
-		cache:        cache,
+		// cache:        cache,
 	}
 }
 
@@ -120,19 +119,6 @@ func (s *sessionService) CreateSession(ctx context.Context, request dto.CreateSe
 		return dto.ResponseSessionDTO{}, e.NewInternalServerApiError("Error creando la sesión", err)
 	}
 
-	// Invalidar caché para listas relacionadas
-	cacheKeys := []string{
-		fmt.Sprintf("sessions_year:%d", newSession.Year),
-		fmt.Sprintf("sessions_circuit:%d", newSession.CircuitKey),
-		fmt.Sprintf("sessions_country:%s", newSession.CountryCode),
-		fmt.Sprintf("sessions_name_type:%s_%s", newSession.SessionName, newSession.SessionType),
-		"all_sessions",
-	}
-	for _, key := range cacheKeys {
-		s.cache.Delete(key)
-		fmt.Printf("Invalidated cache for key=%s\n", key)
-	}
-
 	// Convertir el modelo en un DTO de respuesta
 	response := dto.ResponseSessionDTO{
 		ID:               newSession.ID,
@@ -157,14 +143,6 @@ func (s *sessionService) CreateSession(ctx context.Context, request dto.CreateSe
 }
 
 func (s *sessionService) GetSessionById(ctx context.Context, sessionID int) (dto.ResponseSessionDTO, e.ApiError) {
-	cacheKey := fmt.Sprintf("session:%d", sessionID)
-
-	if cached, exists := s.cache.Get(cacheKey); exists {
-		if sessionDTO, ok := cached.(dto.ResponseSessionDTO); ok {
-			return sessionDTO, nil
-		}
-	}
-
 	session, err := s.sessionsRepo.GetSessionById(ctx, sessionID)
 	if err != nil {
 		return dto.ResponseSessionDTO{}, err
@@ -190,8 +168,6 @@ func (s *sessionService) GetSessionById(ctx context.Context, sessionID int) (dto
 		DNF:              session.DNF,
 	}
 
-	// cache UTC values
-	s.cache.Set(cacheKey, response, 1*time.Hour)
 	return response, nil
 }
 
@@ -311,21 +287,6 @@ func (s *sessionService) UpdateSessionById(ctx context.Context, sessionID int, r
 		return dto.ResponseSessionDTO{}, apiErr
 	}
 
-	// Invalidar caché para la sesión y listas relacionadas
-	cacheKeys := []string{
-		fmt.Sprintf("session:%d", sessionID),
-		fmt.Sprintf("sessions_year:%d", session.Year),
-		fmt.Sprintf("sessions_circuit:%d", session.CircuitKey),
-		fmt.Sprintf("sessions_country:%s", session.CountryCode),
-		fmt.Sprintf("sessions_name_type:%s_%s", session.SessionName, session.SessionType),
-		fmt.Sprintf("race_results:%d", sessionID),
-		"all_sessions",
-	}
-	for _, key := range cacheKeys {
-		s.cache.Delete(key)
-		fmt.Printf("Invalidated cache for key=%s\n", key)
-	}
-
 	// Construye el DTO de respuesta utilizando los valores actualizados del modelo
 	response := dto.ResponseSessionDTO{
 		ID:               session.ID,
@@ -346,7 +307,6 @@ func (s *sessionService) UpdateSessionById(ctx context.Context, sessionID int, r
 		SF:               session.SF,
 	}
 
-	s.cache.Set(fmt.Sprintf("session:%d", sessionID), response, 1*time.Hour)
 	return response, nil
 }
 
@@ -362,32 +322,10 @@ func (s *sessionService) DeleteSessionById(ctx context.Context, sessionID int) e
 		return e.NewInternalServerApiError("Error eliminando la sesión", err)
 	}
 
-	// Invalidar caché para la sesión y listas relacionadas
-	cacheKeys := []string{
-		fmt.Sprintf("session:%d", sessionID),
-		fmt.Sprintf("sessions_year:%d", session.Year),
-		fmt.Sprintf("sessions_circuit:%d", session.CircuitKey),
-		fmt.Sprintf("sessions_country:%s", session.CountryCode),
-		fmt.Sprintf("sessions_name_type:%s_%s", session.SessionName, session.SessionType),
-		fmt.Sprintf("race_results:%d", sessionID),
-		"all_sessions",
-	}
-	for _, key := range cacheKeys {
-		s.cache.Delete(key)
-		fmt.Printf("Invalidated cache for key=%s\n", key)
-	}
-
 	return nil
 }
 
 func (s *sessionService) ListSessionsByYear(ctx context.Context, year int) ([]dto.ResponseSessionDTO, e.ApiError) {
-	cacheKey := fmt.Sprintf("sessions_by_year_%d", year)
-	if cached, exists := s.cache.Get(cacheKey); exists {
-		if sessions, ok := cached.([]dto.ResponseSessionDTO); ok {
-			return sessions, nil
-		}
-	}
-
 	sessions, err := s.sessionsRepo.GetSessionByYear(ctx, year)
 	if err != nil {
 		return nil, err
@@ -416,21 +354,10 @@ func (s *sessionService) ListSessionsByYear(ctx context.Context, year int) ([]dt
 		})
 	}
 
-	s.cache.Set(cacheKey, response, 1*time.Hour)
 	return response, nil
 }
 
 func (s *sessionService) GetSessionNameAndTypeById(ctx context.Context, sessionID int) (dto.SessionNameAndTypeDTO, e.ApiError) {
-	cacheKey := fmt.Sprintf("session_name_type:%d", sessionID)
-
-	// Consultar la caché primero
-	if cached, exists := s.cache.Get(cacheKey); exists {
-		if sessionDTO, ok := cached.(dto.SessionNameAndTypeDTO); ok {
-			fmt.Printf("Cache hit for session_name_type=%d\n", sessionID)
-			return sessionDTO, nil
-		}
-	}
-
 	// Llamar al repositorio para obtener el nombre y tipo de la sesión
 	sessionName, sessionType, err := s.sessionsRepo.GetSessionNameAndTypeBySessionID(ctx, sessionID)
 	if err != nil {
@@ -443,21 +370,10 @@ func (s *sessionService) GetSessionNameAndTypeById(ctx context.Context, sessionI
 		SessionType: sessionType,
 	}
 
-	// Almacenar en caché con un TTL de 1 hora
-	s.cache.Set(cacheKey, response, 1*time.Hour)
-	fmt.Printf("Cache miss for session_name_type=%d, storing response\n", sessionID)
-
 	return response, nil
 }
 
 func (s *sessionService) ListSessionsByCircuitKey(ctx context.Context, circuitKey int) ([]dto.ResponseSessionDTO, e.ApiError) {
-	cacheKey := fmt.Sprintf("sessions_circuit:%d", circuitKey)
-	if cached, exists := s.cache.Get(cacheKey); exists {
-		if sessions, ok := cached.([]dto.ResponseSessionDTO); ok {
-			return sessions, nil
-		}
-	}
-
 	models, err := s.sessionsRepo.GetSessionsByCircuitKey(ctx, circuitKey)
 	if err != nil {
 		return nil, err
@@ -485,18 +401,10 @@ func (s *sessionService) ListSessionsByCircuitKey(ctx context.Context, circuitKe
 		})
 	}
 
-	s.cache.Set(cacheKey, response, 1*time.Hour)
 	return response, nil
 }
 
 func (s *sessionService) ListSessionsByCountryCode(ctx context.Context, countryCode string) ([]dto.ResponseSessionDTO, e.ApiError) {
-	cacheKey := fmt.Sprintf("sessions_country:%s", countryCode)
-	if cached, exists := s.cache.Get(cacheKey); exists {
-		if sessions, ok := cached.([]dto.ResponseSessionDTO); ok {
-			return sessions, nil
-		}
-	}
-
 	models, err := s.sessionsRepo.GetSessionsByCountryCode(ctx, countryCode)
 	if err != nil {
 		return nil, err
@@ -524,18 +432,10 @@ func (s *sessionService) ListSessionsByCountryCode(ctx context.Context, countryC
 		})
 	}
 
-	s.cache.Set(cacheKey, response, 1*time.Hour)
 	return response, nil
 }
 
 func (s *sessionService) ListUpcomingSessions(ctx context.Context) ([]dto.ResponseSessionDTO, e.ApiError) {
-	cacheKey := "upcoming_sessions"
-	if cached, exists := s.cache.Get(cacheKey); exists {
-		if sessions, ok := cached.([]dto.ResponseSessionDTO); ok {
-			return sessions, nil
-		}
-	}
-
 	sessions, err := s.sessionsRepo.GetUpcomingSessions(ctx)
 	if err != nil {
 		return nil, err
@@ -564,18 +464,10 @@ func (s *sessionService) ListUpcomingSessions(ctx context.Context) ([]dto.Respon
 		return []dto.ResponseSessionDTO{}, nil
 	}
 
-	s.cache.Set(cacheKey, response, 5*time.Minute)
 	return response, nil
 }
 
 func (s *sessionService) ListPastSessions(ctx context.Context, year int) ([]dto.ResponseSessionDTO, e.ApiError) {
-	cacheKey := fmt.Sprintf("past_sessions_year_%d", year)
-	if cached, exists := s.cache.Get(cacheKey); exists {
-		if sessions, ok := cached.([]dto.ResponseSessionDTO); ok {
-			return sessions, nil
-		}
-	}
-
 	sessions, err := s.sessionsRepo.GetPastSessions(ctx, year)
 	if err != nil {
 		return nil, err
@@ -604,7 +496,6 @@ func (s *sessionService) ListPastSessions(ctx context.Context, year int) ([]dto.
 		})
 	}
 
-	s.cache.Set(cacheKey, response, 24*time.Hour)
 	if len(response) == 0 {
 		return []dto.ResponseSessionDTO{}, nil
 	}
@@ -617,12 +508,6 @@ func (s *sessionService) ListSessionsBetweenDates(ctx context.Context, startDate
 		return nil, e.NewBadRequestApiError("La fecha de finalización no puede ser anterior a la fecha de inicio")
 	}
 	startDate, endDate = startDate.UTC(), endDate.UTC()
-	cacheKey := fmt.Sprintf("sessions_date_range:%s_%s", startDate.Format(time.RFC3339), endDate.Format(time.RFC3339))
-	if cached, exists := s.cache.Get(cacheKey); exists {
-		if sessions, ok := cached.([]dto.ResponseSessionDTO); ok {
-			return sessions, nil
-		}
-	}
 
 	models, err := s.sessionsRepo.GetSessionsBetweenDates(ctx, startDate, endDate)
 	if err != nil {
@@ -651,7 +536,6 @@ func (s *sessionService) ListSessionsBetweenDates(ctx context.Context, startDate
 		})
 	}
 
-	s.cache.Set(cacheKey, response, 5*time.Minute)
 	return response, nil
 }
 
@@ -659,13 +543,6 @@ func (s *sessionService) FindSessionsByNameAndType(ctx context.Context, sessionN
 	// Validar que sessionName y sessionType no estén vacíos
 	if sessionName == "" || sessionType == "" {
 		return nil, e.NewBadRequestApiError("El nombre y tipo de sesión son obligatorios")
-	}
-
-	cacheKey := fmt.Sprintf("sessions_name_type:%s_%s", sessionName, sessionType)
-	if cached, exists := s.cache.Get(cacheKey); exists {
-		if sessions, ok := cached.([]dto.ResponseSessionDTO); ok {
-			return sessions, nil
-		}
 	}
 
 	// Llamar al repositorio para obtener las sesiones por nombre y tipo
@@ -697,8 +574,6 @@ func (s *sessionService) FindSessionsByNameAndType(ctx context.Context, sessionN
 		})
 	}
 
-	s.cache.Set(cacheKey, response, 1*time.Hour)
-
 	if len(response) == 0 {
 		return []dto.ResponseSessionDTO{}, nil
 	}
@@ -707,13 +582,6 @@ func (s *sessionService) FindSessionsByNameAndType(ctx context.Context, sessionN
 }
 
 func (s *sessionService) GetAllSessions(ctx context.Context) ([]dto.ResponseSessionDTO, e.ApiError) {
-	cacheKey := "all_sessions"
-	if cached, exists := s.cache.Get(cacheKey); exists {
-		if sessions, ok := cached.([]dto.ResponseSessionDTO); ok {
-			return sessions, nil
-		}
-	}
-
 	// Llamar al repositorio para obtener todas las sesiones
 	sessions, err := s.sessionsRepo.GetAllSessions(ctx)
 	if err != nil {
@@ -743,9 +611,6 @@ func (s *sessionService) GetAllSessions(ctx context.Context) ([]dto.ResponseSess
 		})
 	}
 
-	// Almacenar en caché con fechas en UTC
-	s.cache.Set(cacheKey, response, 5*time.Minute)
-
 	if len(response) == 0 {
 		return []dto.ResponseSessionDTO{}, nil
 	}
@@ -754,16 +619,6 @@ func (s *sessionService) GetAllSessions(ctx context.Context) ([]dto.ResponseSess
 }
 
 func (s *sessionService) GetRaceResultsById(ctx context.Context, sessionID int) (dto.RaceResultsDTO, e.ApiError) {
-	cacheKey := fmt.Sprintf("race_results:%d", sessionID)
-
-	// Consultar la caché primero
-	if cached, exists := s.cache.Get(cacheKey); exists {
-		if results, ok := cached.(dto.RaceResultsDTO); ok {
-			fmt.Printf("Cache hit for race_results=%d\n", sessionID)
-			return results, nil
-		}
-	}
-
 	// Obtener la sesión por ID
 	session, apiErr := s.sessionsRepo.GetSessionById(ctx, sessionID)
 	if apiErr != nil {
@@ -781,10 +636,6 @@ func (s *sessionService) GetRaceResultsById(ctx context.Context, sessionID int) 
 		VSC: session.VSC,
 		SF:  session.SF,
 	}
-
-	// Almacenar en caché con un TTL de 1 hora
-	s.cache.Set(cacheKey, response, 1*time.Hour)
-	fmt.Printf("Cache miss for race_results=%d, storing response\n", sessionID)
 
 	return response, nil
 }
@@ -821,21 +672,6 @@ func (s *sessionService) UpdateResultSCAndVSC(ctx context.Context, sessionID int
 		return e.NewInternalServerApiError("Error updating SC and VSC in session", err)
 	}
 
-	// Invalidar caché para la sesión y listas relacionadas
-	cacheKeys := []string{
-		fmt.Sprintf("session:%d", sessionID),
-		fmt.Sprintf("sessions_year:%d", session.Year),
-		fmt.Sprintf("sessions_circuit:%d", session.CircuitKey),
-		fmt.Sprintf("sessions_country:%s", session.CountryCode),
-		fmt.Sprintf("sessions_name_type:%s_%s", session.SessionName, session.SessionType),
-		fmt.Sprintf("race_results:%d", sessionID),
-		"all_sessions",
-	}
-	for _, key := range cacheKeys {
-		s.cache.Delete(key)
-		fmt.Printf("Invalidated cache for key=%s\n", key)
-	}
-
 	return nil
 }
 
@@ -857,21 +693,6 @@ func (s *sessionService) UpdateDNFBySessionID(ctx context.Context, sessionID int
 	// Guardar la actualización en el repositorio
 	if err := s.sessionsRepo.UpdateSessionById(ctx, session); err != nil {
 		return e.NewInternalServerApiError("Error actualizando la cantidad de DNF", err)
-	}
-
-	// Invalidar caché para la sesión y listas relacionadas
-	cacheKeys := []string{
-		fmt.Sprintf("session:%d", sessionID),
-		fmt.Sprintf("sessions_year:%d", session.Year),
-		fmt.Sprintf("sessions_circuit:%d", session.CircuitKey),
-		fmt.Sprintf("sessions_country:%s", session.CountryCode),
-		fmt.Sprintf("sessions_name_type:%s_%s", session.SessionName, session.SessionType),
-		fmt.Sprintf("race_results:%d", sessionID),
-		"all_sessions",
-	}
-	for _, key := range cacheKeys {
-		s.cache.Delete(key)
-		fmt.Printf("Invalidated cache for key=%s\n", key)
 	}
 
 	return nil
@@ -902,37 +723,12 @@ func (s *sessionService) UpdateSessionData(ctx context.Context, sessionID int, l
 		if apiErr := s.sessionsRepo.UpdateSessionById(ctx, session); apiErr != nil {
 			return apiErr
 		}
-
-		// Invalidar caché para la sesión y listas relacionadas
-		cacheKeys := []string{
-			fmt.Sprintf("session:%d", sessionID),
-			fmt.Sprintf("sessions_year:%d", session.Year),
-			fmt.Sprintf("sessions_circuit:%d", session.CircuitKey),
-			fmt.Sprintf("sessions_country:%s", session.CountryCode),
-			fmt.Sprintf("sessions_name_type:%s_%s", session.SessionName, session.SessionType),
-			fmt.Sprintf("race_results:%d", sessionID),
-			"all_sessions",
-		}
-		for _, key := range cacheKeys {
-			s.cache.Delete(key)
-			fmt.Printf("Invalidated cache for key=%s\n", key)
-		}
 	}
 
 	return nil
 }
 
 func (s *sessionService) GetSessionKeyBySessionID(ctx context.Context, sessionID int) (int, e.ApiError) {
-	cacheKey := fmt.Sprintf("session_key:%d", sessionID)
-
-	// Consultar la caché primero
-	if cached, exists := s.cache.Get(cacheKey); exists {
-		if sessionKey, ok := cached.(int); ok {
-			fmt.Printf("Cache hit for session_key=%d\n", sessionID)
-			return sessionKey, nil
-		}
-	}
-
 	// Obtener la sesión por ID
 	session, err := s.sessionsRepo.GetSessionById(ctx, sessionID)
 	if err != nil {
@@ -942,10 +738,6 @@ func (s *sessionService) GetSessionKeyBySessionID(ctx context.Context, sessionID
 	if session.SessionKey == nil {
 		return 0, e.NewNotFoundApiError("Session key no encontrado para esta sesión")
 	}
-
-	// Almacenar en caché con un TTL de 1 hora
-	s.cache.Set(cacheKey, *session.SessionKey, 1*time.Hour)
-	fmt.Printf("Cache miss for session_key=%d, storing response\n", sessionID)
 
 	return *session.SessionKey, nil
 }
@@ -963,59 +755,5 @@ func (s *sessionService) UpdateSessionKeyAdmin(ctx context.Context, sessionID in
 		return err
 	}
 
-	// Invalidar caché para la sesión y listas relacionadas
-	cacheKeys := []string{
-		fmt.Sprintf("session:%d", sessionID),
-		fmt.Sprintf("sessions_year:%d", session.Year),
-		fmt.Sprintf("sessions_circuit:%d", session.CircuitKey),
-		fmt.Sprintf("sessions_country:%s", session.CountryCode),
-		fmt.Sprintf("sessions_name_type:%s_%s", session.SessionName, session.SessionType),
-		fmt.Sprintf("race_results:%d", sessionID),
-		"all_sessions",
-	}
-	for _, key := range cacheKeys {
-		s.cache.Delete(key)
-		fmt.Printf("Invalidated cache for key=%s\n", key)
-	}
-
-	return nil
-}
-
-func (s *sessionService) UpdateDFastLap(ctx context.Context, sessionID int) e.ApiError {
-	// Obtener la vuelta más rápida desde el microservicio de results
-	fastestLapResult, err := s.client.GetFastestLapBySessionID(sessionID)
-	if err != nil {
-		fmt.Printf("Error obteniendo el piloto con la vuelta más rápida: %v\n", err)
-		return e.NewInternalServerApiError("Error obteniendo el piloto con la vuelta más rápida", err)
-	}
-
-	// Verificar que el resultado de la vuelta rápida no esté vacío
-	if fastestLapResult == nil {
-		fmt.Println("No se encontró una vuelta rápida válida")
-		return e.NewNotFoundApiError("No se encontró una vuelta rápida válida para la sesión")
-	}
-
-	// Obtener la sesión actual por su ID
-	session, apiErr := s.sessionsRepo.GetSessionById(ctx, sessionID)
-	if apiErr != nil {
-		return apiErr
-	}
-
-	// Invalidar caché para la sesión y listas relacionadas
-	cacheKeys := []string{
-		fmt.Sprintf("session:%d", sessionID),
-		fmt.Sprintf("sessions_year:%d", session.Year),
-		fmt.Sprintf("sessions_circuit:%d", session.CircuitKey),
-		fmt.Sprintf("sessions_country:%s", session.CountryCode),
-		fmt.Sprintf("sessions_name_type:%s_%s", session.SessionName, session.SessionType),
-		fmt.Sprintf("race_results:%d", sessionID),
-		"all_sessions",
-	}
-	for _, key := range cacheKeys {
-		s.cache.Delete(key)
-		fmt.Printf("Invalidated cache for key=%s\n", key)
-	}
-
-	fmt.Printf("Vuelta más rápida actualizada correctamente para la sesión %d: Piloto %d\n", sessionID, fastestLapResult.Driver.ID)
 	return nil
 }

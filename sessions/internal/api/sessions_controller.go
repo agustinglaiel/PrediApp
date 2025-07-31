@@ -421,19 +421,3 @@ func (sc *SessionController) UpdateSessionKeyAdmin(c *gin.Context) {
 	// Responder con un estado 200 si la actualización fue exitosa
 	c.Status(http.StatusOK)
 }
-
-func (sc *SessionController) UpdateDFastLap(c *gin.Context) {
-	sessionID, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, e.NewBadRequestApiError("ID de sesión inválido"))
-		return
-	}
-
-	apiErr := sc.sessionService.UpdateDFastLap(c.Request.Context(), sessionID)
-	if apiErr != nil {
-		c.JSON(apiErr.Status(), apiErr)
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Vuelta más rápida actualizada correctamente"})
-}
