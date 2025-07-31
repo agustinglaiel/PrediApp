@@ -297,7 +297,7 @@ func (s *userService) UploadProfilePicture(ctx context.Context, userID int, data
 }
 
 func (s *userService) GetScoreboard(ctx context.Context) ([]dto.UserScoreDtoSimplified, e.ApiError) {
-	users, apiErr := s.userRepo.GetUsers(ctx)
+	users, apiErr := s.userRepo.GetScoreboard(ctx)
 	if apiErr != nil {
 		return nil, apiErr
 	}

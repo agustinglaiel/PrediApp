@@ -25,6 +25,7 @@ type UserRepository interface {
 	UpdateUserByID(ctx context.Context, id int, user *model.User) e.ApiError
 	DeleteUserByID(ctx context.Context, id int) e.ApiError
 	UpdateProfileImage(ctx context.Context, id int, data []byte, mime string) e.ApiError
+	GetScoreboard(ctx context.Context) ([]*model.User, e.ApiError)
 }
 
 // NewUserRepository crea una nueva instancia de userRepository
@@ -128,4 +129,15 @@ func (r *userRepository) UpdateProfileImage(ctx context.Context, id int, data []
 		return e.NewInternalServerApiError("error updating avatar", err)
 	}
 	return nil
+}
+
+func (r *userRepository) GetScoreboard(ctx context.Context) ([]*model.User, e.ApiError) {
+	var users []*model.User
+	if err := r.db.WithContext(ctx).
+		Select("username, score").
+		Order("score desc").
+		Find(&users).Error; err != nil {
+		return nil, e.NewInternalServerApiError("error finding users", err)
+	}
+	return users, nil
 }
